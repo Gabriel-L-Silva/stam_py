@@ -1,5 +1,6 @@
 from functools import cache
 import string
+from xml.etree.ElementInclude import include
 import pyvista as pv
 import numpy as np
 from math import cos, pi
@@ -13,6 +14,7 @@ import random
 from threading import Thread
 import sys
 from PyQt5.QtWidgets import (QApplication, QLabel, QWidget)
+import imageio
 
 def find_lambda(pr, face):
     A = [[1,1,1],
@@ -124,7 +126,13 @@ def computeViscosity():
     pass
 
 def computePressure():
-    return poisson_solver()
+    x0 = poisson_solver()
+    grad = gradient(x0)
+
+    mesh['vectors'][:,0] -= grad[:,0]
+    mesh['vectors'][:,1] -= grad[:,1]
+
+    apply_boundary_condition()
 
 def computeAdvection(density):
     new_pos = mesh.points-mesh['vectors']*timeInterval
@@ -136,11 +144,29 @@ def computeAdvection(density):
         mesh['vectors'][:,0] = interpolate(new_pos,'vectors', 0)
         mesh['vectors'][:,1] = interpolate(new_pos,'vectors', 1)
 
+    apply_boundary_condition()
+
 def computeSource():
     mesh['density'][36:40] = 1
 
 def divergent(rbf, nring):
-    return np.sum(rbf[:,1]*mesh['vectors'][nring,0] + rbf[:,2]*mesh['vectors'][nring,1])
+    div = np.sum(rbf[:,1]*mesh['vectors'][nring,0] + rbf[:,2]*mesh['vectors'][nring,1])
+    apply_boundary_condition()
+    return div
+    
+
+def gradient(lapl):
+    grad = np.zeros((mesh.n_points,2))
+    for pid in range(mesh.number_of_points):
+        nring = find_Nring(2, pid, [])
+        nring = np.append(nring, nring[0])
+        nring[0] = pid
+        
+        
+        rbf = rbf_fd_weights(np.asarray([mesh.points[x] for x in nring]), np.asarray(mesh.points[pid]), 5, 2)
+        
+        grad[pid] = np.sum(rbf[:,1]*mesh['vectors'][nring,0]), np.sum(rbf[:,2]*mesh['vectors'][nring,1])
+    return grad
 
 def poisson_solver():
     lapl = np.asarray([])
@@ -163,10 +189,9 @@ def poisson_solver():
         line[nring]= weights
         # p.show(cpos='xy')
         w = np.vstack([w, line])
-    p.show(cpos="xy")
     w = np.delete(w, 0,0)
-    w[0] = np.identity(mesh.number_of_points)[0]
-    b[0] = solution(mesh.points[0][0],mesh.points[0][1])
+    # w[0] = np.identity(mesh.number_of_points)[0]
+    # b[0] = solution(mesh.points[0][0],mesh.points[0][1])
     lapl = np.linalg.solve(w,b)
     return lapl
 
@@ -175,7 +200,7 @@ def velocityStep():
 
     computeViscosity()
 
-    # computePressure()
+    computePressure()
 
     computeAdvection(False)
 
@@ -192,7 +217,16 @@ def update_field():
     apply_boundary_condition()
     velocityStep()
 
+    apply_boundary_condition()
     densityStep()
+
+def pause_play(a):
+    global _pause
+    _pause = a
+
+def stop_sim(a):
+    global stop
+    stop = a
 
 def apply_boundary_condition():
     bottom_id = [x for x in boundary_ids if mesh['normals'][x,1] < 0]
@@ -210,12 +244,19 @@ def main():
     global timeInterval
     global boundary_ids
     global pl
+    global _pause
+    global stop 
+
+    stop = True
+    _pause = True
     timeInterval = 1/60.0
     #init mesh
     mesh = initialize_mesh()
 
+    filename = 'smoke_sim.mp4'
     #create window
     pl = pvqt.BackgroundPlotter()
+    pl.open_movie(filename,framerate=60)
     # pl.view_xy()
     pl.camera_position = [(1.6690598396129241, 1.3942212637901101, 8.140274938683984),
         (1.6690598396129241, 1.3942212637901101, 0.0),
@@ -232,18 +273,28 @@ def main():
     mesh['normals'] = get_normals(mesh, boundary_ids)
     apply_boundary_condition()
     #show vectors
-    geom = pv.Arrow()
-    glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
-    pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm')
+    # geom = pv.Arrow()
+    # glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
+    # vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm',)
     pl.add_mesh(mesh, show_edges=True, scalars='colors', rgba=True)
-    
-    pl.add_callback(update_field, interval=int(timeInterval))
-    while True:
-    #     # update velocity
-    #     on_advance_timestep()
-
+    pl.add_checkbox_button_widget(pause_play, position=(10, 150),value=True)
+    pl.add_checkbox_button_widget(stop_sim, position=(0, 150),value=True,color='red')
+    # pl.add_callback(update_field, interval=int(timeInterval))
+    while stop:
+        if _pause:
+            pl.app.processEvents()
+            continue
+        # update velocity
         # mesh['colors'] = np.hstack((np.ones((mesh.n_points,3)),mesh['density'].reshape(mesh.n_points,1)))
+        # mesh.set_active_scalars('scalars')
+        # glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
+        # pl.remove_actor(vec_actor)
+        
+        # vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm',render=False)
+        # mesh.set_active_scalars('density')
+        update_field()
         pl.render()
+        pl.write_frame()
         pl.app.processEvents()
     
 
