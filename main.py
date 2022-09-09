@@ -24,10 +24,12 @@ def find_lambda(pr, face):
 
     return x
 
-def interpolate(points, field:string):
+def interpolate(points, field:string, xy = None):
     cells = mesh.find_containing_cell(points)
     lambdas = [find_lambda(x, y) for x,y in zip(points,cells)]
-    return np.sum(mesh['density'][faces[cells]]*lambdas,axis=1)
+    if xy != None:
+        return np.sum(mesh[field][faces[cells]][:,xy]*lambdas,axis=1)
+    return np.sum(mesh[field][faces[cells]]*lambdas,axis=1)
 
 class MouseTracker(QWidget):
     def __init__(self):
@@ -104,12 +106,12 @@ def get_normals(mesh, boundary_ids):
     return normals
 
 def initialize_mesh():
-    mesh = pv.read("./mesh16.obj")
+    mesh = pv.read("./mesh8.obj")
     assert mesh.is_all_triangles()
 
-    mesh.add_field_data(np.zeros((mesh.n_points,1)), 'density')
+    mesh.point_data['density'] = np.zeros((mesh.n_points))
     mesh['colors'] = np.hstack((np.ones((mesh.n_points,3)),mesh['density'].reshape(mesh.n_points,1)))
-    mesh['vectors'] = np.hstack((np.random.random((mesh.n_points,2)),np.zeros((mesh.n_points,1))))
+    mesh['vectors'] = np.hstack((np.random.random((mesh.n_points,2)),np.zeros((mesh.n_points,1))))*2
     mesh['scalars'] = (np.linalg.norm(mesh['vectors'],axis=1))
     mesh['density'][36:40] = 1
 
@@ -128,12 +130,14 @@ def computeAdvection(density):
     new_pos = mesh.points-mesh['vectors']*timeInterval
     new_pos = np.clip(new_pos,0,pi)
     if density:
-        mesh['density'] = interpolate(new_pos,'density')
+        mesh.set_active_scalars('density')
+        mesh['density'] = interpolate(new_pos,'density').reshape((-1,1))
     else:
-        interpolate(new_pos,'vectors')
+        mesh['vectors'][:,0] = interpolate(new_pos,'vectors', 0)
+        mesh['vectors'][:,1] = interpolate(new_pos,'vectors', 1)
 
 def computeSource():
-    pass
+    mesh['density'][36:40] = 1
 
 def divergent(rbf, nring):
     return np.sum(rbf[:,1]*mesh['vectors'][nring,0] + rbf[:,2]*mesh['vectors'][nring,1])
@@ -171,11 +175,11 @@ def velocityStep():
 
     computeViscosity()
 
-    computePressure()
+    # computePressure()
 
-    computeAdvection()
+    computeAdvection(False)
 
-    computePressure()
+    # computePressure()
 
 def densityStep():
     computeSource()
@@ -185,10 +189,21 @@ def densityStep():
     computeAdvection(True)
 
 def update_field():
-    # velocityStep()
+    apply_boundary_condition()
+    velocityStep()
 
     densityStep()
 
+def apply_boundary_condition():
+    bottom_id = [x for x in boundary_ids if mesh['normals'][x,1] < 0]
+    top_id = [x for x in boundary_ids if mesh['normals'][x,1] > 0]
+    left_id = [x for x in boundary_ids if mesh['normals'][x,0] < 0]
+    right_id = [x for x in boundary_ids if mesh['normals'][x,0] > 0]
+    mesh['vectors'][left_id,0] = 0
+    mesh['vectors'][right_id,0] = 0
+    mesh['vectors'][top_id,1] = 0
+    mesh['vectors'][bottom_id,1] = 0
+    
 def main():
     global faces    
     global mesh
@@ -207,12 +222,6 @@ def main():
         (0.0, 1.0, 0.0)
     ]
 
-    #show vectors
-    geom = pv.Arrow()
-    glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
-    pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm')
-    pl.add_mesh(mesh, show_edges=False, scalars='colors', rgba=True)
-    
     faces = mesh.faces.reshape((-1,4))[:, 1:4]
 
     #calculate boundary normals
@@ -220,8 +229,14 @@ def main():
                                         non_manifold_edges=False, 
                                         manifold_edges=False)
     boundary_ids = get_boundary_ids(mesh, boundary)
-    mesh.add_field_data(get_normals(mesh, boundary_ids), 'normals')
-
+    mesh['normals'] = get_normals(mesh, boundary_ids)
+    apply_boundary_condition()
+    #show vectors
+    geom = pv.Arrow()
+    glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
+    pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm')
+    pl.add_mesh(mesh, show_edges=True, scalars='colors', rgba=True)
+    
     pl.add_callback(update_field, interval=int(timeInterval))
     while True:
     #     # update velocity
