@@ -1,20 +1,13 @@
 from functools import cache
 import string
-from xml.etree.ElementInclude import include
 import pyvista as pv
 import numpy as np
 from math import cos, pi
 import scipy.spatial.distance as sd
 import numpy.polynomial.polynomial as pp
 # from tqdm import tqdm
-import matplotlib.pyplot as plt
-from matplotlib import cm
 import pyvistaqt as pvqt
-import random
-from threading import Thread
-import sys
 from PyQt5.QtWidgets import (QApplication, QLabel, QWidget)
-import imageio
 
 def find_lambda(pr, face):
     A = [[1,1,1],
@@ -113,9 +106,11 @@ def initialize_mesh():
 
     mesh.point_data['density'] = np.zeros((mesh.n_points))
     mesh['colors'] = np.hstack((np.ones((mesh.n_points,3)),mesh['density'].reshape(mesh.n_points,1)))
-    mesh['vectors'] = np.hstack((np.random.random((mesh.n_points,2)),np.zeros((mesh.n_points,1))))*2
+    mesh['vectors'] = np.hstack((np.random.random((mesh.n_points,2)),np.zeros((mesh.n_points,1))))*2#np.zeros((mesh.n_points,3))#
     mesh['scalars'] = (np.linalg.norm(mesh['vectors'],axis=1))
-    mesh['density'][36:40] = 1
+    mesh.set_active_vectors('vectors')
+    # mesh['density'][25] = 1
+    # mesh['vectors'][25] = [0,1,0]
 
     return mesh
 
@@ -147,9 +142,9 @@ def computeAdvection(density):
     apply_boundary_condition()
 
 def computeSource():
-    mesh['density'][36:40] = 1
+    mesh['density'][[25,40]] = 1
 
-def divergent(rbf, nring):
+def divergent(rbf, nring, pid):
     div = np.sum(rbf[:,1]*mesh['vectors'][nring,0] + rbf[:,2]*mesh['vectors'][nring,1])
     apply_boundary_condition()
     return div
@@ -165,7 +160,7 @@ def gradient(lapl):
         
         rbf = rbf_fd_weights(np.asarray([mesh.points[x] for x in nring]), np.asarray(mesh.points[pid]), 5, 2)
         
-        grad[pid] = np.sum(rbf[:,1]*mesh['vectors'][nring,0]), np.sum(rbf[:,2]*mesh['vectors'][nring,1])
+        grad[pid] = np.sum(rbf[:,1]*lapl[nring]), np.sum(rbf[:,2]*lapl[nring])
     return grad
 
 def poisson_solver():
@@ -183,7 +178,7 @@ def poisson_solver():
             weights = rbf[:,1]*mesh['normals'][pid,0] + rbf[:,2]*mesh['normals'][pid,1]
         else:
             weights = rbf[:,0]
-            b[pid] = divergent(rbf, nring)
+            b[pid] = divergent(rbf, nring, pid)
         
         line = np.zeros(mesh.number_of_points)
         line[nring]= weights
@@ -200,7 +195,7 @@ def velocityStep():
 
     computeViscosity()
 
-    computePressure()
+    # computePressure()
 
     computeAdvection(False)
 
@@ -229,14 +224,12 @@ def stop_sim(a):
     stop = a
 
 def apply_boundary_condition():
-    bottom_id = [x for x in boundary_ids if mesh['normals'][x,1] < 0]
-    top_id = [x for x in boundary_ids if mesh['normals'][x,1] > 0]
-    left_id = [x for x in boundary_ids if mesh['normals'][x,0] < 0]
-    right_id = [x for x in boundary_ids if mesh['normals'][x,0] > 0]
     mesh['vectors'][left_id,0] = 0
     mesh['vectors'][right_id,0] = 0
     mesh['vectors'][top_id,1] = 0
     mesh['vectors'][bottom_id,1] = 0
+
+    # mesh['vectors'][40,1] = 1
     
 def main():
     global faces    
@@ -246,7 +239,11 @@ def main():
     global pl
     global _pause
     global stop 
-
+    global bottom_id 
+    global top_id 
+    global left_id
+    global right_id
+    
     stop = True
     _pause = True
     timeInterval = 1/60.0
@@ -255,7 +252,7 @@ def main():
 
     filename = 'smoke_sim.mp4'
     #create window
-    pl = pvqt.BackgroundPlotter()
+    pl = pvqt.BackgroundPlotter(window_size=(1026, 782))
     pl.open_movie(filename,framerate=60)
     # pl.view_xy()
     pl.camera_position = [(1.6690598396129241, 1.3942212637901101, 8.140274938683984),
@@ -271,14 +268,18 @@ def main():
                                         manifold_edges=False)
     boundary_ids = get_boundary_ids(mesh, boundary)
     mesh['normals'] = get_normals(mesh, boundary_ids)
+    bottom_id = [x for x in boundary_ids if mesh['normals'][x,1] < 0]
+    top_id = [x for x in boundary_ids if mesh['normals'][x,1] > 0]
+    left_id = [x for x in boundary_ids if mesh['normals'][x,0] < 0]
+    right_id = [x for x in boundary_ids if mesh['normals'][x,0] > 0]
     apply_boundary_condition()
     #show vectors
-    # geom = pv.Arrow()
-    # glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
-    # vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm',)
-    pl.add_mesh(mesh, show_edges=True, scalars='colors', rgba=True)
+    geom = pv.Arrow()
+    glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
+    vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm')
+    pl.add_mesh(mesh, show_edges=True)
     pl.add_checkbox_button_widget(pause_play, position=(10, 150),value=True)
-    pl.add_checkbox_button_widget(stop_sim, position=(0, 150),value=True,color='red')
+    pl.add_checkbox_button_widget(stop_sim, position=(10, 50),value=True,color_on='red')
     # pl.add_callback(update_field, interval=int(timeInterval))
     while stop:
         if _pause:
@@ -287,15 +288,16 @@ def main():
         # update velocity
         # mesh['colors'] = np.hstack((np.ones((mesh.n_points,3)),mesh['density'].reshape(mesh.n_points,1)))
         # mesh.set_active_scalars('scalars')
-        # glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
-        # pl.remove_actor(vec_actor)
-        
-        # vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm',render=False)
-        # mesh.set_active_scalars('density')
         update_field()
+        glyphs = mesh.glyph(orient="vectors", scale="vectors", factor=1, geom=geom)
+        pl.remove_actor(vec_actor)
+        
+        vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm',render=False)
+        mesh.set_active_scalars('density')
         pl.render()
         pl.write_frame()
         pl.app.processEvents()
+    pl.close()
     
 
 @cache
