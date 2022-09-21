@@ -1,3 +1,6 @@
+from matplotlib import tri
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 from functools import cache
 import string
 import pyvista as pv
@@ -5,9 +8,6 @@ import numpy as np
 from math import cos, pi
 import scipy.spatial.distance as sd
 import numpy.polynomial.polynomial as pp
-# from tqdm import tqdm
-import pyvistaqt as pvqt
-from PyQt5.QtWidgets import (QApplication, QLabel, QWidget)
 
 def find_lambda(pr, face):
     A = [[1,1,1],
@@ -19,28 +19,12 @@ def find_lambda(pr, face):
 
     return x
 
-def interpolate(points, field:string, xy = None):
-    cells = mesh.find_containing_cell(points)
+def interpolate(points, xy = None):
+    cells = mesh.triFinder(points[:,0],points[:,1])
     lambdas = [find_lambda(x, y) for x,y in zip(points,cells)]
     if xy != None:
-        return np.sum(mesh[field][faces[cells]][:,xy]*lambdas,axis=1)
-    return np.sum(mesh[field][faces[cells]]*lambdas,axis=1)
-
-class MouseTracker(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
-        self.setMouseTracking(True)
-
-    def initUI(self):
-        self.setGeometry(300, 300, 300, 200)
-        self.setWindowTitle('Mouse Tracker')
-        self.label = QLabel(self)
-        self.label.resize(200, 40)
-        self.show()
-
-    def mouseMoveEvent(self, event):
-        self.label.setText('Mouse coords: ( %d : %d )' % (event.x(), event.y()))
+        return np.sum(mesh.vectors[:,xy][faces[cells]]*lambdas,axis=1)
+    return np.sum(mesh.density[faces[cells]]*lambdas,axis=1)
     
 def rbf_fd_weights(X,ctr,s,d):
     #   X : each row contains one node in R^2
@@ -81,14 +65,14 @@ def is_boundary(mesh, boundary, pid):
 
 def get_boundary_ids(mesh, boundary):
     b_id = []
-    for pid in range(mesh.number_of_points):
+    for pid in range(mesh.n_points):
         if is_boundary(mesh, boundary, pid):
             b_id.append(pid)
     return b_id
 
 def get_normals(mesh, boundary_ids):
-    normals = np.zeros((mesh.number_of_points,3))
-    for id, b in zip(boundary_ids,mesh.points[boundary_ids]):
+    normals = np.zeros((mesh.n_points,3))
+    for id, b in zip(list(boundary_ids),mesh.points[list(boundary_ids)]):
         if b[0] == 0:
             normals[id] += [-1,0,0]
         if b[1] == 0:
@@ -124,68 +108,54 @@ def computePressure():
     x0 = poisson_solver()
     grad = gradient(x0)
 
-    mesh['vectors'][:,0] -= grad[:,0]
-    mesh['vectors'][:,1] -= grad[:,1]
+    mesh.vectors[:,0] -= grad[:,0]
+    mesh.vectors[:,1] -= grad[:,1]
 
     apply_boundary_condition()
 
 def computeAdvection(density):
-    new_pos = mesh.points-mesh['vectors']*timeInterval
+    new_pos = mesh.points-mesh.vectors*timeInterval
     new_pos = np.clip(new_pos,0,pi)
     if density:
-        mesh.set_active_scalars('density')
-        mesh['density'] = interpolate(new_pos,'density').reshape((-1,1))
+        mesh.density = interpolate(new_pos)
     else:
-        mesh['vectors'][:,0] = interpolate(new_pos,'vectors', 0)
-        mesh['vectors'][:,1] = interpolate(new_pos,'vectors', 1)
+        mesh.vectors[:,0] = interpolate(new_pos,0)
+        mesh.vectors[:,1] = interpolate(new_pos,1)
 
     apply_boundary_condition()
 
 def computeSource():
-    mesh['density'][[25,40]] = 1
+    mesh.density[[25,40]] = 1
 
-def divergent(rbf, nring, pid):
-    div = np.sum(rbf[:,1]*mesh['vectors'][nring,0] + rbf[:,2]*mesh['vectors'][nring,1])
+def divergent(pid):
+    div = np.sum(rbf[pid][:,1]*mesh.vectors[nring[pid],0] + rbf[pid][:,2]*mesh.vectors[nring[pid],1])
     apply_boundary_condition()
     return div
     
 
 def gradient(lapl):
     grad = np.zeros((mesh.n_points,2))
-    for pid in range(mesh.number_of_points):
-        nring = find_Nring(2, pid, [])
-        nring = np.append(nring, nring[0])
-        nring[0] = pid
-        
-        
-        rbf = rbf_fd_weights(np.asarray([mesh.points[x] for x in nring]), np.asarray(mesh.points[pid]), 5, 2)
-        
-        grad[pid] = np.sum(rbf[:,1]*lapl[nring]), np.sum(rbf[:,2]*lapl[nring])
+    for pid in range(mesh.n_points):        
+        grad[pid] = np.sum(rbf[pid][:,1]*lapl[nring[pid]]), np.sum(rbf[pid][:,2]*lapl[nring[pid]])
     return grad
 
 def poisson_solver():
     lapl = np.asarray([])
-    w = np.zeros(mesh.number_of_points)
-    b = np.zeros(mesh.number_of_points)
-    for pid in range(mesh.number_of_points):
-        nring = find_Nring(2, pid, [])
-        nring = np.append(nring, nring[0])
-        nring[0] = pid
-        
-        weights = np.zeros_like(nring)
-        rbf = rbf_fd_weights(np.asarray([mesh.points[x] for x in nring]), np.asarray(mesh.points[pid]), 5, 2)
-        if pid in boundary_ids:
-            weights = rbf[:,1]*mesh['normals'][pid,0] + rbf[:,2]*mesh['normals'][pid,1]
+    w = np.zeros(mesh.n_points)
+    b = np.zeros(mesh.n_points)
+    for pid in range(mesh.n_points): 
+        if pid in boundary:
+            weights = rbf[pid][:,1]*mesh.normals[pid,0] + rbf[pid][:,2]*mesh.normals[pid,1]
         else:
-            weights = rbf[:,0]
-            b[pid] = divergent(rbf, nring, pid)
+            weights = rbf[pid][:,0]
+            b[pid] = divergent(pid)
         
-        line = np.zeros(mesh.number_of_points)
-        line[nring]= weights
+        line = np.zeros(mesh.n_points)
+        line[nring[pid]]= weights
         # p.show(cpos='xy')
         w = np.vstack([w, line])
     w = np.delete(w, 0,0)
-    # w[0] = np.identity(mesh.number_of_points)[0]
+    # w[0] = np.identity(mesh.n_points)[0]
     # b[0] = solution(mesh.points[0][0],mesh.points[0][1])
     lapl = np.linalg.solve(w,b)
     return lapl
@@ -195,7 +165,7 @@ def velocityStep():
 
     computeViscosity()
 
-    # computePressure()
+    computePressure()
 
     computeAdvection(False)
 
@@ -208,12 +178,16 @@ def densityStep():
 
     computeAdvection(True)
 
-def update_field():
+def update_field(*args):
     apply_boundary_condition()
     velocityStep()
 
     apply_boundary_condition()
     densityStep()
+
+    im.set_array(mesh.density)
+    vc.U = mesh.vectors[:,0]
+    vc.V = mesh.vectors[:,1]
 
 def pause_play(a):
     global _pause
@@ -224,6 +198,7 @@ def stop_sim(a):
     stop = a
 
 def apply_boundary_condition():
+    return
     mesh['vectors'][left_id,0] = 0
     mesh['vectors'][right_id,0] = 0
     mesh['vectors'][top_id,1] = 0
@@ -235,7 +210,7 @@ def main():
     global faces    
     global mesh
     global timeInterval
-    global boundary_ids
+    global boundary
     global pl
     global _pause
     global stop 
@@ -243,61 +218,67 @@ def main():
     global top_id 
     global left_id
     global right_id
-    
-    stop = True
-    _pause = True
+    global nring
+    global rbf
+    global im, vc
+
     timeInterval = 1/60.0
-    #init mesh
-    mesh = initialize_mesh()
 
-    filename = 'smoke_sim.mp4'
-    #create window
-    pl = pvqt.BackgroundPlotter(window_size=(1026, 782))
-    pl.open_movie(filename,framerate=60)
-    # pl.view_xy()
-    pl.camera_position = [(1.6690598396129241, 1.3942212637901101, 8.140274938683984),
-        (1.6690598396129241, 1.3942212637901101, 0.0),
-        (0.0, 1.0, 0.0)
-    ]
+    mesh = pv.read("./mesh8.obj")
+    assert mesh.is_all_triangles()
 
-    faces = mesh.faces.reshape((-1,4))[:, 1:4]
+    mesh = tri.Triangulation(mesh.points[:,0], mesh.points[:,1])
 
-    #calculate boundary normals
-    boundary = mesh.extract_feature_edges(boundary_edges=True, 
-                                        non_manifold_edges=False, 
-                                        manifold_edges=False)
-    boundary_ids = get_boundary_ids(mesh, boundary)
-    mesh['normals'] = get_normals(mesh, boundary_ids)
-    bottom_id = [x for x in boundary_ids if mesh['normals'][x,1] < 0]
-    top_id = [x for x in boundary_ids if mesh['normals'][x,1] > 0]
-    left_id = [x for x in boundary_ids if mesh['normals'][x,0] < 0]
-    right_id = [x for x in boundary_ids if mesh['normals'][x,0] > 0]
-    apply_boundary_condition()
-    #show vectors
-    geom = pv.Arrow()
-    glyphs = mesh.glyph(orient="vectors", scale="scalars", factor=0.1, geom=geom)
-    vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm')
-    pl.add_mesh(mesh, show_edges=True)
-    pl.add_checkbox_button_widget(pause_play, position=(10, 150),value=True)
-    pl.add_checkbox_button_widget(stop_sim, position=(10, 50),value=True,color_on='red')
-    # pl.add_callback(update_field, interval=int(timeInterval))
-    while stop:
-        if _pause:
-            pl.app.processEvents()
-            continue
-        # update velocity
-        # mesh['colors'] = np.hstack((np.ones((mesh.n_points,3)),mesh['density'].reshape(mesh.n_points,1)))
-        # mesh.set_active_scalars('scalars')
-        update_field()
-        glyphs = mesh.glyph(orient="vectors", scale="vectors", factor=1, geom=geom)
-        pl.remove_actor(vec_actor)
-        
-        vec_actor = pl.add_mesh(glyphs, show_scalar_bar=False, lighting=False, cmap='coolwarm',render=False)
-        mesh.set_active_scalars('density')
-        pl.render()
-        pl.write_frame()
-        pl.app.processEvents()
-    pl.close()
+    mesh.points = np.asarray([p for p in zip(mesh.x,mesh.y)])
+    mesh.n_points = len(mesh.points)
+    mesh.density = np.zeros((mesh.n_points))
+    mesh.vectors = np.random.random((mesh.n_points,2))#np.zeros((mesh.n_points,2))
+    mesh.triFinder = mesh.get_trifinder()
+    faces = mesh.triangles
+    # plt.style.use('dark_background')
+    # plt.figure(figsize=(5,5),dpi=160)
+    # plt.triplot(mesh)
+    
+    nring = [find_Nring(2, p, []) for p in range(len(mesh.x))]
+    rbf = [rbf_fd_weights(mesh.points[nring[p]], mesh.points[p], 5, 2) for p in range(mesh.n_points)]
+    # Find edges at the boundary
+    boundary = set()
+    for i in range(len(mesh.neighbors)):
+        for k in range(3):
+            if (mesh.neighbors[i][k] == -1):
+                nk1,nk2 = (k)%3, (k)%3 
+                boundary.add(mesh.triangles[i][nk1])
+                boundary.add(mesh.triangles[i][nk2])
+
+    mesh.normals = get_normals(mesh, boundary)
+    bottom_id = [x for x in boundary if mesh.normals[x,1] < 0]
+    top_id = [x for x in boundary if mesh.normals[x,1] > 0]
+    left_id = [x for x in boundary if mesh.normals[x,0] < 0]
+    right_id = [x for x in boundary if mesh.normals[x,0] > 0]
+
+    px = [mesh.points[b][0] for b in boundary]
+    py = [mesh.points[b][1] for b in boundary]
+    # plt.scatter(px,py)
+
+
+    fig, ax = plt.subplots()
+    ax.set(xlim=(0,pi),ylim=(0,pi))
+    #criando a figura e adiocionando os eixos
+
+    # cid = fig.canvas.mpl_connect('button_press_event', on_button_press)
+    # cid = fig.canvas.mpl_connect('button_release_event', on_button_release)
+    # cid = fig.canvas.mpl_connect('motion_notify_event', on_motion)
+    #mpl_connect mapeia para um inteiro ou eu que faço?
+    # onde ele muda esse cid ao longo do código
+    #im é a imagem que vamos trabalhar em cima, im.set_data() atualiza a im a cada chamada
+    im = ax.tripcolor(mesh.points[:,0], mesh.points[:,1], np.random.random(mesh.n_points), shading='gouraud',cmap=plt.cm.gray)
+    vc = plt.quiver(mesh.points[:,0],mesh.points[:,1],mesh.vectors[:,0],mesh.vectors[:,1],color='red')
+    #[1:-1, 1:-1]: vai da primeira ate a ultima posiçao do array
+    #extent: espaço que a imagem vai ocupar
+    #vmin e vmax: range do color map
+    animation = FuncAnimation(fig, update_field, interval=10, frames=800)
+    #interval: delay entre os frames em milissegundos, super rápido
+    plt.show()
     
 
 @cache
