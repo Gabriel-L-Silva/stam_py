@@ -157,6 +157,8 @@ def poisson_solver():
     w = np.delete(w, 0,0)
     # w[0] = np.identity(mesh.n_points)[0]
     # b[0] = solution(mesh.points[0][0],mesh.points[0][1])
+    np.savetxt("foo.csv", w, fmt="%.7s",delimiter="\t")
+
     lapl = np.linalg.solve(w,b)
     return lapl
 
@@ -239,7 +241,7 @@ def main():
     # plt.figure(figsize=(5,5),dpi=160)
     # plt.triplot(mesh)
     
-    nring = [find_Nring(2, p, []) for p in range(len(mesh.x))]
+    nring = [np.append(find_Nring(2, p, []),p) for p in range(len(mesh.x))]
     rbf = [rbf_fd_weights(mesh.points[nring[p]], mesh.points[p], 5, 2) for p in range(mesh.n_points)]
     # Find edges at the boundary
     boundary = set()
