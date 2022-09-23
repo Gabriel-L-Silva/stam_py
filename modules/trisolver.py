@@ -20,11 +20,14 @@ class TriSolver:
         self.program['position'] = self.mesh.points + [-1,-1]
         self.program['color'] = self.smoke_color
 
-        c = 3
-        self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs', version='430',count=c)
-        self.quiver_program['position'] = self.mesh.points[:c] + [-1,-1]
-        self.quiver_program['scale'] = [0.1,0.1]
-        self.quiver_program['arrow_color'] = self.quiv_color
+        self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs', version='430')
+        self.quiver_program['position'] = self.mesh.points + [-1,-1]
+        self.quiver_program['size'] = 1
+        self.quiver_program['linewidth'] = 1
+        self.quiver_program['antialias'] = 1
+        self.quiver_program['fg_color'] = self.quiv_color
+        self.quiver_program['bg_color'] = [0,0,0,1]
+
 
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,2))
