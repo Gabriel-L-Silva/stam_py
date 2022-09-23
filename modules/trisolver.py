@@ -2,36 +2,34 @@ from math import pi
 import numpy as np
 from modules.trimesh import TriMesh
 from modules.interpolator import Interpolator
-from glumpy import app, gloo, gl
+from glumpy import app, gloo, gl, glm
 
 class TriSolver:
     def __init__(self, filename, vertex, fragment, WIDTH, HEIGHT):
         self.mesh = TriMesh(filename)
 
-        self.show_vectors = False
-        self.show_grid = False
+        self.show_vectors = True
+        self.show_grid = True
         self.smoke_color = [1,1,1]
+        self.view_matrix = [0,0,-5]
         self.grid_color = [1,0,0]
-        self.quiv_color = [0,1,0]
+        self.quiv_color = [0,1,0,1]
 
         self.program = gloo.Program(vertex, fragment)
         self.idx_buff = self.mesh.faces.flatten().astype(np.uint32).view(gloo.IndexBuffer)
         self.program['position'] = self.mesh.points + [-1,-1]
         self.program['color'] = self.smoke_color
 
-        self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs')
-        self.quiver_program['position'] = self.mesh.points + [-1,-1]
-        self.quiver_program["iResolution"] = WIDTH, HEIGHT
-        self.quiver_program["dim_x"] = np.sqrt(self.mesh.n_points).astype(np.int)
-        self.quiver_program["dim_y"] = np.sqrt(self.mesh.n_points).astype(np.int)
-        self.quiver_program["linewidth"] = 1.0
+        c = 3
+        self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs', version='430',count=c)
+        self.quiver_program['position'] = self.mesh.points[:c] + [-1,-1]
+        self.quiver_program['scale'] = [0.1,0.1]
+        self.quiver_program['arrow_color'] = self.quiv_color
 
-        self.density = np.random.random((self.mesh.n_points))
-        self.vectors = np.random.random((self.mesh.n_points,2))
+        self.density = np.zeros((self.mesh.n_points))
+        self.vectors = np.zeros((self.mesh.n_points,2))
         
-        self.Xinterpolator = Interpolator(self.mesh, self.vectors[:,0])
-        self.Yinterpolator = Interpolator(self.mesh, self.vectors[:,1])
-        self.Densinterpolator = Interpolator(self.mesh, self.density)
+        self.Interpolator = Interpolator(self.mesh)
         # px = [mesh.points[b][0] for b in boundary]
         # py = [mesh.points[b][1] for b in boundary]
         # plt.scatter(px,py)
@@ -44,21 +42,26 @@ class TriSolver:
             self.draw_grid()
 
         if self.show_vectors:
-            self.draw_vectors()
+            self.draw_vectors(*args)
 
     def draw_grid(self):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
         self.program['color'] = self.grid_color
+        self.program['density'] = 1.0
         self.program.draw(gl.GL_TRIANGLES, self.idx_buff)
         self.program['color'] = self.smoke_color
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
-    def draw_vectors(self):
-        self.quiver_program["velocities"] = self.vectors.view(gloo.TextureFloat2D)
+    def draw_vectors(self, *args):
+        self.quiver_program['velocity'] = self.vectors.astype(np.float32).view(gloo.TextureFloat2D)
         self.quiver_program.draw(gl.GL_TRIANGLE_STRIP)
 
     def update_smoke_color(self):
         self.program["color"] = self.smoke_color
+
+    def update_view_matrix(self):
+        self.program["u_view"] = glm.translate(np.eye(4), self.view_matrix[0], self.view_matrix[1], self.view_matrix[2])
+        self.quiver_program["u_view"] = glm.translate(np.eye(4), self.view_matrix[0], self.view_matrix[1], self.view_matrix[2])
 
     def apply_boundary_condition(self):
         self.vectors[self.mesh.left_id,0] = 0
@@ -85,10 +88,10 @@ class TriSolver:
         new_pos = self.mesh.points - self.vectors*dt
         new_pos = np.clip(new_pos,0,pi)
         if density:
-            self.density = self.Densinterpolator(new_pos)
+            self.density = self.Interpolator(self.density, new_pos)
         else:
-            self.vectors[:,0] = self.Xinterpolator(new_pos)
-            self.vectors[:,1] = self.Yinterpolator(new_pos)
+            self.vectors[:,0] = self.Interpolator(self.vectors[:,0], new_pos)
+            self.vectors[:,1] = self.Interpolator(self.vectors[:,1], new_pos)
 
         self.apply_boundary_condition()
 
@@ -138,7 +141,7 @@ class TriSolver:
 
         self.computeViscosity(dt)
 
-        self.computePressure(dt)
+        # self.computePressure(dt)
 
         self.computeAdvection(False, dt)
 

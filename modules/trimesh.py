@@ -3,7 +3,10 @@ from math import pi
 import pyvista as pv
 import numpy as np
 from matplotlib import tri
-from modules.rbf import rbf_fd_weights
+try:
+    from modules.rbf import rbf_fd_weights
+except:
+    from rbf import rbf_fd_weights
 
 class TriMesh:
     def __init__(self, filename):
