@@ -2,11 +2,19 @@ from math import pi
 import numpy as np
 from modules.trimesh import TriMesh
 from modules.interpolator import Interpolator
+from glumpy import app, gloo, gl
+
 class TriSolver:
-    def __init__(self, filename, timeInterval):
+    def __init__(self, filename, vertex, fragment):
         self.mesh = TriMesh(filename)
 
-        self.timeInterval = timeInterval
+        self.show_vectors = False
+        self.show_grid = False
+        self.smoke_color = [1,1,1]
+
+        self.program = gloo.Program(vertex, fragment, count=self.mesh.n_points)
+        self.program['position'] = self.mesh.points
+
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.random.random((self.mesh.n_points,2))
         
@@ -16,6 +24,12 @@ class TriSolver:
         # px = [mesh.points[b][0] for b in boundary]
         # py = [mesh.points[b][1] for b in boundary]
         # plt.scatter(px,py)
+    def draw(self, *args):
+        self.program['density'] = self.density
+        self.program.draw(gl.GL_TRIANGLE_STRIP, *args)
+
+    def update_smoke_color(self):
+        self.program["FillColor"] = self.smoke_color
 
     def apply_boundary_condition(self):
         self.vectors[self.mesh.left_id,0] = 0
@@ -23,13 +37,13 @@ class TriSolver:
         self.vectors[self.mesh.top_id,1] = 0
         self.vectors[self.mesh.bottom_id,1] = 0
 
-    def computeExternalForces(self):
+    def computeExternalForces(self, dt):
         pass
 
-    def computeViscosity(self):
+    def computeViscosity(self, dt):
         pass
 
-    def computePressure(self):
+    def computePressure(self, dt):
         x0 = self.poisson_solver()
         grad = self.gradient(x0)
 
@@ -38,8 +52,8 @@ class TriSolver:
 
         self.apply_boundary_condition()
 
-    def computeAdvection(self, density):
-        new_pos = self.mesh.points - self.vectors*self.timeInterval
+    def computeAdvection(self, density, dt):
+        new_pos = self.mesh.points - self.vectors*dt
         new_pos = np.clip(new_pos,0,pi)
         if density:
             self.density = self.Densinterpolator(new_pos)
@@ -49,7 +63,7 @@ class TriSolver:
 
         self.apply_boundary_condition()
 
-    def computeSource(self):
+    def computeSource(self, dt):
         self.density[[25,40]] = 1
 
     def divergent(self, pid):
@@ -90,27 +104,27 @@ class TriSolver:
         lapl = np.linalg.solve(w,b)
         return lapl
 
-    def velocityStep(self):
-        self.computeExternalForces()
+    def velocityStep(self, dt):
+        self.computeExternalForces(dt)
 
-        self.computeViscosity()
+        self.computeViscosity(dt)
 
-        self.computePressure()
+        self.computePressure(dt)
 
-        self.computeAdvection(False)
+        self.computeAdvection(False, dt)
 
         # computePressure()
 
-    def densityStep(self):
-        self.computeSource()
+    def densityStep(self, dt):
+        self.computeSource(dt)
 
-        self.computeViscosity()
+        self.computeViscosity(dt)
 
-        self.computeAdvection(True)
+        self.computeAdvection(True, dt)
 
-    def update_field(self):
+    def update_field(self, dt):
         self.apply_boundary_condition()
-        self.velocityStep()
+        self.velocityStep(dt)
 
         self.apply_boundary_condition()
-        self.densityStep()
+        self.densityStep(dt)

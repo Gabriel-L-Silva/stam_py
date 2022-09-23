@@ -1,41 +1,121 @@
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from math import pi
+import imgui
+from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer
+
+from glumpy import app
+
+# our modules
+# from modules import fluid_np as fluid
 from modules.trisolver import TriSolver
-    
-def update(frame, solver):
-    
-    solver.update_field()
-    im.set_array(solver.density)
-    vc.U = solver.vectors[:,0]
-    vc.V = solver.vectors[:,1]
-    
-def main():
-    global im, vc
 
-    timeInterval = 1/60.0
+# np.set_printoptions(threshold=sys.maxsize)
 
-    filename = './assets/mesh8.obj'
-    solver = TriSolver(filename, timeInterval)
+# Use pyglet as backend
+app.use("pyglet", major=4, minor=3)
 
-    fig, ax = plt.subplots()
-    ax.set(xlim=(0,pi),ylim=(0,pi))
-    #criando a figura e adiocionando os eixos
+# Constants
+WIDTH = 900
+HEIGHT = 900
+CELLS = 64
 
-    # cid = fig.canvas.mpl_connect('button_press_event', on_button_press)
-    # cid = fig.canvas.mpl_connect('button_release_event', on_button_release)
-    # cid = fig.canvas.mpl_connect('motion_notify_event', on_motion)
-    #mpl_connect mapeia para um inteiro ou eu que faço?
-    # onde ele muda esse cid ao longo do código
-    #im é a imagem que vamos trabalhar em cima, im.set_data() atualiza a im a cada chamada
-    im = ax.tripcolor(solver.mesh.points[:,0], solver.mesh.points[:,1], solver.density, shading='gouraud',cmap=plt.cm.gray)
-    vc = plt.quiver(solver.mesh.points[:,0],solver.mesh.points[:,1],solver.vectors[:,0],solver.vectors[:,1],color='red')
-    #[1:-1, 1:-1]: vai da primeira ate a ultima posiçao do array
-    #extent: espaço que a imagem vai ocupar
-    #vmin e vmax: range do color map
-    animation = FuncAnimation(fig, update, interval=10, frames=800, fargs=(solver,))
-    #interval: delay entre os frames em milissegundos, super rápido
-    plt.show()
+# create window with openGL context
+window = app.Window(WIDTH, HEIGHT)
 
-if __name__ == '__main__':
-    main()
+# create renderer of imgui on window
+imgui.create_context()
+imgui_renderer = PygletProgrammablePipelineRenderer(window.native_window) # pass native pyglet window
+
+# main object
+# smoke_grid = fluid.Fluid(WIDTH, HEIGHT, CELLS)
+vertex      = 'shaders/fluid.vs'
+fragment    = 'shaders/fluid.fs'
+solver = TriSolver('./assets/mesh8.obj', vertex, fragment)
+
+@window.event
+def on_draw(dt):
+    window.clear()
+
+    solver.update_field(dt)
+
+    # draw smoke first
+    solver.draw()
+
+    # Imgui Interface
+    imgui.new_frame()
+
+    imgui.begin("Controls")
+    _, solver.show_grid = imgui.checkbox("Show Grid", solver.show_grid)
+    _, solver.show_vectors = imgui.checkbox("Show Vectors", solver.show_vectors)
+
+    changed, solver.smoke_color = imgui.color_edit3("Smoke Color", *solver.smoke_color)
+
+    if changed:
+        solver.update_smoke_color()
+
+    imgui.end()
+
+    # render gui on top of everything
+    try:
+        imgui.render()
+        imgui_renderer.render(imgui.get_draw_data())
+    except Exception:
+        imgui_renderer.shutdown()
+
+@window.event
+def on_mouse_drag(x, y, dx, dy, buttons):
+    """The mouse was moved with some buttons pressed."""
+
+    # Case was right mouse button
+    if buttons == 4:
+        radius = 1
+        if x > WIDTH-radius:
+            x = WIDTH-radius
+        if x < radius:
+            x = radius
+        if y > HEIGHT-radius:
+            y = HEIGHT-radius
+        if y < radius:
+            y = radius
+        
+        idrow = int(y/smoke_grid.dx) + 1
+        idcol = int(x/smoke_grid.dy) + 1
+        
+        for i in range(-radius, radius):
+            idx = idrow + i
+            for j in range(-radius, radius):
+                idy = idcol + j
+                smoke_grid.density_field[idx, idy] = 1.0
+
+    # Case was left mouse button
+    if buttons == 1:
+        radius = 1
+        if x > WIDTH-radius:
+            x = WIDTH-radius
+        if x < radius:
+            x = radius
+        if y > HEIGHT-radius:
+            y = HEIGHT-radius
+        if y < radius:
+            y = radius
+        
+        idrow = int(y/smoke_grid.dx) + 1
+        idcol = int(x/smoke_grid.dy) + 1
+
+        for i in range(-radius, radius):
+            idx = idrow + i
+            for j in range(-radius, radius):
+                idy = idcol + j
+                speed = 100
+                smoke_grid.velocity_field[idx, idy] = [
+                    speed*dx, speed*-dy
+                ]
+
+@window.event
+def on_show():
+    # disable resize on show
+    window.native_window.set_minimum_size(WIDTH, HEIGHT)
+    window.native_window.set_maximum_size(WIDTH, HEIGHT)
+
+
+if __name__ == "__main__":
+    # run app
+    app.run()
