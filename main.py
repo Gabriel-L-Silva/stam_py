@@ -28,7 +28,7 @@ imgui_renderer = PygletProgrammablePipelineRenderer(window.native_window) # pass
 # smoke_grid = fluid.Fluid(WIDTH, HEIGHT, CELLS)
 vertex      = 'shaders/fluid.vs'
 fragment    = 'shaders/fluid.fs'
-solver = TriSolver('./assets/mesh8.obj', vertex, fragment)
+solver = TriSolver('./assets/mesh8.obj', vertex, fragment, WIDTH, HEIGHT)
 
 @window.event
 def on_draw(dt):
@@ -60,54 +60,54 @@ def on_draw(dt):
     except Exception:
         imgui_renderer.shutdown()
 
-@window.event
-def on_mouse_drag(x, y, dx, dy, buttons):
-    """The mouse was moved with some buttons pressed."""
+# @window.event
+# def on_mouse_drag(x, y, dx, dy, buttons):
+#     """The mouse was moved with some buttons pressed."""
 
-    # Case was right mouse button
-    if buttons == 4:
-        radius = 1
-        if x > WIDTH-radius:
-            x = WIDTH-radius
-        if x < radius:
-            x = radius
-        if y > HEIGHT-radius:
-            y = HEIGHT-radius
-        if y < radius:
-            y = radius
+#     # Case was right mouse button
+#     if buttons == 4:
+#         radius = 1
+#         if x > WIDTH-radius:
+#             x = WIDTH-radius
+#         if x < radius:
+#             x = radius
+#         if y > HEIGHT-radius:
+#             y = HEIGHT-radius
+#         if y < radius:
+#             y = radius
         
-        idrow = int(y/smoke_grid.dx) + 1
-        idcol = int(x/smoke_grid.dy) + 1
+#         idrow = int(y/smoke_grid.dx) + 1
+#         idcol = int(x/smoke_grid.dy) + 1
         
-        for i in range(-radius, radius):
-            idx = idrow + i
-            for j in range(-radius, radius):
-                idy = idcol + j
-                smoke_grid.density_field[idx, idy] = 1.0
+#         for i in range(-radius, radius):
+#             idx = idrow + i
+#             for j in range(-radius, radius):
+#                 idy = idcol + j
+#                 smoke_grid.density_field[idx, idy] = 1.0
 
-    # Case was left mouse button
-    if buttons == 1:
-        radius = 1
-        if x > WIDTH-radius:
-            x = WIDTH-radius
-        if x < radius:
-            x = radius
-        if y > HEIGHT-radius:
-            y = HEIGHT-radius
-        if y < radius:
-            y = radius
+#     # Case was left mouse button
+#     if buttons == 1:
+#         radius = 1
+#         if x > WIDTH-radius:
+#             x = WIDTH-radius
+#         if x < radius:
+#             x = radius
+#         if y > HEIGHT-radius:
+#             y = HEIGHT-radius
+#         if y < radius:
+#             y = radius
         
-        idrow = int(y/smoke_grid.dx) + 1
-        idcol = int(x/smoke_grid.dy) + 1
+#         idrow = int(y/smoke_grid.dx) + 1
+#         idcol = int(x/smoke_grid.dy) + 1
 
-        for i in range(-radius, radius):
-            idx = idrow + i
-            for j in range(-radius, radius):
-                idy = idcol + j
-                speed = 100
-                smoke_grid.velocity_field[idx, idy] = [
-                    speed*dx, speed*-dy
-                ]
+#         for i in range(-radius, radius):
+#             idx = idrow + i
+#             for j in range(-radius, radius):
+#                 idy = idcol + j
+#                 speed = 100
+#                 smoke_grid.velocity_field[idx, idy] = [
+#                     speed*dx, speed*-dy
+#                 ]
 
 @window.event
 def on_show():
