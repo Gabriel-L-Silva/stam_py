@@ -20,17 +20,15 @@ class TriSolver:
         self.program['position'] = self.mesh.points + [-1,-1]
         self.program['color'] = self.smoke_color
 
-        self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs', version='430')
+        self.density = np.zeros((self.mesh.n_points),dtype=np.float32)
+        self.vectors = np.zeros((self.mesh.n_points,2),dtype=np.float32)
+
+        self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs', 'shaders/quiver.gs', version='430')
         self.quiver_program['position'] = self.mesh.points + [-1,-1]
-        self.quiver_program['size'] = 1
-        self.quiver_program['linewidth'] = 1
-        self.quiver_program['antialias'] = 1
-        self.quiver_program['fg_color'] = self.quiv_color
-        self.quiver_program['bg_color'] = [0,0,0,1]
+        self.quiver_program['velocity'] = self.vectors
+        self.quiver_program['vec_length'] = 0.1
+        self.quiver_program['acolor'] = self.quiv_color
 
-
-        self.density = np.zeros((self.mesh.n_points))
-        self.vectors = np.zeros((self.mesh.n_points,2))
         
         self.Interpolator = Interpolator(self.mesh)
         # px = [mesh.points[b][0] for b in boundary]
@@ -56,8 +54,9 @@ class TriSolver:
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
     def draw_vectors(self, *args):
-        self.quiver_program['velocity'] = self.vectors.astype(np.float32).view(gloo.TextureFloat2D)
-        self.quiver_program.draw(gl.GL_TRIANGLE_STRIP)
+        self.quiver_program.activate()
+        self.quiver_program['velocity'] = self.vectors
+        self.quiver_program.draw(gl.GL_POINTS)
 
     def update_smoke_color(self):
         self.program["color"] = self.smoke_color
