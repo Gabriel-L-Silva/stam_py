@@ -59,7 +59,7 @@ def on_draw(dt):
     # draw smoke first
     solver.draw()
     
-    solver.update_field(dt)
+    # solver.update_field(dt)
 
     # Imgui Interface
     imgui.new_frame()

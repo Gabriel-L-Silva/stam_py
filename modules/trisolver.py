@@ -15,35 +15,33 @@ class TriSolver:
         self.grid_color = [1,0,0]
         self.quiv_color = [0,1,0,1]
 
-        self.program = gloo.Program(vertex, fragment)
+        self.program = gloo.Program(vertex, fragment, version='430')
         self.idx_buff = self.mesh.faces.flatten().astype(np.uint32).view(gloo.IndexBuffer)
         self.program['position'] = self.mesh.points + [-1,-1]
         self.program['color'] = self.smoke_color
 
-        self.density = np.zeros((self.mesh.n_points),dtype=np.float32)
-        self.vectors = np.zeros((self.mesh.n_points,2),dtype=np.float32)
+        self.density = np.zeros((self.mesh.n_points))
+        self.vectors = np.zeros((self.mesh.n_points,2))
 
         self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs', 'shaders/quiver.gs', version='430')
         self.quiver_program['position'] = self.mesh.points + [-1,-1]
-        self.quiver_program['velocity'] = self.vectors
+        self.quiver_program['Xvelocity'] = self.vectors[:,0]
+        self.quiver_program['Yvelocity'] = self.vectors[:,1]
         self.quiver_program['vec_length'] = 0.1
         self.quiver_program['acolor'] = self.quiv_color
 
         
         self.Interpolator = Interpolator(self.mesh)
-        # px = [mesh.points[b][0] for b in boundary]
-        # py = [mesh.points[b][1] for b in boundary]
-        # plt.scatter(px,py)
     
-    def draw(self, *args):
+    def draw(self):
         self.program['density'] = self.density
-        self.program.draw(gl.GL_TRIANGLES, self.idx_buff, *args)
+        self.program.draw(gl.GL_TRIANGLES, self.idx_buff)
 
+        if self.show_vectors:
+            self.draw_vectors()
         if self.show_grid:
             self.draw_grid()
 
-        if self.show_vectors:
-            self.draw_vectors(*args)
 
     def draw_grid(self):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
@@ -53,9 +51,9 @@ class TriSolver:
         self.program['color'] = self.smoke_color
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
-    def draw_vectors(self, *args):
-        self.quiver_program.activate()
-        self.quiver_program['velocity'] = self.vectors
+    def draw_vectors(self):
+        self.quiver_program['Xvelocity'] = self.vectors[:,0]
+        self.quiver_program['Yvelocity'] = self.vectors[:,1]
         self.quiver_program.draw(gl.GL_POINTS)
 
     def update_smoke_color(self):

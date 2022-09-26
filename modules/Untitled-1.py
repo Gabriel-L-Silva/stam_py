@@ -39,7 +39,7 @@ geometry    = 'shaders/quiver.gs'
 program = gloo.Program(vertex,fragment,geometry,version='330')
 
 points = [[-0.5, 0.5],[0.5, 0.5],[0.5, -0.5],[-0.5, -0.5]]
-velocity = [[-0.5, 0.5],[0.5, 0.5],[0.5, -0.5],[-0.5, -0.5]]
+velocity =np.asarray([[-0.5, 0.5],[0.5, 0.5],[0.5, -0.5],[-0.5, -0.5]])
 color = [1,0,0,1]
 @window.event
 def on_init():
@@ -49,7 +49,8 @@ def on_init():
     glm.translate(view, -0.57,-0.57,-3.8)
     # program['mvp'] = projection*view*model
     program['position'] = points
-    program['velocity'] = velocity
+    program['Xvelocity'] = velocity[:,0]
+    program['Yvelocity'] = velocity[:,1]
     program['vec_length'] = 0.1
     program['acolor'] = color
     program['u_model'] = model

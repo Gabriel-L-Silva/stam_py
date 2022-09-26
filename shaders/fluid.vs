@@ -1,10 +1,14 @@
-attribute vec2 position;
-attribute float density;
+#version 330 core
+
+in vec2 position;
+in float density;
+
 uniform vec3 color;
 uniform mat4   u_model;         // Model matrix
 uniform mat4   u_view;          // View matrix
 uniform mat4   u_projection;    // Projection matrix
-varying vec4 g_color;
+
+out vec4 g_color;
 
 void main()
 {
