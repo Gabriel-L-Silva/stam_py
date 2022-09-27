@@ -1,8 +1,10 @@
 from glumpy import glm, gl, gloo
 import numpy as np
 
+from modules.trisolver import TriSolver
+
 class SimulationWindow:
-    def __init__(self, solver, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
+    def __init__(self, solver: TriSolver, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
         
         self.paused = True
         self.frame = 0

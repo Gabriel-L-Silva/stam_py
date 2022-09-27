@@ -14,17 +14,18 @@ class TriSolver:
         self.mesh = TriMesh(filename)
 
         self.density = np.zeros((self.mesh.n_points))
-        self.vectors = np.random.random((self.mesh.n_points,2))
+        self.vectors = np.zeros((self.mesh.n_points,2))
 
         self.Interpolator = Interpolator(self.mesh)
 
         self.init_poisson_weights()
 
-    def apply_boundary_condition(self):
-        self.vectors[self.mesh.left_id,0] = 0
-        self.vectors[self.mesh.right_id,0] = 0
-        self.vectors[self.mesh.top_id,1] = 0
-        self.vectors[self.mesh.bottom_id,1] = 0
+    def apply_boundary_condition(self, field=None):
+        if type(field) == type(None):
+            self.vectors[list(self.mesh.boundary)] = [0,0]
+        else:
+            field[list(self.mesh.boundary)] = 0
+                    
 
     def computeExternalForces(self, dt):
         pass
@@ -53,14 +54,13 @@ class TriSolver:
         self.apply_boundary_condition()
 
     def computeSource(self, dt):
-        self.density[[25,40]] = 1
+        self.density[[0]] = 1
 
     def divergent(self, pid):
         div = np.sum(self.mesh.rbf[pid][:,1]*self.vectors[self.mesh.nring[pid],0] 
                    + self.mesh.rbf[pid][:,2]*self.vectors[self.mesh.nring[pid],1])
         return div
         
-
     def gradient(self, lapl):
         grad = np.zeros((self.mesh.n_points,2))
         for pid in range(self.mesh.n_points):        
@@ -85,11 +85,12 @@ class TriSolver:
         self.w = np.delete(w, 0,0)
 
     def poisson_solver(self, testing=None):        
-
         if testing != None:
             b = testing
         else:
+            self.w[0] = np.identity(self.mesh.n_points)[0]
             b = [self.divergent(pid) for pid in range(self.mesh.n_points)]
+            b[0] = 1
         lapl = np.linalg.solve(self.w,b)
         return lapl
 
@@ -102,7 +103,7 @@ class TriSolver:
 
         self.computeAdvection(False, dt)
 
-        self.computePressure(dt)
+        # self.computePressure(dt)
 
     def densityStep(self, dt):
         self.computeSource(dt)
@@ -113,10 +114,10 @@ class TriSolver:
 
     def update_fields(self, dt):
         self.apply_boundary_condition()
+        self.densityStep(dt)
+        self.apply_boundary_condition()
         self.velocityStep(dt)
 
-        self.apply_boundary_condition()
-        self.densityStep(dt)
 
 def test_poisson():
     def poisson_problem(x,y):
@@ -124,7 +125,7 @@ def test_poisson():
     def poisson_solution(x,y):
         return cos(x)*cos(y) - 1 
     
-    solver = TriSolver('./assets/mesh16.obj')
+    solver = TriSolver('./assets/mesh8.obj')
 
     b = [poisson_problem(p[0],p[1]) if id not in solver.mesh.boundary else 0 for id, p in enumerate(solver.mesh.points)]
     poisson_sol = [poisson_solution(p[0],p[1]) for p in solver.mesh.points]

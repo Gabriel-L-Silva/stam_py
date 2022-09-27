@@ -62,6 +62,7 @@ def on_init():
 def on_draw(dt):
     window.clear()
     
+    
     # draw smoke first
     simWindow.draw()
     advance_frame = True
@@ -91,6 +92,7 @@ def on_draw(dt):
 
     if not simWindow.paused or advance_frame:
         simWindow.advance_frame(dt)
+        print(solver.vectors.max())
     # render gui on top of everything
     try:
         imgui.render()
@@ -122,7 +124,7 @@ def on_mouse_drag(x, y, dx, dy, buttons):
 
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         speed = 0.01
-        solver.vectors[solver.mesh.faces[cell]] = [
+        solver.vectors[solver.mesh.faces[cell]] += [
             speed*dx, speed*-dy
         ]
 @window.event    
