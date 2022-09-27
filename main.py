@@ -39,7 +39,7 @@ q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
 
-solver = TriSolver('./assets/mesh8.obj', WIDTH, HEIGHT)
+solver = TriSolver('./assets/mesh8.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 
 @window.event

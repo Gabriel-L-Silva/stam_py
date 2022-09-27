@@ -2,5 +2,7 @@ matplotlib
 scipy
 numpy
 pyvista
-pyvistaqt
-pyqt5
+glumpy
+PyOpenGl
+imgui
+pyglet
