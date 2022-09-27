@@ -39,7 +39,7 @@ geometry    = 'shaders/quiver.gs'
 program = gloo.Program(vertex,fragment,geometry,version='330')
 
 points = [[-0.5, 0.5],[0.5, 0.5],[0.5, -0.5],[-0.5, -0.5]]
-velocity =np.asarray([[-0.5, 0.5],[0.5, 0.5],[0.5, -0.5],[-0.5, -0.5]])
+velocity =np.asarray([[-0, 0],[0, 0],[0, -0],[-0, -0]])
 color = [1,0,0,1]
 @window.event
 def on_init():

@@ -4,6 +4,7 @@ from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer
 
 from glumpy import app, glm, gl
 from glumpy.transforms import PVMProjection
+from modules.simulationWindow import SimulationWindow
 # our modules
 # from modules import fluid_np as fluid
 from modules.trisolver import TriSolver
@@ -32,24 +33,29 @@ imgui_renderer = PygletProgrammablePipelineRenderer(window.native_window) # pass
 
 # main object
 # smoke_grid = fluid.Fluid(WIDTH, HEIGHT, CELLS)
-vertex      = 'shaders/fluid.vs'
-fragment    = 'shaders/fluid.fs'
-solver = TriSolver('./assets/mesh16.obj', vertex, fragment, WIDTH, HEIGHT)
+f_vertex      = 'shaders/fluid.vs'
+f_fragment    = 'shaders/fluid.fs'
+q_vertex      = 'shaders/quiver.vs'
+q_fragment    = 'shaders/quiver.fs'
+q_geometry    = 'shaders/quiver.gs'
 
+solver = TriSolver('./assets/mesh8.obj', WIDTH, HEIGHT)
+simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 
 @window.event
 def on_init():
+
     view = np.eye(4,dtype=np.float32)
     model = np.eye(4,dtype=np.float32)
-    projection = np.eye(4,dtype=np.float32)
+    projection = glm.perspective(45.0, 1, 2.0, 100.0)
     glm.translate(view, -0.57,-0.57,-3.8)
-    solver.view_matrix = [-0.57,-0.57,-3.8]
-    solver.program['u_model'] = model
-    solver.program['u_view'] = view
-    solver.program['u_projection'] = glm.perspective(45.0, 1, 2.0, 100.0)
-    solver.quiver_program['u_model'] = model
-    solver.quiver_program['u_view'] = view
-    solver.quiver_program['u_projection'] = glm.perspective(45.0, 1, 2.0, 100.0)
+    simWindow.view_matrix = [-0.57,-0.57,-3.8]
+    simWindow.program['u_model'] = model
+    simWindow.program['u_view'] = view
+    simWindow.program['u_projection'] = projection
+    simWindow.quiver_program['u_model'] = model
+    simWindow.quiver_program['u_view'] = view
+    simWindow.quiver_program['u_projection'] = projection
     # gl.glEnable(gl.GL_DEPTH_TEST)
 
 @window.event
@@ -57,29 +63,34 @@ def on_draw(dt):
     window.clear()
     
     # draw smoke first
-    solver.draw()
-    
-    # solver.update_field(dt)
+    simWindow.draw()
+    advance_frame = True
 
     # Imgui Interface
     imgui.new_frame()
 
     imgui.begin("Controls")
-    _, solver.show_grid = imgui.checkbox("Show Grid", solver.show_grid)
-    _, solver.show_vectors = imgui.checkbox("Show Vectors", solver.show_vectors)
+    clicked = imgui.button("Pause")
+    if clicked:
+        simWindow.paused = not simWindow.paused
+    advance_frame = imgui.button("Advance frame")
+    _, simWindow.show_grid = imgui.checkbox("Show Grid", simWindow.show_grid)
+    _, simWindow.show_vectors = imgui.checkbox("Show Vectors", simWindow.show_vectors)
 
-    changed, solver.smoke_color = imgui.color_edit3("Smoke Color", *solver.smoke_color)
+    changed, simWindow.smoke_color = imgui.color_edit3("Smoke Color", *simWindow.smoke_color)
 
     if changed:
-        solver.update_smoke_color()
+        simWindow.update_smoke_color()
     
-    changed,  vm= imgui.drag_float3("View Matrix", *solver.view_matrix, change_speed=0.01)
-    solver.view_matrix = list(vm)
+    changed,  vm= imgui.drag_float3("View Matrix", *simWindow.view_matrix, change_speed=0.01)
+    simWindow.view_matrix = list(vm)
     if changed:
-        solver.update_view_matrix()
+        simWindow.update_view_matrix()
 
     imgui.end()
 
+    if not simWindow.paused or advance_frame:
+        simWindow.advance_frame(dt)
     # render gui on top of everything
     try:
         imgui.render()
@@ -101,16 +112,7 @@ def on_mouse_drag(x, y, dx, dy, buttons):
 
     # Case was right mouse button
     if buttons == 4:
-        radius = 1
-        # if x > WIDTH-radius:
-        #     x = WIDTH-radius
-        # if x < radius:
-        #     x = radius
-        # if y > HEIGHT-radius:
-        #     y = HEIGHT-radius
-        # if y < radius:
-        #     y = radius
-        
+
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         
         solver.density[solver.mesh.faces[cell]] = 1.0
@@ -119,15 +121,15 @@ def on_mouse_drag(x, y, dx, dy, buttons):
     if buttons == 1:       
 
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
-        speed = 1
+        speed = 0.01
         solver.vectors[solver.mesh.faces[cell]] = [
             speed*dx, speed*-dy
         ]
 @window.event    
 def on_mouse_scroll(x, y, dx, dy):
     'The mouse wheel was scrolled by (dx,dy).'
-    solver.view_matrix[-1] -= dy*0.1   
-    solver.update_view_matrix()
+    simWindow.view_matrix[-1] -= dy*0.1   
+    simWindow.update_view_matrix()
 
 @window.event
 def on_show():

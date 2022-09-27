@@ -1,67 +1,22 @@
 from math import pi
 import numpy as np
-from modules.trimesh import TriMesh
-from modules.interpolator import Interpolator
-from glumpy import app, gloo, gl, glm
+try:
+    from modules.trimesh import TriMesh
+except:
+    from trimesh import TriMesh
+try:
+    from modules.interpolator import Interpolator
+except:
+    from interpolator import Interpolator
 
 class TriSolver:
-    def __init__(self, filename, vertex, fragment, WIDTH, HEIGHT):
+    def __init__(self, filename, WIDTH, HEIGHT):
         self.mesh = TriMesh(filename)
 
-        self.show_vectors = True
-        self.show_grid = True
-        self.smoke_color = [1,1,1]
-        self.view_matrix = [0,0,-5]
-        self.grid_color = [1,0,0]
-        self.quiv_color = [0,1,0,1]
-
-        self.program = gloo.Program(vertex, fragment, version='430')
-        self.idx_buff = self.mesh.faces.flatten().astype(np.uint32).view(gloo.IndexBuffer)
-        self.program['position'] = self.mesh.points + [-1,-1]
-        self.program['color'] = self.smoke_color
-
         self.density = np.zeros((self.mesh.n_points))
-        self.vectors = np.zeros((self.mesh.n_points,2))
+        self.vectors = np.random.random((self.mesh.n_points,2))
 
-        self.quiver_program = gloo.Program('shaders/quiver.vs', 'shaders/quiver.fs', 'shaders/quiver.gs', version='430')
-        self.quiver_program['position'] = self.mesh.points + [-1,-1]
-        self.quiver_program['Xvelocity'] = self.vectors[:,0]
-        self.quiver_program['Yvelocity'] = self.vectors[:,1]
-        self.quiver_program['vec_length'] = 0.1
-        self.quiver_program['acolor'] = self.quiv_color
-
-        
         self.Interpolator = Interpolator(self.mesh)
-    
-    def draw(self):
-        self.program['density'] = self.density
-        self.program.draw(gl.GL_TRIANGLES, self.idx_buff)
-
-        if self.show_vectors:
-            self.draw_vectors()
-        if self.show_grid:
-            self.draw_grid()
-
-
-    def draw_grid(self):
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        self.program['color'] = self.grid_color
-        self.program['density'] = 1.0
-        self.program.draw(gl.GL_TRIANGLES, self.idx_buff)
-        self.program['color'] = self.smoke_color
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-
-    def draw_vectors(self):
-        self.quiver_program['Xvelocity'] = self.vectors[:,0]
-        self.quiver_program['Yvelocity'] = self.vectors[:,1]
-        self.quiver_program.draw(gl.GL_POINTS)
-
-    def update_smoke_color(self):
-        self.program["color"] = self.smoke_color
-
-    def update_view_matrix(self):
-        self.program["u_view"] = glm.translate(np.eye(4), self.view_matrix[0], self.view_matrix[1], self.view_matrix[2])
-        self.quiver_program["u_view"] = glm.translate(np.eye(4), self.view_matrix[0], self.view_matrix[1], self.view_matrix[2])
 
     def apply_boundary_condition(self):
         self.vectors[self.mesh.left_id,0] = 0
@@ -145,7 +100,7 @@ class TriSolver:
 
         self.computeAdvection(False, dt)
 
-        # computePressure()
+        self.computePressure(dt)
 
     def densityStep(self, dt):
         self.computeSource(dt)
@@ -154,9 +109,94 @@ class TriSolver:
 
         self.computeAdvection(True, dt)
 
-    def update_field(self, dt):
+    def update_fields(self, dt):
         self.apply_boundary_condition()
         self.velocityStep(dt)
 
         self.apply_boundary_condition()
         self.densityStep(dt)
+
+    
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    from math import cos, sin
+    from matplotlib import cm
+
+    def rbf_problem(x,y):
+        return -2*cos(x)*cos(y)
+    def rbf_solution(x,y):
+        return cos(x)*cos(y) - 1 
+    
+    mesh = TriMesh("./assets/mesh16.obj")
+
+    plt.triplot(mesh.points[:,0],mesh.points[:,1])
+    plt.show(block=True)
+    problem = [rbf_problem(p[0],p[1]) for p in mesh.points]
+    sol = [rbf_solution(p[0],p[1]) for p in mesh.points]
+    # mesh.arrows.plot(cpos='xy')
+    lapl = np.asarray([])
+    w = np.zeros(mesh.n_points)
+    b = np.zeros(mesh.n_points)
+    for pid in range(mesh.n_points): 
+        if pid in mesh.boundary:
+            weights = (mesh.rbf[pid][:,1]*mesh.normals[pid,0] 
+                    + mesh.rbf[pid][:,2]*mesh.normals[pid,1])
+        else:
+            weights = mesh.rbf[pid][:,0]
+            b[pid] = problem[pid]
+        
+        line = np.zeros(mesh.n_points)
+        line[mesh.nring[pid]]= weights
+        # p.show(cpos='xy')
+        w = np.vstack([w, line])
+    w = np.delete(w, 0,0)
+    w[0] = np.identity(mesh.n_points)[0]
+    b[0] = rbf_solution(mesh.points[0][0],mesh.points[0][1])
+    # np.savetxt("foo.csv", w, fmt="%.7s",delimiter="\t")
+
+    lapl = np.linalg.solve(w,b)
+    error = abs(lapl-sol)
+    fig = plt.figure(num='Poisson',figsize=plt.figaspect(0.5))
+    ax1 = fig.add_subplot(1, 3, 1, projection='3d')
+    ax2 = fig.add_subplot(1, 3, 2, projection='3d')
+    ax3 = fig.add_subplot(1, 3, 3, projection='3d')
+    ax1.set_title('Nossa solução')
+    ax2.set_title('Solução Exata')
+    ax3.set_title('Erro')
+    # Plot the surface.
+    surf = ax1.plot_trisurf(mesh.points[:,0], mesh.points[:,1], lapl, cmap=cm.coolwarm                        )
+    surf = ax2.plot_trisurf(mesh.points[:,0], mesh.points[:,1], sol, cmap=cm.coolwarm                       )
+    surf3 = ax3.plot_trisurf(mesh.points[:,0], mesh.points[:,1], error, cmap=cm.coolwarm                        )
+    fig.colorbar(surf3, ax=ax3, fraction=0.1, pad=0.2)
+    fig.suptitle(f'Norma infito do erro = {max(error):1e}', fontsize=20)
+    print(max(error))
+    plt.show(block=True)
+
+
+    def div_problem(x,y):
+        return -2*cos(x)*cos(y),-2*cos(x)*cos(y)
+
+    def div_solution(x,y):
+        return 2*sin(x+y)
+    
+    vectors=np.asarray([div_problem(p[0],p[1]) for p in mesh.points])
+    div_sol = [div_solution(p[0],p[1]) for p in mesh.points]
+    div = np.asarray([np.sum(mesh.rbf[pid][:,1]*vectors[mesh.nring[pid],0]+mesh.rbf[pid][:,2]*vectors[mesh.nring[pid],1]) for pid in range(mesh.n_points)])
+    
+    error = abs(div-div_sol)
+    fig = plt.figure(num='divergence', figsize=plt.figaspect(0.5))
+    ax1 = fig.add_subplot(1, 3, 1, projection='3d')
+    ax2 = fig.add_subplot(1, 3, 2, projection='3d')
+    ax3 = fig.add_subplot(1, 3, 3, projection='3d')
+    ax1.set_title('Nossa solução')
+    ax2.set_title('Solução Exata')
+    ax3.set_title('Erro')
+    fig.suptitle(f'Norma infito do erro = {max(error):1e}',fontsize=20)
+    # Plot the surface.
+    surf = ax1.plot_trisurf(mesh.points[:,0], mesh.points[:,1], lapl, cmap=cm.coolwarm                        )
+    surf = ax2.plot_trisurf(mesh.points[:,0], mesh.points[:,1], sol, cmap=cm.coolwarm                       )
+    surf3 = ax3.plot_trisurf(mesh.points[:,0], mesh.points[:,1], error, cmap=cm.coolwarm                        )
+    fig.colorbar(surf3, ax=ax3, fraction=0.1, pad=0.2)
+    print(max(error))
+    plt.show(block=True)
