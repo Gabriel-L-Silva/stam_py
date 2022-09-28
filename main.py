@@ -20,8 +20,8 @@ config.major_version = 4
 config.minor_version = 3
 
 # Constants
-WIDTH = 900
-HEIGHT = 900
+WIDTH = 600
+HEIGHT = 600
 CELLS = 64
 
 # create window with openGL context

@@ -88,9 +88,7 @@ class TriSolver:
         if testing != None:
             b = testing
         else:
-            self.w[0] = np.identity(self.mesh.n_points)[0]
-            b = [self.divergent(pid) for pid in range(self.mesh.n_points)]
-            b[0] = 1
+            b = [self.divergent(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)]
         lapl = np.linalg.solve(self.w,b)
         return lapl
 
@@ -99,7 +97,7 @@ class TriSolver:
 
         self.computeViscosity(dt)
 
-        # self.computePressure(dt)
+        self.computePressure(dt)
 
         self.computeAdvection(False, dt)
 
@@ -114,9 +112,9 @@ class TriSolver:
 
     def update_fields(self, dt):
         self.apply_boundary_condition()
-        self.densityStep(dt)
-        self.apply_boundary_condition()
         self.velocityStep(dt)
+        self.apply_boundary_condition()
+        self.densityStep(dt)
 
 
 def test_poisson():
