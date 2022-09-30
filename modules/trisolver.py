@@ -1,9 +1,10 @@
 from math import pi
 import numpy as np
+from tqdm import tqdm
 try:
-    from modules.trimesh import TriMesh
+    from modules.tri_mesh import TriMesh
 except:
-    from trimesh import TriMesh
+    from tri_mesh import TriMesh
 try:
     from modules.interpolator import Interpolator
 except:
@@ -70,7 +71,8 @@ class TriSolver:
 
     def init_poisson_weights(self):
         w = np.zeros(self.mesh.n_points)
-        for pid in range(self.mesh.n_points): 
+        print('Building Poisson matrix...')
+        for pid in tqdm(range(self.mesh.n_points)): 
             if pid in self.mesh.boundary:
                 weights = (self.mesh.rbf[pid][:,1]*self.mesh.normals[pid,0] 
                         + self.mesh.rbf[pid][:,2]*self.mesh.normals[pid,1])

@@ -8,6 +8,8 @@ class SimulationWindow:
         
         self.paused = True
         self.frame = 0
+        self.save_video = True
+        self.speed = 0.1
 
         self.solver = solver
         

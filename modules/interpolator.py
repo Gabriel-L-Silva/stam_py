@@ -29,7 +29,7 @@ def main():
     import matplotlib.pyplot as plt
     from matplotlib import cm
 
-    from trimesh import TriMesh
+    from tri_mesh import TriMesh
     mesh = TriMesh("./assets/mesh16.obj")
     xy = np.random.rand(mesh.n_points, 2)*np.pi
     points = np.stack((xy[:,0],xy[:,1],np.zeros(mesh.n_points)),axis=1)

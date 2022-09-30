@@ -6,3 +6,7 @@ glumpy
 PyOpenGl
 imgui
 pyglet
+trimesh
+opencv-python
+tqdm
+pillow
