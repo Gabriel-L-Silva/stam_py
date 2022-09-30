@@ -1,7 +1,6 @@
 matplotlib
 scipy
 numpy
-pyvista
 glumpy
 PyOpenGl
 imgui
@@ -10,3 +9,4 @@ trimesh
 opencv-python
 tqdm
 pillow
+networkx
