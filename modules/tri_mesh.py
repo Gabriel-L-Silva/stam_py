@@ -17,6 +17,15 @@ class TriMesh:
         self._init_mesh()
 
     
+    def triFinder(self, x, y):
+        cells = self.findTri(x,y)
+        if cells.min() == -1:
+            if(type(x) == float):
+                points= np.array([[x, y,0]])
+            else:
+                points = np.stack([x,y,np.zeros(len(x))]).T
+            _,_,cells = trimesh.proximity.closest_point(self.mesh, points)
+        return cells
 
     def _init_mesh(self):
         self.t_mesh = tri.Triangulation(self.mesh.vertices[:,0], self.mesh.vertices[:,1], self.mesh.faces)
@@ -24,7 +33,7 @@ class TriMesh:
         self.points = np.asarray([p for p in zip(self.mesh.vertices[:,0],self.mesh.vertices[:,1])])
         self.n_points = len(self.points)
 
-        self.triFinder = self.t_mesh.get_trifinder()
+        self.findTri = self.t_mesh.get_trifinder()
         self.faces = self.mesh.faces
         
         print('Building neighborhood...')

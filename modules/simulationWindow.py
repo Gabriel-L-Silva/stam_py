@@ -25,13 +25,12 @@ class SimulationWindow:
         self.program['position'] = self.solver.mesh.points + [-1,-1]
         self.program['color'] = self.smoke_color
 
-        self.quiver_program = gloo.Program(q_vertex, q_fragment, q_geometry, version='430')
+        self.quiver_program = gloo.Program(q_vertex, q_fragment, q_geometry, version='430', count=self.solver.mesh.n_points)
         self.quiver_program['position'] = self.solver.mesh.points + [-1,-1]
+        self.quiver_program['acolor'] = self.quiv_color    
         self.quiver_program['Xvelocity'] = self.solver.vectors[:,0]
         self.quiver_program['Yvelocity'] = self.solver.vectors[:,1]
-        self.quiver_program['vec_length'] = 0.1
-        self.quiver_program['acolor'] = self.quiv_color
-    
+        
     def draw(self):
         self.program['density'] = self.solver.density
         self.program.draw(gl.GL_TRIANGLES, self.idx_buff)

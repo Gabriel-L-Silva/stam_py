@@ -16,6 +16,8 @@ class Interpolator:
 
     def __call__(self, data, points):
         cells = self.mesh.triFinder(points[:,0],points[:,1])
+        if cells.min() == -1:
+            print('a')
         lambdas = [self.find_lambda(x, y) for x,y in zip(points,cells)]
 
         return np.sum(data[self.mesh.faces[cells]]*lambdas,axis=1)
@@ -24,7 +26,6 @@ def func(x,y):
     return 2*x+y**2
 
 def main(): 
-    import pyvista as pv
     from matplotlib import tri
     import matplotlib.pyplot as plt
     from matplotlib import cm

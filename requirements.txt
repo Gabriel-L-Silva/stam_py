@@ -10,3 +10,4 @@ opencv-python
 tqdm
 pillow
 networkx
+rtree

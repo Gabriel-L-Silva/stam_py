@@ -1,19 +1,15 @@
-from turtle import width
 from numpy import pi
 import imgui
 from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer
 from tqdm import tqdm
 import pyglet
 
-from glumpy import app, glm, gl
-from glumpy.transforms import PVMProjection
-from modules.simulationWindow import SimulationWindow
+from glumpy import app, glm
 # our modules
-# from modules import fluid_np as fluid
+from modules.simulationWindow import SimulationWindow
 from modules.trisolver import TriSolver
 
 import numpy as np
-# np.set_printoptions(threshold=sys.maxsize)
 
 # Use pyglet as backend
 app.use("pyglet", major=4, minor=3)
@@ -34,8 +30,7 @@ window = app.Window(WIDTH, HEIGHT,config=config)
 imgui.create_context()
 imgui_renderer = PygletProgrammablePipelineRenderer(window.native_window) # pass native pyglet window
 
-# main object
-# smoke_grid = fluid.Fluid(WIDTH, HEIGHT, CELLS)
+# main objects
 f_vertex      = 'shaders/fluid.vs'
 f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
@@ -48,7 +43,6 @@ frames = []
 
 @window.event
 def on_init():
-
     view = np.eye(4,dtype=np.float32)
     model = np.eye(4,dtype=np.float32)
     projection = glm.perspective(45.0, 1, 2.0, 100.0)
@@ -60,7 +54,6 @@ def on_init():
     simWindow.quiver_program['u_model'] = model
     simWindow.quiver_program['u_view'] = view
     simWindow.quiver_program['u_projection'] = projection
-    # gl.glEnable(gl.GL_DEPTH_TEST)
 
 @window.event
 def on_draw(dt):
@@ -83,26 +76,26 @@ def on_draw(dt):
     _, simWindow.save_video = imgui.checkbox("Save video", simWindow.save_video)
 
     changed, simWindow.smoke_color = imgui.color_edit3("Smoke Color", *simWindow.smoke_color)
-
     if changed:
         simWindow.update_smoke_color()
     
-    changed,  vm= imgui.drag_float3("View Matrix", *simWindow.view_matrix, change_speed=0.01)
+    changed,  vm = imgui.drag_float3("View Matrix", *simWindow.view_matrix, change_speed=0.01)
     simWindow.view_matrix = list(vm)
     if changed:
         simWindow.update_view_matrix()
+
     changed, sp = imgui.drag_float("Speed", simWindow.speed, change_speed=0.1)
     if changed:
         simWindow.speed = sp
-
     imgui.end()
 
+    global m
     if not simWindow.paused or advance_frame:
         if simWindow.save_video:
             dt = 1/60.0
             frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
         simWindow.advance_frame(dt)
-        
+        print(solver.vectors.max())
     # render gui on top of everything
     try:
         imgui.render()
@@ -156,22 +149,22 @@ if __name__ == "__main__":
     import os
     from PIL import Image
     # run app
-    import cProfile, pstats
-    profiler = cProfile.Profile()
-    profiler.enable()
-    try:
-        app.run()
-    except:
-        if simWindow.save_video:
-            print('saving frames')
-            video = cv2.VideoWriter('video.avi', 0, 30, (WIDTH,HEIGHT))
-            for f, frame  in tqdm(enumerate(frames)):
-                if len(frame) != WIDTH*HEIGHT*4:
-                    break
-                video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
+    # import cProfile, pstats
+    # profiler = cProfile.Profile()
+    # profiler.enable()
+    # try:
+    app.run()
+    # except:
+    #     if simWindow.save_video:
+    #         print('saving frames')
+    #         video = cv2.VideoWriter('video.avi', 0, 30, (WIDTH,HEIGHT))
+    #         for f, frame  in tqdm(enumerate(frames)):
+    #             if len(frame) != WIDTH*HEIGHT*4:
+    #                 break
+    #             video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
             
-            video.release()
-        print('acabou')
-    profiler.disable()
-    stats = pstats.Stats(profiler).sort_stats('cumtime')
-    stats.print_stats()
+    #         video.release()
+    #     print('acabou')
+    # profiler.disable()
+    # stats = pstats.Stats(profiler).sort_stats('cumtime')
+    # stats.print_stats()
