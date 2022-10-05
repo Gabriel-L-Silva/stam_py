@@ -36,14 +36,14 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-solver = TriSolver('./assets/regular_tri_grid256.obj')
+solver = TriSolver('./assets/regular_tri_grid128.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
 @window.event
 def on_init():
-    view = np.eye(4,dtype=np.float32)
-    model = np.eye(4,dtype=np.float32)
+    view = np.eye(4)
+    model = np.eye(4)
     projection = glm.perspective(45.0, 1, 2.0, 100.0)
     glm.translate(view, -0.57,-0.57,-3.8)
     simWindow.view_matrix = [-0.57,-0.57,-3.8]
@@ -113,7 +113,7 @@ def on_mouse_press(x, y, button):
         
         solver.density[solver.mesh.faces[cell]] = 1.0
     
-    if button==2:
+    if button == 2:
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         solver.density[solver.mesh.faces[cell]] = 1
         solver.vectors[solver.mesh.faces[cell]] = [0,10]
@@ -139,6 +139,13 @@ def on_mouse_drag(x, y, dx, dy, buttons):
         solver.vectors[solver.mesh.faces[cell]] += [
             simWindow.speed*dx, simWindow.speed*-dy
         ]
+
+    if buttons == 2:
+        cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        solver.density[solver.mesh.faces[cell]] = 1
+        solver.vectors[solver.mesh.faces[cell]] = [0,10]
+        for c in solver.mesh.faces[cell]:
+            solver.source_cells.add(c)
 @window.event    
 def on_mouse_scroll(x, y, dx, dy):
     'The mouse wheel was scrolled by (dx,dy).'

@@ -107,11 +107,11 @@ class TriSolver:
 
         self.computeViscosity(dt)
 
-        self.computePressure(dt)
+        # self.computePressure(dt)
 
         self.computeAdvection(False, dt)
 
-        # self.computePressure(dt)
+        self.computePressure(dt)
 
     def densityStep(self, dt):
         self.computeSource(dt)
