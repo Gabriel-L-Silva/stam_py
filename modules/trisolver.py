@@ -10,6 +10,9 @@ try:
 except:
     from interpolator import Interpolator
 
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import spsolve
+
 class TriSolver:
     def __init__(self, filename):
         self.mesh = TriMesh(filename)
@@ -20,6 +23,8 @@ class TriSolver:
         self.Interpolator = Interpolator(self.mesh)
 
         self.init_poisson_weights()
+
+        self.source_cells = set()
 
     def apply_boundary_condition(self, field=None):
         if type(field) == type(None):
@@ -37,7 +42,7 @@ class TriSolver:
     def computePressure(self, dt):
         x0 = self.poisson_solver()
         grad = self.gradient(x0)
-
+        
         self.vectors[:,0] -= grad[:,0]
         self.vectors[:,1] -= grad[:,1]
 
@@ -55,7 +60,8 @@ class TriSolver:
         self.apply_boundary_condition()
 
     def computeSource(self, dt):
-        self.density[[0]] = 1
+        self.vectors[list(self.source_cells)] = [0,10]
+        self.density[list(self.source_cells)] = 1
 
     def divergent(self, pid):
         div = np.sum(self.mesh.rbf[pid][:,1]*self.vectors[self.mesh.nring[pid],0] 
@@ -70,7 +76,9 @@ class TriSolver:
         return grad
 
     def init_poisson_weights(self):
-        w = np.zeros((self.mesh.n_points,self.mesh.n_points))
+        data = []
+        data_row = []
+        data_col = []
         print('Building Poisson matrix...')
         for pid in tqdm(range(self.mesh.n_points)): 
             if pid in self.mesh.boundary:
@@ -78,15 +86,20 @@ class TriSolver:
                         + self.mesh.rbf[pid][:,2]*self.mesh.normals[pid,1])
             else:
                 weights = self.mesh.rbf[pid][:,0]
-                
-            w[pid, self.mesh.nring[pid]] = weights
-        self.w = w
+            
+            data[0:0] = weights
+            data_row[0:0] = ([pid]*len(self.mesh.nring[pid]))
+            data_col[0:0] = self.mesh.nring[pid]
+        self.w = csr_matrix((data, (data_row, data_col)), 
+                          shape = (self.mesh.n_points, self.mesh.n_points))
+
+        
     def poisson_solver(self, testing=None):        
         if testing != None:
             b = testing
         else:
             b = [self.divergent(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)]
-        lapl = np.linalg.solve(self.w,b)
+        lapl = spsolve(self.w, b)
         return lapl
 
     def velocityStep(self, dt):

@@ -36,7 +36,7 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-solver = TriSolver('./assets/regular_tri_grid64.obj')
+solver = TriSolver('./assets/regular_tri_grid256.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
@@ -112,6 +112,13 @@ def on_mouse_press(x, y, button):
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         
         solver.density[solver.mesh.faces[cell]] = 1.0
+    
+    if button==2:
+        cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        solver.density[solver.mesh.faces[cell]] = 1
+        solver.vectors[solver.mesh.faces[cell]] = [0,10]
+        for c in solver.mesh.faces[cell]:
+            solver.source_cells.add(c)
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, buttons):
