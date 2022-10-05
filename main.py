@@ -36,8 +36,7 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-
-solver = TriSolver('./assets/regular_tri_grid32.obj')
+solver = TriSolver('./assets/regular_tri_grid64.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
@@ -67,6 +66,7 @@ def on_draw(dt):
     imgui.new_frame()
 
     imgui.begin("Controls")
+    imgui.text(f"Frame count: {simWindow.frame}")
     clicked = imgui.button("Pause")
     if clicked:
         simWindow.paused = not simWindow.paused
@@ -94,8 +94,9 @@ def on_draw(dt):
         if simWindow.save_video:
             dt = 1/60.0
             frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
-        simWindow.advance_frame(dt)
-        print(solver.vectors.max())
+            profiler.enable()
+            simWindow.advance_frame(dt)
+            profiler.disable()
     # render gui on top of everything
     try:
         imgui.render()
@@ -149,22 +150,21 @@ if __name__ == "__main__":
     import os
     from PIL import Image
     # run app
-    # import cProfile, pstats
-    # profiler = cProfile.Profile()
-    # profiler.enable()
-    # try:
-    app.run()
-    # except:
-    #     if simWindow.save_video:
-    #         print('saving frames')
-    #         video = cv2.VideoWriter('video.avi', 0, 30, (WIDTH,HEIGHT))
-    #         for f, frame  in tqdm(enumerate(frames)):
-    #             if len(frame) != WIDTH*HEIGHT*4:
-    #                 break
-    #             video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
+    import cProfile, pstats
+    global profiler
+    profiler = cProfile.Profile()
+    try:
+        app.run()
+    except:
+        if simWindow.save_video:
+            print('saving frames')
+            video = cv2.VideoWriter('video.avi', 0, 30, (WIDTH,HEIGHT))
+            for f, frame  in tqdm(enumerate(frames)):
+                if len(frame) != WIDTH*HEIGHT*4:
+                    break
+                video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
             
-    #         video.release()
+            video.release()
     #     print('acabou')
-    # profiler.disable()
-    # stats = pstats.Stats(profiler).sort_stats('cumtime')
-    # stats.print_stats()
+    stats = pstats.Stats(profiler).sort_stats('tottime')
+    stats.print_stats()

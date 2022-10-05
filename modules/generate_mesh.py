@@ -3,7 +3,7 @@ import numpy as np
 import trimesh
 
 def main():
-    size = 32
+    size = 128
     x= np.linspace(0,pi,size+1)
     y= np.linspace(0,pi,size+1)
     xx, yy = np.meshgrid(x,y)

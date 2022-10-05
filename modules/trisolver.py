@@ -70,7 +70,7 @@ class TriSolver:
         return grad
 
     def init_poisson_weights(self):
-        w = np.zeros(self.mesh.n_points)
+        w = np.zeros((self.mesh.n_points,self.mesh.n_points))
         print('Building Poisson matrix...')
         for pid in tqdm(range(self.mesh.n_points)): 
             if pid in self.mesh.boundary:
@@ -79,13 +79,8 @@ class TriSolver:
             else:
                 weights = self.mesh.rbf[pid][:,0]
                 
-            
-            line = np.zeros(self.mesh.n_points)
-            line[self.mesh.nring[pid]]= weights
-            # p.show(cpos='xy')
-            w = np.vstack([w, line])
-        self.w = np.delete(w, 0,0)
-
+            w[pid, self.mesh.nring[pid]] = weights
+        self.w = w
     def poisson_solver(self, testing=None):        
         if testing != None:
             b = testing
