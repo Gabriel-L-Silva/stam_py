@@ -27,9 +27,19 @@ class TriMesh:
             _,_,cells = trimesh.proximity.closest_point(self.mesh, points)
         return cells
 
+    def _init_nring(self):
+        self.nring = np.zeros((self.n_points,self.n_points), dtype = int)
+        for p in tqdm(range(len(self.mesh.vertices))):
+            self.nring[p, list(self.find_Nring(2, p, set()))] = 1
+
+    def _init_rbf(self):
+        self.rbf = np.zeros((self.n_points, self.n_points, 3))
+        for p in tqdm(range(len(self.mesh.vertices))):
+            self.rbf[p, np.argwhere(self.nring[p]).flatten()] = rbf_fd_weights(self.points[np.argwhere(self.nring[p]).flatten()], self.points[p], 5, 2) 
+
     def _init_mesh(self):
         self.t_mesh = tri.Triangulation(self.mesh.vertices[:,0], self.mesh.vertices[:,1], self.mesh.faces)
-
+        self.mesh.vertices = np.stack((self.mesh.vertices[:,0],self.mesh.vertices[:,1], np.zeros(len(self.mesh.vertices))),axis=1)
         self.points = np.asarray([p for p in zip(self.mesh.vertices[:,0],self.mesh.vertices[:,1])])
         self.n_points = len(self.points)
 
@@ -38,9 +48,9 @@ class TriMesh:
         
         print('Building neighborhood...')
         self.g = nx.from_edgelist(self.mesh.edges_unique)
-        self.nring = [list(self.find_Nring(2, p, set())) for p in tqdm(range(len(self.mesh.vertices)))]
+        self._init_nring()
         print('Building rbf...')
-        self.rbf = [rbf_fd_weights(self.points[self.nring[p]], self.points[p], 5, 2) for p in tqdm(range(self.n_points))]
+        self._init_rbf()
         
         self._init_boundary()
 
@@ -77,3 +87,6 @@ class TriMesh:
             for v in self.find_one_ring(index):
                 self.find_Nring(n-1, v, nh)
             return nh
+
+if __name__ == '__main__':
+    TriMesh('./assets/mesh16.obj')

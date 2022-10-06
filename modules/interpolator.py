@@ -1,4 +1,6 @@
+import time
 import numpy as np
+import trimesh
 
 class Interpolator:
     def __init__(self, mesh) -> None:
@@ -18,8 +20,8 @@ class Interpolator:
         cells = self.mesh.triFinder(points[:,0],points[:,1])
         if cells.min() == -1:
             print('a')
-        lambdas = [self.find_lambda(x, y) for x,y in zip(points,cells)]
-
+        # lambdas = [self.find_lambda(x, y) for x,y in zip(points,cells)]
+        lambdas = trimesh.triangles.points_to_barycentric(self.mesh.mesh.vertices[self.mesh.faces[cells]], points)
         return np.sum(data[self.mesh.faces[cells]]*lambdas,axis=1)
     
 def func(x,y):
@@ -38,9 +40,22 @@ def main():
     solution = func(points[:,0], points[:,1])
 
     Interp = Interpolator(mesh)
-    CInterp = tri.CubicTriInterpolator(mesh.mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
-    interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
-    Cinterp = CInterp(points[:,0],points[:,1])
+    CInterp = tri.CubicTriInterpolator(mesh.t_mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
+    for times in range(50):
+        start = time.time()
+        #do some stuff
+        interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points)
+        stop = time.time()
+        duration = stop-start
+        print(f'{times}:\t {duration}')
+
+    for times in range(50):
+        start = time.time()
+        #do some stuff
+        Cinterp = CInterp(points[:,0],points[:,1])
+        stop = time.time()
+        duration = stop-start
+        print(f'{times}:\t {duration}')
 
     error = (interp-solution)
     Cerror = (Cinterp-solution)

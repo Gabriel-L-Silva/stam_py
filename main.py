@@ -89,14 +89,13 @@ def on_draw(dt):
         simWindow.speed = sp
     imgui.end()
 
-    global m
     if not simWindow.paused or advance_frame:
         if simWindow.save_video:
             dt = 1/60.0
             frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
-            profiler.enable()
-            simWindow.advance_frame(dt)
-            profiler.disable()
+        profiler.enable()
+        simWindow.advance_frame(dt)
+        profiler.disable()
     # render gui on top of everything
     try:
         imgui.render()
@@ -116,7 +115,7 @@ def on_mouse_press(x, y, button):
     if button == 2:
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell]] = [0,10]
+        solver.vectors[solver.mesh.faces[cell],:2] = [0,10]
         for c in solver.mesh.faces[cell]:
             solver.source_cells.add(c)
 
@@ -136,14 +135,14 @@ def on_mouse_drag(x, y, dx, dy, buttons):
 
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         
-        solver.vectors[solver.mesh.faces[cell]] += [
+        solver.vectors[solver.mesh.faces[cell],:2] += [
             simWindow.speed*dx, simWindow.speed*-dy
         ]
 
     if buttons == 2:
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell]] = [0,10]
+        solver.vectors[solver.mesh.faces[cell],:2] = [0,10]
         for c in solver.mesh.faces[cell]:
             solver.source_cells.add(c)
 @window.event    
@@ -179,6 +178,6 @@ if __name__ == "__main__":
                 video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
             
             video.release()
-    #     print('acabou')
+        print('acabou')
     stats = pstats.Stats(profiler).sort_stats('tottime')
     stats.print_stats()
