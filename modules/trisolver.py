@@ -79,7 +79,7 @@ class TriSolver:
         self.apply_boundary_condition()
 
     def computeSource(self, dt):
-        self.vectors[list(self.source_cells),:2] = [0,10]
+        self.vectors[list(self.source_cells),:2] = [0,5]
         self.density[list(self.source_cells)] = 1
 
     def init_poisson_weights(self):

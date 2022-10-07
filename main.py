@@ -19,9 +19,8 @@ config.major_version = 4
 config.minor_version = 3
 
 # Constants
-WIDTH = 600
-HEIGHT = 600
-CELLS = 64
+WIDTH = 900
+HEIGHT = 900
 
 # create window with openGL context
 window = app.Window(WIDTH, HEIGHT,config=config)
@@ -115,7 +114,7 @@ def on_mouse_press(x, y, button):
     if button == 2:
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell],:2] = [0,10]
+        solver.vectors[solver.mesh.faces[cell],:2] = [0,5]
         for c in solver.mesh.faces[cell]:
             solver.source_cells.add(c)
 
@@ -142,7 +141,7 @@ def on_mouse_drag(x, y, dx, dy, buttons):
     if buttons == 2:
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell],:2] = [0,10]
+        solver.vectors[solver.mesh.faces[cell],:2] = [0,5]
         for c in solver.mesh.faces[cell]:
             solver.source_cells.add(c)
 @window.event    
