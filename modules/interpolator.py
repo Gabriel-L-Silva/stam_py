@@ -1,5 +1,7 @@
 import numpy as np
-
+from tri_mesh import TriMesh
+from rbf import rbf_interpolator_inv_matrix
+from tqdm import tqdm
 class Interpolator:
     def __init__(self, mesh) -> None:
         self.mesh = mesh
@@ -16,14 +18,19 @@ class Interpolator:
 
     def __call__(self, data, points):
         cells = self.mesh.triFinder(points[:,0],points[:,1])
-        if cells.min() == -1:
-            print('a')
         lambdas = [self.find_lambda(x, y) for x,y in zip(points,cells)]
 
         return np.sum(data[self.mesh.faces[cells]]*lambdas,axis=1)
-    
+
+class RBFInterpolator:
+    def __init__(self, mesh:TriMesh) -> None:
+        self.rbf = [rbf_interpolator_inv_matrix(mesh.points[mesh.nring[p]], mesh.points[p], 5, 2, np.zeros((len(mesh.nring[p]),2)), np.zeros(len(mesh.nring[p]))) for p in tqdm(range(mesh.n_points))]
+
 def func(x,y):
-    return 2*x+y**2
+    return np.sin(2*x+y**2)+np.cos(x*y-2*x**2)
+
+def rmse(e, N):
+    return np.sum(np.sqrt(e**2/N))
 
 def main(): 
     from matplotlib import tri
@@ -31,22 +38,24 @@ def main():
     from matplotlib import cm
 
     from tri_mesh import TriMesh
-    mesh = TriMesh("./assets/mesh16.obj")
+    N = 64
+    mesh = TriMesh(f"./assets/regular_tri_grid{N}.obj")
     xy = np.random.rand(mesh.n_points, 2)*np.pi
     points = np.stack((xy[:,0],xy[:,1],np.zeros(mesh.n_points)),axis=1)
 
     solution = func(points[:,0], points[:,1])
 
     Interp = Interpolator(mesh)
-    CInterp = tri.CubicTriInterpolator(mesh.mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
+    CInterp = tri.CubicTriInterpolator(mesh.t_mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
     interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
     Cinterp = CInterp(points[:,0],points[:,1])
+    RBFInterp = RBFInterpolator(mesh)
 
     error = (interp-solution)
     Cerror = (Cinterp-solution)
     
-    print(max(error))
-
+    print(f'max: {max(abs(error))}, rmse: {rmse(error, N)}')
+    print(f'Cmax: {max(abs(Cerror))}, Crmse: {rmse(Cerror, N)}')
     fig = plt.figure(figsize=plt.figaspect(0.5))
     ax1 = fig.add_subplot(1, 4, 1, projection='3d')
     ax2 = fig.add_subplot(1, 4, 2, projection='3d')
