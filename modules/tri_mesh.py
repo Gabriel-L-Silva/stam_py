@@ -75,10 +75,9 @@ class TriMesh:
             normals[id] = normals[id] / np.sqrt(np.sum(normals[id]**2))
         return normals
 
-    
     def find_one_ring(self, index):
         return list(self.g[index].keys())
-
+    
     def find_Nring(self, n, index, nh :set):
         if n == 0:
             nh.add(index)
