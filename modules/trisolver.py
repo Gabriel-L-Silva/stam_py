@@ -7,9 +7,9 @@ try:
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import Interpolator
+    from modules.interpolator import Interpolator, RBFInterpolator
 except:
-    from interpolator import Interpolator
+    from interpolator import Interpolator, RBFInterpolator
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
@@ -39,7 +39,7 @@ class TriSolver:
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,3))
 
-        self.Interpolator = Interpolator(self.mesh)
+        self.Interpolator = RBFInterpolator(self.mesh)
 
         self.init_poisson_weights()
 

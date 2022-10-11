@@ -38,7 +38,7 @@ def rbf_fd_weights(X,ctr,s,d):
     return weights[:n,:]
 
 
-def rbf_interpolator_inv_matrix(X,s,d, velocity, density):
+def rbf_interpolator_inv_matrix(X,s,d):
     #   X : each row contains one node in R^2
     # ctr : center (evaluation) node
     # s,d : PHS order and polynomial degree
@@ -49,9 +49,7 @@ def rbf_interpolator_inv_matrix(X,s,d, velocity, density):
     # for i in range(2): X[:,i] -= ctr[i]
     DM = sd.squareform(sd.pdist(X))
     D0 = np.sqrt(X[:,0]**2 + X[:,1]**2)
-    A = rbf(DM,s)
-    b = np.vstack((velocity[:,0], velocity[:,1], density)).T
-                    
+    A = rbf(DM,s)                    
     if d > -1: #adding polynomials
         m = int((d+2)*(d+1)/2)              
         O, k = np.zeros((m,m)), 0
@@ -62,8 +60,7 @@ def rbf_interpolator_inv_matrix(X,s,d, velocity, density):
             P[:,k:k+j+1], k = PX[:,j::-1]*PY[:,:j+1], k+j+1
         if d > 0: LP[1,1], LP[2,2] = 1, 1
         if d > 1: LP[3,0], LP[5,0] = 2, 2 
-        A = np.block([[A,P],[P.T,O]])	
-        b = np.block([[b],[np.zeros((m,3))]])
+        A = np.block([[A,P],[P.T,O]])
     # each column contains the weights for 
     # the Laplacian, d/dx1, d/dx2, respectivly.
     

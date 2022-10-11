@@ -11,6 +11,7 @@ except:
 import scipy.spatial.distance as sd
 import numpy.polynomial.polynomial as pp
 from tqdm import tqdm
+import trimesh
 
 class Interpolator:
     def __init__(self, mesh) -> None:
@@ -50,7 +51,7 @@ class RBFInterpolator:
         self.nring = np.asarray(self.nring,dtype=object)
         self.rbf = []
         for f in tqdm(range(len(mesh.faces))):
-            ret = rbf_interpolator_inv_matrix(mesh.points[self.nring[f]], self.s, self.d, np.zeros((len(self.nring[f]),2)), np.zeros(len(self.nring[f])))
+            ret = rbf_interpolator_inv_matrix(mesh.points[self.nring[f]], self.s, self.d)
             self.rbf.append(ret)
     def __call__(self, data, points):
         cells = self.mesh.triFinder(points[:,0],points[:,1])
@@ -65,9 +66,11 @@ class RBFInterpolator:
             for j in range(self.d+1):
                 P[:,k:k+j+1], k = PX[:,j::-1]*PY[:,:j+1], k+j+1
         for idx, c in enumerate(cells):
-            alphas = np.dot(self.rbf[c], np.pad(data[self.nring[c]],(0,m)))
+            b = np.zeros(self.rbf[c].shape[0])
+            b[:-m] = data[self.nring[c]]
+            alphas = np.dot(self.rbf[c], b)
             
-            value_interp[idx] = np.sum(alphas[:-m]*rbf(sd.cdist([points[idx]],self.mesh.points[self.nring[c]]),self.s)) + np.sum(alphas[-m:]*P[idx])
+            value_interp[idx] = np.sum(alphas[:-m]*rbf(sd.cdist([points[idx,:2]],self.mesh.points[self.nring[c]]),self.s)) + np.sum(alphas[-m:]*P[idx])
         return value_interp
 
 def func(x,y):
@@ -92,7 +95,7 @@ def main():
     Interp = Interpolator(mesh)
     CInterp = tri.CubicTriInterpolator(mesh.t_mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
     RBFInterp = RBFInterpolator(mesh)
-    interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
+    interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points)
     rbfinterp = RBFInterp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
     Cinterp = CInterp(points[:,0],points[:,1])
 
