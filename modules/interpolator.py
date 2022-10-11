@@ -1,7 +1,9 @@
 import numpy as np
 from tri_mesh import TriMesh
-from rbf import rbf_interpolator_inv_matrix
+from rbf import rbf_interpolator_inv_matrix, rbf 
+import scipy.spatial.distance as sd
 from tqdm import tqdm
+
 class Interpolator:
     def __init__(self, mesh) -> None:
         self.mesh = mesh
@@ -23,8 +25,32 @@ class Interpolator:
         return np.sum(data[self.mesh.faces[cells]]*lambdas,axis=1)
 
 class RBFInterpolator:
-    def __init__(self, mesh:TriMesh) -> None:
-        self.rbf = [rbf_interpolator_inv_matrix(mesh.points[mesh.nring[p]], mesh.points[p], 5, 2, np.zeros((len(mesh.nring[p]),2)), np.zeros(len(mesh.nring[p]))) for p in tqdm(range(mesh.n_points))]
+    def __init__(self, mesh: TriMesh) -> None:
+        self.mesh = mesh
+        self.nring = []
+        for f in mesh.faces:
+            nring = set()
+            nb = [mesh.find_one_ring(v) for v in f]
+            for n in nb:
+                for c in n:
+                    nring.add(c)
+            self.nring.append(list(nring))
+        self.nring = np.asarray(self.nring,dtype=object)
+        self.rbf = []
+        self.poly = []
+        for f in tqdm(range(len(mesh.faces))):
+            ret = rbf_interpolator_inv_matrix(mesh.points[self.nring[f]], 5, 2, np.zeros((len(self.nring[f]),2)), np.zeros(len(self.nring[f])))
+            self.rbf.append(ret[0])
+            self.poly.append(ret[1])
+
+    def __call__(self, data, points):
+        cells = self.mesh.triFinder(points[:,0],points[:,1])
+        value_interp = np.zeros(points.shape[0])
+        for idx, c in enumerate(cells):
+            pad_size = len(self.rbf[c])-len(data[self.nring[c]])
+            alphas = np.dot(self.rbf[c], np.pad(data[self.nring[c]],(0,pad_size)))
+            value_interp[idx] = (np.sum(alphas[:-pad_size]*rbf(sd.cdist(points,self.mesh.points[self.nring[c]]),5) + np.sum(alphas[-pad_size:]*self.poly[c])))
+        return value_interp
 
 def func(x,y):
     return np.sin(2*x+y**2)+np.cos(x*y-2*x**2)
@@ -47,9 +73,10 @@ def main():
 
     Interp = Interpolator(mesh)
     CInterp = tri.CubicTriInterpolator(mesh.t_mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
-    interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
-    Cinterp = CInterp(points[:,0],points[:,1])
     RBFInterp = RBFInterpolator(mesh)
+    interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
+    rbfinterp = RBFInterp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
+    Cinterp = CInterp(points[:,0],points[:,1])
 
     error = (interp-solution)
     Cerror = (Cinterp-solution)
@@ -66,7 +93,7 @@ def main():
     ax1.set_title('Nossa solução')
     ax2.set_title('Solução Exata')
     ax3.set_title('Erro')
-    ax3.set_title('Erro cubico')
+    ax4.set_title('Erro cubico')
     # Plot the surface.
     surf = ax1.plot_trisurf(points[:,0], points[:,1], interp, cmap=cm.coolwarm                        )
     surf = ax2.plot_trisurf(points[:,0], points[:,1], solution, cmap=cm.coolwarm                       )

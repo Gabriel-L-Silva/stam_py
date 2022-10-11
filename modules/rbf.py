@@ -2,12 +2,13 @@ import numpy as np
 import scipy.spatial.distance as sd
 import numpy.polynomial.polynomial as pp
 
+rbf  = lambda r,s: r**s
+
 def rbf_fd_weights(X,ctr,s,d):
     #   X : each row contains one node in R^2
     # ctr : center (evaluation) node
     # s,d : PHS order and polynomial degree
-        
-    rbf  = lambda r,s: r**s
+
     Drbf = lambda r,s,xi: s*xi*r**(s-2)
     Lrbf = lambda r,s: s**2*r**(s-2)
         
@@ -37,7 +38,7 @@ def rbf_fd_weights(X,ctr,s,d):
     return weights[:n,:]
 
 
-def rbf_interpolator_inv_matrix(X,ctr,s,d, velocity, density):
+def rbf_interpolator_inv_matrix(X,s,d, velocity, density):
     #   X : each row contains one node in R^2
     # ctr : center (evaluation) node
     # s,d : PHS order and polynomial degree
@@ -45,7 +46,7 @@ def rbf_interpolator_inv_matrix(X,ctr,s,d, velocity, density):
     rbf  = lambda r,s: r**s
         
     n = X.shape[0] 
-    for i in range(2): X[:,i] -= ctr[i]
+    # for i in range(2): X[:,i] -= ctr[i]
     DM = sd.squareform(sd.pdist(X))
     D0 = np.sqrt(X[:,0]**2 + X[:,1]**2)
     A = rbf(DM,s)
@@ -66,4 +67,4 @@ def rbf_interpolator_inv_matrix(X,ctr,s,d, velocity, density):
     # each column contains the weights for 
     # the Laplacian, d/dx1, d/dx2, respectivly.
     
-    return np.linalg.inv(A)
+    return np.linalg.inv(A),P 
