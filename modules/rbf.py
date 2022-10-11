@@ -67,4 +67,4 @@ def rbf_interpolator_inv_matrix(X,s,d, velocity, density):
     # each column contains the weights for 
     # the Laplacian, d/dx1, d/dx2, respectivly.
     
-    return np.linalg.inv(A),P 
+    return np.linalg.inv(A)
