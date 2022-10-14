@@ -63,4 +63,4 @@ class SimulationWindow:
 
     def advance_frame(self, dt):
         self.frame += 1
-        self.solver.update_fields(dt)
+        self.solver.update_fields(dt, self.frame)

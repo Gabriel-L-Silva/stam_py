@@ -19,9 +19,8 @@ config.major_version = 4
 config.minor_version = 3
 
 # Constants
-WIDTH = 600
-HEIGHT = 600
-CELLS = 64
+WIDTH = 1000
+HEIGHT = 1000
 
 # create window with openGL context
 window = app.Window(WIDTH, HEIGHT,config=config)
@@ -36,7 +35,7 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-solver = TriSolver('./assets/regular_tri_grid128.obj')
+solver = TriSolver('./assets/regular_tri_grid32.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
@@ -116,7 +115,7 @@ def on_mouse_press(x, y, button):
     if button == 2:
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell]] = [0,10]
+        solver.vectors[solver.mesh.faces[cell]] = [0,3]
         for c in solver.mesh.faces[cell]:
             solver.source_cells.add(c)
 
@@ -143,7 +142,7 @@ def on_mouse_drag(x, y, dx, dy, buttons):
     if buttons == 2:
         cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell]] = [0,10]
+        solver.vectors[solver.mesh.faces[cell]] = [0,3]
         for c in solver.mesh.faces[cell]:
             solver.source_cells.add(c)
 @window.event    
@@ -172,7 +171,7 @@ if __name__ == "__main__":
     except:
         if simWindow.save_video:
             print('saving frames')
-            video = cv2.VideoWriter('video.avi', 0, 30, (WIDTH,HEIGHT))
+            video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','P','4','V'), 30, (WIDTH,HEIGHT))
             for f, frame  in tqdm(enumerate(frames)):
                 if len(frame) != WIDTH*HEIGHT*4:
                     break

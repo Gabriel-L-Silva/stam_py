@@ -6,9 +6,9 @@ try:
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import Interpolator
+    from modules.interpolator import RBFInterpolator
 except:
-    from interpolator import Interpolator
+    from interpolator import RBFInterpolator
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
@@ -20,7 +20,7 @@ class TriSolver:
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,2))
 
-        self.Interpolator = Interpolator(self.mesh)
+        self.Interpolator = RBFInterpolator(self.mesh)
 
         self.init_poisson_weights()
 
@@ -59,9 +59,10 @@ class TriSolver:
 
         self.apply_boundary_condition()
 
-    def computeSource(self, dt):
-        self.vectors[list(self.source_cells)] = [0,10]
-        self.density[list(self.source_cells)] = 1
+    def computeSource(self, dt, frame):
+        if frame <= 500:
+            self.vectors[list(self.source_cells)] = [0,3]
+            self.density[list(self.source_cells)] = 1
 
     def divergent(self, pid):
         div = np.sum(self.mesh.rbf[pid][:,1]*self.vectors[self.mesh.nring[pid],0] 
@@ -113,18 +114,18 @@ class TriSolver:
 
         self.computePressure(dt)
 
-    def densityStep(self, dt):
-        self.computeSource(dt)
+    def densityStep(self, dt, frame):
+        self.computeSource(dt, frame)
 
         self.computeViscosity(dt)
 
         self.computeAdvection(True, dt)
 
-    def update_fields(self, dt):
+    def update_fields(self, dt, frame):
         self.apply_boundary_condition()
         self.velocityStep(dt)
         self.apply_boundary_condition()
-        self.densityStep(dt)
+        self.densityStep(dt, frame)
 
 
 def test_poisson():
