@@ -170,7 +170,7 @@ if __name__ == "__main__":
     except:
         if simWindow.save_video:
             print('saving frames')
-            video = cv2.VideoWriter('video.avi', 0, 30, (WIDTH,HEIGHT))
+            video = cv2.VideoWriter('video.avi', 0, 60, (WIDTH,HEIGHT))
             for f, frame  in tqdm(enumerate(frames)):
                 if len(frame) != WIDTH*HEIGHT*4:
                     break
