@@ -78,9 +78,10 @@ class TriSolver:
 
         self.apply_boundary_condition()
 
-    def computeSource(self, dt):
-        self.vectors[list(self.source_cells),:2] = [0,5]
-        self.density[list(self.source_cells)] = 1
+    def computeSource(self, dt, frame):
+        if frame <= 500:
+            self.vectors[list(self.source_cells),:2] = [0,5]
+            self.density[list(self.source_cells)] = 1
 
     def init_poisson_weights(self):
         data = []
@@ -120,18 +121,18 @@ class TriSolver:
 
         self.computePressure(dt)
 
-    def densityStep(self, dt):
-        self.computeSource(dt)
+    def densityStep(self, dt, frame):
+        self.computeSource(dt, frame)
 
         self.computeViscosity(dt)
 
         self.computeAdvection(True, dt)
 
-    def update_fields(self, dt):
+    def update_fields(self, dt, frame):
         self.apply_boundary_condition()
         self.velocityStep(dt)
         self.apply_boundary_condition()
-        self.densityStep(dt)
+        self.densityStep(dt, frame)
 
 
 def test_poisson():
