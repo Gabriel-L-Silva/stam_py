@@ -35,7 +35,7 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-solver = TriSolver('./assets/regular_tri_grid32.obj')
+solver = TriSolver('./assets/regular_tri_grid256.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
@@ -93,9 +93,9 @@ def on_draw(dt):
         if simWindow.save_video:
             dt = 1/60.0
             frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
-            profiler.enable()
-            simWindow.advance_frame(dt)
-            profiler.disable()
+        profiler.enable()
+        simWindow.advance_frame(dt)
+        profiler.disable()
     # render gui on top of everything
     try:
         imgui.render()
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     except:
         if simWindow.save_video:
             print('saving frames')
-            video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','P','4','V'), 30, (WIDTH,HEIGHT))
+            video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
             for f, frame  in tqdm(enumerate(frames)):
                 if len(frame) != WIDTH*HEIGHT*4:
                     break

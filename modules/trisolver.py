@@ -52,7 +52,7 @@ class TriSolver:
         new_pos = self.mesh.points - self.vectors*dt
         new_pos = np.clip(new_pos,0,pi)
         if density:
-            self.density = self.Interpolator(self.density, new_pos)
+            self.density = np.clip(self.Interpolator(self.density, new_pos), 0, 1)
         else:
             self.vectors[:,0] = self.Interpolator(self.vectors[:,0], new_pos)
             self.vectors[:,1] = self.Interpolator(self.vectors[:,1], new_pos)
