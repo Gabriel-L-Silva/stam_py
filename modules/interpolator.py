@@ -62,7 +62,9 @@ class RBFInterpolator:
             for j in range(self.d+1):
                 P[:,k:k+j+1], k = PX[:,j::-1]*PY[:,:j+1], k+j+1
         for idx, c in enumerate(cells):
-            alphas = np.dot(self.rbf[c], np.pad(data[self.nring[c]],(0,m)))
+            b = np.zeros(self.rbf[c].shape[0])
+            b[:-m] = data[self.nring[c]]
+            alphas = np.dot(self.rbf[c], b)
             
             value_interp[idx] = np.sum(alphas[:-m]*rbf(sd.cdist([points[idx]],self.mesh.points[self.nring[c]]),self.s)) + np.sum(alphas[-m:]*P[idx])
         return value_interp
