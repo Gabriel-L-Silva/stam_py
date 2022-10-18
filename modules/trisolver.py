@@ -33,8 +33,8 @@ def divergent(rbf, nring, vectors, n_points, boundary=np.array([])):
     return div
 
 class TriSolver:
-    def __init__(self, filename):
-        self.mesh = TriMesh(filename)
+    def __init__(self, mesh):
+        self.mesh = TriMesh(mesh)
 
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,3))

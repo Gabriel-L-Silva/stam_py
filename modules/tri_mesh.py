@@ -11,8 +11,8 @@ except:
     from rbf import rbf_fd_weights
 
 class TriMesh:
-    def __init__(self, filename):
-        self.mesh = trimesh.load_mesh(filename)
+    def __init__(self, mesh):
+        self.mesh = mesh
 
         self._init_mesh()
 

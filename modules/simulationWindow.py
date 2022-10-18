@@ -50,10 +50,8 @@ class SimulationWindow:
         self.update_mesh()
         
     def build_solver(self):
-        self.solver: TriSolver = TriSolver(self.meshpath)
-        self.program['position'] = self.solver.mesh.points + [-1,-1]
-        self.idx_buff = self.solver.mesh.faces.flatten().astype(np.uint32).view(gloo.IndexBuffer)
-        self.quiver_program['position'] = self.solver.mesh.points + [-1,-1]
+        self.solver: TriSolver = TriSolver(self.mesh)
+        self.quiver_program['position'] = self.solver.mesh.points
         self.quiver_program['Xvelocity'] = self.solver.vectors[:,0]
         self.quiver_program['Yvelocity'] = self.solver.vectors[:,1]
 
@@ -80,7 +78,8 @@ class SimulationWindow:
         self.idx_buff = self.mesh.faces.flatten().astype(np.uint32).view(gloo.IndexBuffer)
         normalized_x = 2* (self.mesh.vertices[:,0] - np.min(self.mesh.vertices[:,0]))/np.ptp(self.mesh.vertices[:,0]) - 1
         normalized_y = 2* (self.mesh.vertices[:,1] - np.min(self.mesh.vertices[:,1]))/np.ptp(self.mesh.vertices[:,1]) - 1
-        self.program['position'] = np.stack((normalized_x, normalized_y),axis=1)
+        self.mesh.vertices = np.stack((normalized_x, normalized_y, np.zeros(len(self.mesh.vertices))),axis=1)
+        self.program['position'] = self.mesh.vertices[:,:2]
 
     def draw_gui(self):
         # Imgui Interface
@@ -106,7 +105,8 @@ class SimulationWindow:
                 self.speed = sp
         else:
             if imgui.collapsing_header('Solver'):
-                pass
+                if imgui.button("Build Solver"):
+                    self.build_solver()
             clicked, self.current_mesh = imgui.combo('Mesh selector', self.current_mesh, self.mesh_list)
             if clicked:
                 self.update_mesh()
