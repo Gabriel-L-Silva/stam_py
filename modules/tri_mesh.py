@@ -11,12 +11,11 @@ except:
     from rbf import rbf_fd_weights
 
 class TriMesh:
-    def __init__(self, vertices, faces, testing = False):
-        self.mesh = trimesh.Trimesh(vertices, faces)
+    def __init__(self, filename):
+        self.mesh = trimesh.load_mesh(filename)
 
-        self._init_mesh(testing)
+        self._init_mesh()
 
-    
     def triFinder(self, x, y):
         cells = self.findTri(x,y)
         if cells.min() == -1:
@@ -37,15 +36,13 @@ class TriMesh:
         for p in tqdm(range(len(self.mesh.vertices))):
             self.rbf[p, np.argwhere(self.nring[p]).flatten()] = rbf_fd_weights(self.points[np.argwhere(self.nring[p]).flatten()], self.points[p], 5, 2) 
 
-    def _init_mesh(self, testing):
+    def _init_mesh(self):
         self.t_mesh = tri.Triangulation(self.mesh.vertices[:,0], self.mesh.vertices[:,1], self.mesh.faces)
         self.mesh.vertices = np.stack((self.mesh.vertices[:,0],self.mesh.vertices[:,1], np.zeros(len(self.mesh.vertices))),axis=1)
         self.points = np.asarray([p for p in zip(self.mesh.vertices[:,0],self.mesh.vertices[:,1])])
         self.n_points = len(self.points)
         self.faces = self.mesh.faces
 
-        if self.testing:
-            return
         self.findTri = self.t_mesh.get_trifinder()
         
         print('Building neighborhood...')

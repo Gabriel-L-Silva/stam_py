@@ -35,25 +35,16 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-simWindow = SimulationWindow(f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
+view = np.eye(4)
+model = np.eye(4)
+projection = glm.perspective(45.0, 1, 0.1, 1000.0)
+glm.translate(view, 0,0,-3)
+view_matrix = [0,0,-3]
+simWindow = SimulationWindow( view, model, projection, view_matrix, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
 def preview_mesh():
     simWindow.draw_grid()
-
-@window.event
-def on_init():
-    view = np.eye(4)
-    model = np.eye(4)
-    projection = glm.perspective(45.0, 1, 2.0, 100.0)
-    glm.translate(view, -0.57,-0.57,-3.8)
-    simWindow.view_matrix = [-0.57,-0.57,-3.8]
-    simWindow.program['u_model'] = model
-    simWindow.program['u_view'] = view
-    simWindow.program['u_projection'] = projection
-    simWindow.quiver_program['u_model'] = model
-    simWindow.quiver_program['u_view'] = view
-    simWindow.quiver_program['u_projection'] = projection
 
 @window.event
 def on_draw(dt):
@@ -128,8 +119,7 @@ def on_mouse_drag(x, y, dx, dy, buttons):
 @window.event    
 def on_mouse_scroll(x, y, dx, dy):
     'The mouse wheel was scrolled by (dx,dy).'
-    if not simWindow.ready:
-        return 
+
     simWindow.view_matrix[-1] -= dy*0.1   
     simWindow.update_view_matrix()
 
