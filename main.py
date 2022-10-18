@@ -4,10 +4,10 @@ from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer
 from tqdm import tqdm
 import pyglet
 
-from glumpy import app, glm
+from glumpy import app, glm, gloo
 # our modules
 from modules.simulationWindow import SimulationWindow
-from modules.trisolver import TriSolver
+from modules.tri_mesh import TriMesh
 
 import numpy as np
 
@@ -35,9 +35,11 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-solver = TriSolver('./assets/regular_tri_grid128.obj')
-simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
+simWindow = SimulationWindow(f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
+
+def preview_mesh():
+    simWindow.draw_grid()
 
 @window.event
 def on_init():
@@ -56,45 +58,21 @@ def on_init():
 @window.event
 def on_draw(dt):
     window.clear()
-    
-    # draw smoke first
-    simWindow.draw()
-    advance_frame = True
 
-    # Imgui Interface
-    imgui.new_frame()
+    simWindow.draw_gui()
+    if simWindow.ready:
+        # draw smoke first
+        simWindow.draw()
+        if not simWindow.paused or simWindow.advance_frame:
+            if simWindow.save_video:
+                dt = 1/60.0
+                frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
+            profiler.enable()
+            simWindow.advance_frame(dt)
+            profiler.disable()
+    else:
+        preview_mesh()
 
-    imgui.begin("Controls")
-    imgui.text(f"Frame count: {simWindow.frame}")
-    clicked = imgui.button("Pause")
-    if clicked:
-        simWindow.paused = not simWindow.paused
-    advance_frame = imgui.button("Advance frame")
-    _, simWindow.show_grid = imgui.checkbox("Show Grid", simWindow.show_grid)
-    _, simWindow.show_vectors = imgui.checkbox("Show Vectors", simWindow.show_vectors)
-    _, simWindow.save_video = imgui.checkbox("Save video", simWindow.save_video)
-
-    changed, simWindow.smoke_color = imgui.color_edit3("Smoke Color", *simWindow.smoke_color)
-    if changed:
-        simWindow.update_smoke_color()
-    
-    changed,  vm = imgui.drag_float3("View Matrix", *simWindow.view_matrix, change_speed=0.01)
-    simWindow.view_matrix = list(vm)
-    if changed:
-        simWindow.update_view_matrix()
-
-    changed, sp = imgui.drag_float("Speed", simWindow.speed, change_speed=0.1)
-    if changed:
-        simWindow.speed = sp
-    imgui.end()
-
-    if not simWindow.paused or advance_frame:
-        if simWindow.save_video:
-            dt = 1/60.0
-            frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
-        profiler.enable()
-        simWindow.advance_frame(dt)
-        profiler.disable()
     # render gui on top of everything
     try:
         imgui.render()
@@ -105,48 +83,53 @@ def on_draw(dt):
 
 @window.event
 def on_mouse_press(x, y, button):
+    if not simWindow.ready:
+        return 
     # Case was right mouse button
     if button == 4:        
-        cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         
-        solver.density[solver.mesh.faces[cell]] = 1.0
+        simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1.0
     
     if button == 2:
-        cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
-        solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell],:2] = [0,5]
-        for c in solver.mesh.faces[cell]:
-            solver.source_cells.add(c)
+        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
+        simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
+        for c in simWindow.solver.mesh.faces[cell]:
+            simWindow.solver.source_cells.add(c)
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, buttons):
     """The mouse was moved with some buttons pressed."""
-
+    if not simWindow.ready:
+        return 
     # Case was right mouse button
     if buttons == 4:
 
-        cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         
-        solver.density[solver.mesh.faces[cell]] = 1.0
+        simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1.0
 
     # Case was left mouse button
     if buttons == 1:       
 
-        cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
         
-        solver.vectors[solver.mesh.faces[cell],:2] += [
+        simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] += [
             simWindow.speed*dx, simWindow.speed*-dy
         ]
 
     if buttons == 2:
-        cell = solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
-        solver.density[solver.mesh.faces[cell]] = 1
-        solver.vectors[solver.mesh.faces[cell],:2] = [0,5]
-        for c in solver.mesh.faces[cell]:
-            solver.source_cells.add(c)
+        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
+        simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
+        for c in simWindow.solver.mesh.faces[cell]:
+            simWindow.solver.source_cells.add(c)
 @window.event    
 def on_mouse_scroll(x, y, dx, dy):
     'The mouse wheel was scrolled by (dx,dy).'
+    if not simWindow.ready:
+        return 
     simWindow.view_matrix[-1] -= dy*0.1   
     simWindow.update_view_matrix()
 
@@ -165,18 +148,18 @@ if __name__ == "__main__":
     import cProfile, pstats
     global profiler
     profiler = cProfile.Profile()
-    try:
-        app.run()
-    except:
-        if simWindow.save_video:
-            print('saving frames')
-            video = cv2.VideoWriter('video.avi', 0, 60, (WIDTH,HEIGHT))
-            for f, frame  in tqdm(enumerate(frames)):
-                if len(frame) != WIDTH*HEIGHT*4:
-                    break
-                video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
+    # try:
+    app.run()
+    # except:
+    #     if simWindow.save_video:
+    #         print('saving frames')
+    #         video = cv2.VideoWriter('video.avi', 0, 60, (WIDTH,HEIGHT))
+    #         for f, frame  in tqdm(enumerate(frames)):
+    #             if len(frame) != WIDTH*HEIGHT*4:
+    #                 break
+    #             video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
             
-            video.release()
-        print('acabou')
-    stats = pstats.Stats(profiler).sort_stats('tottime')
-    stats.print_stats()
+    #         video.release()
+    #     print('acabou')
+    # stats = pstats.Stats(profiler).sort_stats('tottime')
+    # stats.print_stats()

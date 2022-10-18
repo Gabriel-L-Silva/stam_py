@@ -27,10 +27,15 @@ def regular_tri_grid(size = 64):
 def polygon_triangulation(polygon: Polygon):
     points, indices = trimesh.creation.triangulate_polygon(polygon, 'pq30', engine='triangle')
     return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices)
-    trimesh.sample.sample_surface_even(tmesh, 100)
 
-def get_names(data):
-    return np.array([f['properties']['ADMIN'] for f in data['features']])
+def get_geojson():
+    '''
+    in: filename to geojson
+    out: json, list of names
+    '''
+    with open('./assets/geo-countries/archive/countries.geojson') as f:
+        data = geojson.load(f)
+    return data, np.array([f['properties']['ADMIN'] for f in data['features']])
 
 def main():
     # size = 4
@@ -39,9 +44,8 @@ def main():
     # # tmesh.export(f'assets/regular_tri_grid{size}.obj')
     # tmesh.show(smooth=False, flags={'wireframe':True})
 
-    with open('./assets/geo-countries/archive/countries.geojson') as f:
-        data = geojson.load(f)
-    names = get_names(data)
+    
+    data, names = get_geojson()
     idx = np.where(names=='Niger')[0][0]
     poly: Polygon = shape(data['features'][idx]['geometry'])
     tmesh= polygon_triangulation(poly)

@@ -11,10 +11,10 @@ except:
     from rbf import rbf_fd_weights
 
 class TriMesh:
-    def __init__(self, filename):
-        self.mesh = trimesh.load_mesh(filename)
+    def __init__(self, vertices, faces, testing = False):
+        self.mesh = trimesh.Trimesh(vertices, faces)
 
-        self._init_mesh()
+        self._init_mesh(testing)
 
     
     def triFinder(self, x, y):
@@ -37,14 +37,16 @@ class TriMesh:
         for p in tqdm(range(len(self.mesh.vertices))):
             self.rbf[p, np.argwhere(self.nring[p]).flatten()] = rbf_fd_weights(self.points[np.argwhere(self.nring[p]).flatten()], self.points[p], 5, 2) 
 
-    def _init_mesh(self):
+    def _init_mesh(self, testing):
         self.t_mesh = tri.Triangulation(self.mesh.vertices[:,0], self.mesh.vertices[:,1], self.mesh.faces)
         self.mesh.vertices = np.stack((self.mesh.vertices[:,0],self.mesh.vertices[:,1], np.zeros(len(self.mesh.vertices))),axis=1)
         self.points = np.asarray([p for p in zip(self.mesh.vertices[:,0],self.mesh.vertices[:,1])])
         self.n_points = len(self.points)
-
-        self.findTri = self.t_mesh.get_trifinder()
         self.faces = self.mesh.faces
+
+        if self.testing:
+            return
+        self.findTri = self.t_mesh.get_trifinder()
         
         print('Building neighborhood...')
         self.g = nx.from_edgelist(self.mesh.edges_unique)
