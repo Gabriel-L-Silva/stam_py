@@ -11,3 +11,6 @@ tqdm
 pillow
 networkx
 rtree
+shapely
+geojson
+triangle
