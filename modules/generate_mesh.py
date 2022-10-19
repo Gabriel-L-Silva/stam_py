@@ -25,10 +25,7 @@ def regular_tri_grid(size = 64):
     return points, indices
 
 def polygon_triangulation(polygon: Polygon):
-    try:
-        points, indices = trimesh.creation.triangulate_polygon(polygon, 'pq30', engine='triangle')
-    except AttributeError:
-        points, indices = trimesh.creation.triangulate_polygon(polygon.convex_hull, 'pq30', engine='triangle')
+    points, indices = trimesh.creation.triangulate_polygon(polygon, 'pq30', engine='triangle')
     return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices)
 
 def get_geojson():

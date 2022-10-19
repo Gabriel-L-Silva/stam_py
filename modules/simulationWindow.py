@@ -3,7 +3,7 @@ import numpy as np
 import imgui
 from modules.trisolver import TriSolver
 from modules.generate_mesh import get_geojson, polygon_triangulation
-from shapely.geometry import Polygon, shape
+from shapely.geometry import Polygon, shape, MultiPolygon
 
 class SimulationWindow:
     def __init__(self,  view, model, projection, view_matrix, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
@@ -68,6 +68,8 @@ class SimulationWindow:
 
     def update_mesh(self):
         poly: Polygon = shape(self.geojson[self.current_mesh]['geometry'])
+        if type(poly) == MultiPolygon:
+            poly = list(poly)[0]
         self.mesh = polygon_triangulation(poly)
         # self.mesh.show(smooth=False, flags={'wireframe':True})
         self.program = gloo.Program(self.f_vertex, self.f_fragment, version='430')
