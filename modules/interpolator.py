@@ -10,6 +10,7 @@ except:
 import scipy.spatial.distance as sd
 import numpy.polynomial.polynomial as pp
 from tqdm import tqdm
+from matplotlib import tri
 
 class Interpolator:
     def __init__(self, mesh) -> None:
@@ -69,6 +70,16 @@ class RBFInterpolator:
             value_interp[idx] = np.sum(alphas[:-m]*rbf(sd.cdist([points[idx]],self.mesh.points[self.nring[c]]),self.s)) + np.sum(alphas[-m:]*P[idx])
         return value_interp
 
+class CubicInterpolator:
+    def __init__(self, mesh) -> None:
+        self.mesh = mesh
+        self.interp = tri.CubicTriInterpolator(mesh.t_mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
+
+    def __call__(self, data, points):
+        self.interp = tri.CubicTriInterpolator(self.mesh.t_mesh, data, kind='min_E')
+        return self.interp(points[:,0],points[:,1])
+
+
 def func(x,y):
     return np.sin(2*x+y**2)+np.cos(x*y-2*x**2)
 
@@ -76,7 +87,6 @@ def rmse(e, N):
     return np.sum(np.sqrt(e**2/N))
 
 def main(): 
-    from matplotlib import tri
     import matplotlib.pyplot as plt
     from matplotlib import cm
 
@@ -89,11 +99,11 @@ def main():
     solution = func(points[:,0], points[:,1])
 
     Interp = Interpolator(mesh)
-    CInterp = tri.CubicTriInterpolator(mesh.t_mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
+    CInterp = CubicInterpolator(mesh)
     RBFInterp = RBFInterpolator(mesh)
     interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
     rbfinterp = RBFInterp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
-    Cinterp = CInterp(points[:,0],points[:,1])
+    Cinterp = CInterp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
 
     error = (interp-solution)
     Cerror = (Cinterp-solution)

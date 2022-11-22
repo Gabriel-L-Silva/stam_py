@@ -63,4 +63,16 @@ class SimulationWindow:
 
     def advance_frame(self, dt):
         self.frame += 1
+        if self.frame == 1000:
+            self.paused = True
         self.solver.update_fields(dt, self.frame)
+    
+    def build_scene_1(self, dt):
+        dx = 1/64.0
+        xx = np.arange(0.5*np.pi-dx, 0.5*np.pi+dx, dx/2)
+        yy = np.arange(0.15*np.pi, 0.2*np.pi, dx/2)
+        cells = np.unique([int(self.solver.mesh.triFinder(x,y)) for x,y in np.array(np.meshgrid(xx, yy)).T.reshape(-1, 2)])
+        for p in self.solver.mesh.faces[cells]:
+            for c in p:
+                self.solver.source_cells.add(c)
+        self.solver.computeSource(dt, self.frame)

@@ -6,9 +6,9 @@ try:
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import RBFInterpolator
+    from modules.interpolator import RBFInterpolator, CubicInterpolator
 except:
-    from interpolator import RBFInterpolator
+    from interpolator import RBFInterpolator, CubicInterpolator
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve

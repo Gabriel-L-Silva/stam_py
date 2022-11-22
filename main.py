@@ -70,6 +70,10 @@ def on_draw(dt):
     if clicked:
         simWindow.paused = not simWindow.paused
     advance_frame = imgui.button("Advance frame")
+    clicked = imgui.button("Build scene 1")
+    if clicked:
+        simWindow.build_scene_1(dt)
+    
     _, simWindow.show_grid = imgui.checkbox("Show Grid", simWindow.show_grid)
     _, simWindow.show_vectors = imgui.checkbox("Show Vectors", simWindow.show_vectors)
     _, simWindow.save_video = imgui.checkbox("Save video", simWindow.save_video)
