@@ -19,8 +19,8 @@ config.major_version = 4
 config.minor_version = 3
 
 # Constants
-WIDTH = 1000
-HEIGHT = 1000
+WIDTH = 720
+HEIGHT = 720
 
 # create window with openGL context
 window = app.Window(WIDTH, HEIGHT,config=config)
