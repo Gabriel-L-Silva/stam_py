@@ -6,14 +6,16 @@ from modules.generate_mesh import get_geojson, polygon_triangulation
 from shapely.geometry import Polygon, shape, MultiPolygon
 
 class SimulationWindow:
-    def __init__(self,  view, model, projection, view_matrix, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
+    def __init__(self,  view, model, projection, view_matrix, width, height, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
 
         self.paused = True
-        self.next_frame = True
+        self.next_frame = False
         self.frame = 0
         self.save_video = True
         self.speed = 0.1
 
+        self.width = width
+        self.height = height
         self.ready = False
         
         self.show_vectors = True
@@ -70,7 +72,7 @@ class SimulationWindow:
         poly: Polygon = shape(self.geojson[self.current_mesh]['geometry'])
         if type(poly) == MultiPolygon:
             poly = list(poly)[0]
-        self.mesh = polygon_triangulation(poly)
+        self.mesh = polygon_triangulation(poly, self.width, self.height)
         # self.mesh.show(smooth=False, flags={'wireframe':True})
         self.program = gloo.Program(self.f_vertex, self.f_fragment, version='430')
         self.program['u_model'] = self.model
@@ -78,9 +80,9 @@ class SimulationWindow:
         self.program['u_projection'] = self.projection
         self.program['color'] = self.smoke_color
         self.idx_buff = self.mesh.faces.flatten().astype(np.uint32).view(gloo.IndexBuffer)
-        normalized_x = 2* (self.mesh.vertices[:,0] - np.min(self.mesh.vertices[:,0]))/np.ptp(self.mesh.vertices[:,0]) - 1
-        normalized_y = 2* (self.mesh.vertices[:,1] - np.min(self.mesh.vertices[:,1]))/np.ptp(self.mesh.vertices[:,1]) - 1
-        self.mesh.vertices = np.stack((normalized_x, normalized_y, np.zeros(len(self.mesh.vertices))),axis=1)
+        # normalized_x = 2* (self.mesh.vertices[:,0] - np.min(self.mesh.vertices[:,0]))/np.ptp(self.mesh.vertices[:,0]) - 1
+        # normalized_y = 2* (self.mesh.vertices[:,1] - np.min(self.mesh.vertices[:,1]))/np.ptp(self.mesh.vertices[:,1]) - 1
+        # self.mesh.vertices = np.stack((normalized_x, normalized_y, np.zeros(len(self.mesh.vertices))),axis=1)
         self.program['position'] = self.mesh.vertices[:,:2]
 
     def draw_gui(self):
@@ -92,10 +94,9 @@ class SimulationWindow:
             clicked = imgui.button("Pause")
             if clicked:
                 self.paused = not self.paused
-            self.advance_frame = imgui.button("Advance frame")
+            self.next_frame = imgui.button("Advance frame")
             _, self.show_grid = imgui.checkbox("Show Grid", self.show_grid)
             _, self.show_vectors = imgui.checkbox("Show Vectors", self.show_vectors)
-            _, self.save_video = imgui.checkbox("Save video", self.save_video)
 
             changed, self.smoke_color = imgui.color_edit3("Smoke Color", *self.smoke_color)
             if changed:
@@ -107,15 +108,16 @@ class SimulationWindow:
                 self.speed = sp
         else:
             if imgui.collapsing_header('Solver'):
-                if imgui.button("Build Solver"):
-                    self.build_solver()
-            clicked, self.current_mesh = imgui.combo('Mesh selector', self.current_mesh, self.mesh_list)
-            if clicked:
-                self.update_mesh()
+                clicked, self.current_mesh = imgui.combo('Mesh selector', self.current_mesh, self.mesh_list)
+                if clicked:
+                    self.update_mesh()
             changed,  vm = imgui.drag_float3("View Matrix", *self.view_matrix, change_speed=0.01)
             self.view_matrix = list(vm)
             if changed:
                 self.update_view_matrix()
+            _, self.save_video = imgui.checkbox("Save video", self.save_video)
+            if imgui.button("Build Solver"):
+                self.build_solver()
         imgui.end()
 
     def draw_grid(self):

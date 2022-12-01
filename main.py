@@ -19,8 +19,8 @@ config.major_version = 4
 config.minor_version = 3
 
 # Constants
-WIDTH = 900
-HEIGHT = 900
+WIDTH = 720
+HEIGHT = 720
 
 # create window with openGL context
 window = app.Window(WIDTH, HEIGHT,config=config)
@@ -38,9 +38,9 @@ q_geometry    = 'shaders/quiver.gs'
 view = np.eye(4)
 model = np.eye(4)
 projection = glm.perspective(45.0, 1, 0.1, 1000.0)
-glm.translate(view, 0,0,-3)
-view_matrix = [0,0,-3]
-simWindow = SimulationWindow( view, model, projection, view_matrix, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
+glm.translate(view, 0,0,-720)
+view_matrix = [0,0,-720]
+simWindow = SimulationWindow( view, model, projection, view_matrix, WIDTH, HEIGHT, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
 def preview_mesh():
@@ -54,7 +54,7 @@ def on_draw(dt):
     if simWindow.ready:
         # draw smoke first
         simWindow.draw()
-        if not simWindow.paused or simWindow.advance_frame:
+        if not simWindow.paused or simWindow.next_frame:
             if simWindow.save_video:
                 dt = 1/60.0
                 frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))

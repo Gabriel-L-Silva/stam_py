@@ -68,6 +68,7 @@ class TriSolver:
         self.apply_boundary_condition()
 
     def computeAdvection(self, density, dt):
+        #TODO stop on wall for any mesh
         new_pos = self.mesh.mesh.vertices - self.vectors*dt
         new_pos = np.clip(new_pos,0,pi)
         if density:

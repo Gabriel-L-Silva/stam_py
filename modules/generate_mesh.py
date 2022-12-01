@@ -1,6 +1,7 @@
 from math import pi
 import numpy as np
 import trimesh
+from shapely.affinity import affine_transform
 from shapely.geometry import Polygon, shape
 import geojson
 
@@ -24,8 +25,23 @@ def regular_tri_grid(size = 64):
             index += 6
     return points, indices
 
-def polygon_triangulation(polygon: Polygon):
-    points, indices = trimesh.creation.triangulate_polygon(polygon, 'pq30', engine='triangle')
+def TS(polygon, W, H):
+    x_min, y_min, x_max, y_max = polygon.bounds
+    cx = polygon.centroid.x
+    cy = polygon.centroid.y
+    Sx = W/2/(x_max-x_min)
+    Sy = H/2/(y_max-y_min)
+
+    scale_factor = Sx if Sx > Sy else Sy
+    #move to origin
+    poly = affine_transform(polygon, [1, 0, 0, 1, -cx, -cy])
+
+
+    return affine_transform(poly, [scale_factor, 0, 0, scale_factor, 0, 0])
+
+def polygon_triangulation(polygon: Polygon, W, H):
+    poly = TS(polygon, W, H)
+    points, indices = trimesh.creation.triangulate_polygon(poly, 'pq30', engine='triangle')
     return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices)
 
 def get_geojson():
