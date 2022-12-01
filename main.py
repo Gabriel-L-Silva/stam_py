@@ -35,7 +35,7 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-solver = TriSolver('./assets/regular_tri_grid256.obj')
+solver = TriSolver('./assets/regular_tri_grid32.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
