@@ -60,43 +60,55 @@ class TriMesh:
 
         self.normals = self._get_normals(unique_edges)
 
-    def sort_edges(self, EDGES):
-        sorted_edges = []
-        edges = [list(e) for e in EDGES]
-        from collections import defaultdict
-
-        followed_by = defaultdict(list)
-
-        def follows(edge1, edge2):  # does edge2 follow edge1
-            return edge1 != edge2 and not set(edge1).isdisjoint(set(edge2))
-
-        def sorted_path(path, end):
-
-            start = path[-1]
-
-            for follower in followed_by[tuple(start)]:
-
-                if follower in path:
-                    continue  # avoid circularities
-
-                if follower == end:
-                    return path + [end]  # solution found
-
-                new_path = sorted_path(path + [follower], end)  # recurse
-
-                if new_path:
-                    return new_path  # solution found
-
-            return None  # solution not found
-
-        # build defaultdict of who follows who
-
-        for edge in edges:
-            for potential_follower in edges:
-                if follows(edge, potential_follower):
-                    followed_by[tuple(edge)].append(potential_follower)
-
-        return np.array(sorted_path([edges[0]], edges[np.where(EDGES[:,1] == 0)[0][0]]))
+    def sort_edges(self, edges):
+        edge_count = len(edges)
+        if(edge_count > 0):
+            e = []
+            e.append(edges[0])
+            flip = []
+            
+            #main loop for edge e
+            for e_iter in edges:
+                eb = e[-1][1] #end vertex of last edge of e
+                found = False
+                
+                #first search
+                for m in edges:
+                    ma = m[0] #begin vertex of edge m
+                    mb = m[1] #end vertex of edge m
+                    if(eb == ma):
+                        flipFound = False
+                        for n in e:
+                            if(n[0] == mb and n[1] == ma):
+                                flipFound = True
+                                break
+                        if(flipFound == True):
+                            continue
+                        else:         
+                            e.append(m)
+                            found = True
+                            break
+                    
+                #check for reverse direction in case first search failed
+                if(found == False):
+                    for index, m in enumerate(edges):
+                        ma = m[0] #begin vertex of edge e
+                        mb = m[1] #end vertex of edge e
+                        
+                        #...also exclude existing m's in e
+                        if(mb == eb and m not in e):
+                            #create duplicate to reverse vertex indices
+                            m_dup = edges.copy()
+                            f = m_dup[index]
+                            f[0] = mb
+                            f[1] = ma
+                            e.append(f)
+                        else:
+                            continue
+    
+        #remove last element (was added twice)
+        del e[-1]
+        return e
 
     def _get_normals(self, edges):
         normals = np.zeros((self.n_points,3))
