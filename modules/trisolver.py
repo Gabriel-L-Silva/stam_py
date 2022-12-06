@@ -2,14 +2,15 @@ from math import pi
 import time
 import numpy as np
 from tqdm import tqdm
+import trimesh
 try:
     from modules.tri_mesh import TriMesh
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import Interpolator, RBFInterpolator
+    from modules.interpolator import RBFInterpolator, CubicInterpolator
 except:
-    from interpolator import Interpolator, RBFInterpolator
+    from interpolator import RBFInterpolator, CubicInterpolator
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
@@ -70,7 +71,9 @@ class TriSolver:
     def computeAdvection(self, density, dt):
         #TODO stop on wall for any mesh
         new_pos = self.mesh.mesh.vertices - self.vectors*dt
-        new_pos = np.clip(new_pos,0,pi)
+        mask = np.argwhere(self.mesh.findTri(new_pos[:,0], new_pos[:,1])==-1).flatten()
+        if len(mask)!=0:
+            new_pos[mask], _, _ = trimesh.proximity.closest_point(self.mesh.mesh,new_pos[mask])
         if density:
             self.density = np.clip(self.Interpolator(self.density, new_pos), 0, 1)
         else:

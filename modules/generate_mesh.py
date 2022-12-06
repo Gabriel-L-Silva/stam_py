@@ -35,8 +35,6 @@ def TS(polygon, W, H):
     scale_factor = Sx if Sx > Sy else Sy
     #move to origin
     poly = affine_transform(polygon, [1, 0, 0, 1, -cx, -cy])
-
-
     return affine_transform(poly, [scale_factor, 0, 0, scale_factor, 0, 0])
 
 def polygon_triangulation(polygon: Polygon, W, H):

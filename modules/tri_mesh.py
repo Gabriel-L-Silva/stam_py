@@ -58,20 +58,72 @@ class TriMesh:
         unique_edges = self.mesh.edges[trimesh.grouping.group_rows(self.mesh.edges_sorted, require_count=1)]
         self.boundary = set(np.unique(unique_edges.flatten()))
 
-        self.normals = self._get_normals()
+        self.normals = self._get_normals(unique_edges)
 
-    def _get_normals(self):
+    def sort_edges(self, EDGES):
+        sorted_edges = []
+        edges = [list(e) for e in EDGES]
+        from collections import defaultdict
+
+        followed_by = defaultdict(list)
+
+        def follows(edge1, edge2):  # does edge2 follow edge1
+            return edge1 != edge2 and not set(edge1).isdisjoint(set(edge2))
+
+        def sorted_path(path, end):
+
+            start = path[-1]
+
+            for follower in followed_by[tuple(start)]:
+
+                if follower in path:
+                    continue  # avoid circularities
+
+                if follower == end:
+                    return path + [end]  # solution found
+
+                new_path = sorted_path(path + [follower], end)  # recurse
+
+                if new_path:
+                    return new_path  # solution found
+
+            return None  # solution not found
+
+        # build defaultdict of who follows who
+
+        for edge in edges:
+            for potential_follower in edges:
+                if follows(edge, potential_follower):
+                    followed_by[tuple(edge)].append(potential_follower)
+
+        return np.array(sorted_path([edges[0]], edges[np.where(EDGES[:,1] == 0)[0][0]]))
+
+    def _get_normals(self, edges):
         normals = np.zeros((self.n_points,3))
-        for id, b in zip(list(self.boundary),self.points[list(self.boundary)]):
-            if b[0] == 0:
-                normals[id] += [-1,0,0]
-            if b[1] == 0:
-                normals[id] += [0,-1,0]
-            if abs(b[0] - pi) <= 10e-3:
-                normals[id] += [1,0,0]
-            if abs(b[1] - pi) <= 10e-3:
-                normals[id] += [0,1,0]
-            normals[id] = normals[id] / np.sqrt(np.sum(normals[id]**2))
+        e_normals = np.zeros((len(edges),2))
+        R_matrix = np.array([[0,1],[-1,0]])
+        sorted_edges = self.sort_edges(edges)
+        for idx, edge in enumerate(sorted_edges):
+            e = self.mesh.vertices[edge[0]][:2] - self.mesh.vertices[edge[1]][:2]
+            e_normals[idx] = R_matrix@e
+            e_normals[idx] = e_normals[idx] / np.sqrt(np.sum(e_normals[idx]**2))
+        for id, edge in enumerate(sorted_edges):
+            if id==131:
+                print('aq')
+            normals[edge[0],:2] = (e_normals[id-1] + e_normals[id])/2
+            normals[edge[0],2] = 0
+            normals[edge[0]] = normals[edge[0]] / np.sqrt(np.sum(normals[edge[0]]**2))
+        # for id, b in zip(list(self.boundary),self.points[list(self.boundary)]):
+        #     if b[0] == 0:
+        #         normals[id] += [-1,0,0]
+        #     if b[1] == 0:
+        #         normals[id] += [0,-1,0]
+        #     if abs(b[0] - pi) <= 10e-3:
+        #         normals[id] += [1,0,0]
+        #     if abs(b[1] - pi) <= 10e-3:
+        #         normals[id] += [0,1,0]
+        #     normals[id] = normals[id] / np.sqrt(np.sum(normals[id]**2))
+
         return normals
 
     def find_one_ring(self, index):
