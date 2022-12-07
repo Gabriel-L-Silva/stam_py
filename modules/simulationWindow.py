@@ -73,6 +73,7 @@ class SimulationWindow:
         if type(poly) == MultiPolygon:
             poly = list(poly)[0]
         self.mesh = polygon_triangulation(poly, self.width, self.height)
+        self.mesh.boundary = poly
         # self.mesh.show(smooth=False, flags={'wireframe':True})
         self.program = gloo.Program(self.f_vertex, self.f_fragment, version='430')
         self.program['u_model'] = self.model

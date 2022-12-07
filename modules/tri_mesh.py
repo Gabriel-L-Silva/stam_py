@@ -56,7 +56,8 @@ class TriMesh:
     def _init_boundary(self):
         # Find edges at the boundary
         unique_edges = self.mesh.edges[trimesh.grouping.group_rows(self.mesh.edges_sorted, require_count=1)]
-        self.boundary = set(np.unique(unique_edges.flatten()))
+        self.boundary_set = set(np.unique(unique_edges.flatten()))
+        self.boundary = self.mesh.boundary
 
         self.normals = self._get_normals(unique_edges)
 
@@ -120,8 +121,6 @@ class TriMesh:
             e_normals[idx] = R_matrix@e
             e_normals[idx] = e_normals[idx] / np.sqrt(np.sum(e_normals[idx]**2))
         for id, edge in enumerate(sorted_edges):
-            if id==131:
-                print('aq')
             normals[edge[0],:2] = (e_normals[id-1] + e_normals[id])/2
             normals[edge[0],2] = 0
             normals[edge[0]] = normals[edge[0]] / np.sqrt(np.sum(normals[edge[0]]**2))
