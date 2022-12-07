@@ -48,9 +48,9 @@ class TriSolver:
 
     def apply_boundary_condition(self, field=None):
         if type(field) == type(None):
-            self.vectors[list(self.mesh.boundary),:2] = [0,0]
+            self.vectors[list(self.mesh.boundary_set),:2] = [0,0]
         else:
-            field[list(self.mesh.boundary)] = 0
+            field[list(self.mesh.boundary_set)] = 0
                     
 
     def computeExternalForces(self, dt):
@@ -68,9 +68,14 @@ class TriSolver:
 
         self.apply_boundary_condition()
 
+    
+        
     def computeAdvection(self, density, dt):
         #TODO stop on wall for any mesh
         new_pos = self.mesh.mesh.vertices - self.vectors*dt
+        
+        if (self.vectors.min != 0 and self.vectors.max != 0):
+            self.raycast(new_pos)
         mask = np.argwhere(self.mesh.findTri(new_pos[:,0], new_pos[:,1])==-1).flatten()
         if len(mask)!=0:
             new_pos[mask], _, _ = trimesh.proximity.closest_point(self.mesh.mesh,new_pos[mask])
@@ -93,7 +98,7 @@ class TriSolver:
         data_col = []
         print('Building Poisson matrix...')
         for pid in tqdm(range(self.mesh.n_points)): 
-            if pid in self.mesh.boundary:
+            if pid in self.mesh.boundary_set:
                 weights = (self.mesh.rbf[pid][np.argwhere(self.mesh.nring[pid]).flatten(),1]*self.mesh.normals[pid,0] 
                         + self.mesh.rbf[pid][np.argwhere(self.mesh.nring[pid]).flatten(),2]*self.mesh.normals[pid,1])
             else:
@@ -110,7 +115,7 @@ class TriSolver:
         if testing != None:
             b = testing
         else:
-            b = divergent(self.mesh.rbf, self.mesh.nring, self.vectors[:,:2], self.mesh.n_points, np.array(list(self.mesh.boundary)))
+            b = divergent(self.mesh.rbf, self.mesh.nring, self.vectors[:,:2], self.mesh.n_points, np.array(list(self.mesh.boundary_set)))
         lapl = spsolve(self.w, b)
         return lapl
 
@@ -147,7 +152,7 @@ def test_poisson():
     
     solver = TriSolver('./assets/mesh8.obj')
 
-    b = [poisson_problem(p[0],p[1]) if id not in solver.mesh.boundary else 0 for id, p in enumerate(solver.mesh.points)]
+    b = [poisson_problem(p[0],p[1]) if id not in solver.mesh.boundary_set else 0 for id, p in enumerate(solver.mesh.points)]
     poisson_sol = [poisson_solution(p[0],p[1]) for p in solver.mesh.points]
 
     #applying dirichilet to find exact solution
@@ -186,7 +191,7 @@ def test_divergence():
     for times in range(50):
         start = time.time()
         #do some stuff
-        div = divergent(solver.mesh.rbf, solver.mesh.nring, solver.vectors, solver.mesh.n_points, np.array(list(solver.mesh.boundary)))
+        div = divergent(solver.mesh.rbf, solver.mesh.nring, solver.vectors, solver.mesh.n_points, np.array(list(solver.mesh.boundary_set)))
         stop = time.time()
         duration = stop-start
         print(f'{times}:\t {duration}')
