@@ -116,6 +116,7 @@ class TriMesh:
         e_normals = np.zeros((len(edges),2))
         R_matrix = np.array([[0,1],[-1,0]])
         sorted_edges = self.sort_edges(edges)
+        self.sorted_edges = sorted_edges
         for idx, edge in enumerate(sorted_edges):
             e = self.mesh.vertices[edge[0]][:2] - self.mesh.vertices[edge[1]][:2]
             e_normals[idx] = R_matrix@e
