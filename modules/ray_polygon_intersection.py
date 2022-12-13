@@ -2,6 +2,7 @@ import numpy as np
 from shapely.geometry import Polygon
 from typing import Tuple, List, Optional
 from shapely.geometry import LineString, Point, shape, MultiPolygon
+import trimesh
 
 try:
     from modules.generate_mesh import get_geojson, polygon_triangulation
@@ -101,6 +102,8 @@ def ray_intersection_point(mesh, ray, edges):
         return None
 
 if __name__ == '__main__':
+    scene = trimesh.Scene()
+
     ray_origin = np.array([1.0, 1.0, 0.0])
     ray_direction = np.array([100.0, 100.0, 0.0])
     ray = Ray(ray_origin, ray_direction)
@@ -114,6 +117,14 @@ if __name__ == '__main__':
     mesh = polygon_triangulation(poly, 720, 720)
     mesh.boundary = poly
     t_mesh = TriMesh(mesh)
+    axis_mesh = trimesh.creation.axis(axis_length=50)
+    entity= trimesh.path.entities.Line([ray.origin.tolist(), (ray.origin+ray.direction).tolist()])
+    path = trimesh.path.Path2D([entity], entity.end_points.tolist())
+    path.show()
+    scene.add_geometry(axis_mesh)
+    scene.add_geometry(t_mesh.mesh)
+    scene.add_geometry(path)
+    scene.show(smooth=False, flags={'wireframe':True})
     # t_mesh.mesh.show(smooth=False, flags={'wireframe':True})
 
     intersection = ray_intersection_point(mesh, ray, t_mesh.sorted_edges)
