@@ -84,14 +84,14 @@ def ray_intersection_point(mesh, ray, edges):
     
     # Loop through each edge of the polygon
     candidate_intersection_points = []
-    ray_line = [tuple(ray.origin[:2]), (ray.origin[0] + ray.direction[0], ray.origin[1] + ray.direction[1])]
+    ray_line = [tuple(ray.origin[:2]), tuple(ray.origin[:2] + ray.direction[:2])]
     for edge in edges:
         edge = mesh.vertices[edge]
         # Calculate the intersection point of the ray with the current edge
         intersect, intersection_point = line_intersect(ray, edge)
         
         # If the intersection point lies on the ray and within the edge, store it as a candidate intersection point
-        check = intersect and is_point_on_segment(intersection_point.coords[0][:-1], ray_line) and is_point_on_segment(intersection_point.coords[0][:-1], edge)
+        check = intersect #and is_point_on_segment(intersection_point.coords[0][:-1], ray_line) and is_point_on_segment(intersection_point.coords[0][:-1], edge)
         if check:
             candidate_intersection_points.append(np.copy(intersection_point.coords[0][:-1]))
     
@@ -103,10 +103,11 @@ def ray_intersection_point(mesh, ray, edges):
 
 if __name__ == '__main__':
     scene = trimesh.Scene()
-
-    ray_origin = np.array([1.0, 1.0, 0.0])
-    ray_direction = np.array([100.0, 100.0, 0.0])
-    ray = Ray(ray_origin, ray_direction)
+    n_rays = 32
+    ray_origins = np.array([1.0, 1.0, 0.0]).repeat(n_rays).reshape(n_rays, 3)
+    ray_directions = np.random.uniform(-1,1,size=(n_rays,3))*[100,100,0]
+    # ray_directions = np.array([20.0, 100.0, 0.0]).repeat(n_rays).reshape(n_rays, 3)
+    rays = [Ray(o,d) for o,d in zip(ray_origins, ray_directions)]
     
     current_mesh: int = 0
     geojson, mesh_list = get_geojson()
@@ -118,16 +119,19 @@ if __name__ == '__main__':
     mesh.boundary = poly
     t_mesh = TriMesh(mesh)
     axis_mesh = trimesh.creation.axis(axis_length=50)
-    entity= trimesh.path.entities.Line([ray.origin.tolist(), (ray.origin+ray.direction).tolist()])
-    path = trimesh.path.Path2D([entity], entity.end_points.tolist())
-    path.show()
+    radius = 0.1
+    heights = np.linalg.norm(ray_directions - ray_origins, axis=1)
+    vector_angles = np.arctan2(ray_directions[:,0], ray_directions[:,1])
+    transforms = [trimesh.transformations.compose_matrix(translate=t,angles=[-np.pi/2, 0,-a]) for t,a in zip(ray_origins, vector_angles)]
+    caps = [trimesh.primitives.Capsule(radius=radius, height=height, transform=transform) for height, transform in zip(heights, transforms)]
     scene.add_geometry(axis_mesh)
     scene.add_geometry(t_mesh.mesh)
-    scene.add_geometry(path)
+    scene.add_geometry(caps)
+
+    intersections = np.array([ray_intersection_point(mesh, ray, t_mesh.sorted_edges) for ray in rays if ray_intersection_point(mesh, ray, t_mesh.sorted_edges) is not None])
+    
+    intersections = np.stack([intersections[:,0],intersections[:,1],np.zeros((len(intersections)))], axis=1).reshape(-1,3)
+    points = trimesh.PointCloud(intersections,colors=[255,0,0])
+    scene.add_geometry(points)
     scene.show(smooth=False, flags={'wireframe':True})
-    # t_mesh.mesh.show(smooth=False, flags={'wireframe':True})
-
-    intersection = ray_intersection_point(mesh, ray, t_mesh.sorted_edges)
-
-    print(intersection)
 
