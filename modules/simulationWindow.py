@@ -6,7 +6,7 @@ from modules.generate_mesh import get_geojson, polygon_triangulation
 from shapely.geometry import Polygon, shape, MultiPolygon
 
 class SimulationWindow:
-    def __init__(self,  view, model, projection, view_matrix, width, height, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
+    def __init__(self, w, h, view, model, projection, view_matrix, width, height, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
 
         self.paused = True
         self.next_frame = False
@@ -25,6 +25,8 @@ class SimulationWindow:
         self.grid_color = [1,0,0]
         self.quiv_color = [0,1,0,1]
 
+        self.w = w
+        self.h = h
         self.view = view
         self.model = model
         self.projection = projection

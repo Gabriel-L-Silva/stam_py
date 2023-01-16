@@ -1,3 +1,4 @@
+import math
 from numpy import pi
 import imgui
 from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer
@@ -38,9 +39,12 @@ q_geometry    = 'shaders/quiver.gs'
 view = np.eye(4)
 model = np.eye(4)
 projection = glm.perspective(45.0, 1, 0.1, 1000.0)
+h = math.tan(45.0 / 360.0 * math.pi) * 0.1
+aspect = float(WIDTH) / float(HEIGHT)
+w = h * aspect
 glm.translate(view, 0,0,-720)
 view_matrix = [0,0,-720]
-simWindow = SimulationWindow( view, model, projection, view_matrix, WIDTH, HEIGHT, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
+simWindow = SimulationWindow(w, h, view, model, projection, view_matrix, WIDTH, HEIGHT, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
 def preview_mesh():
@@ -72,18 +76,25 @@ def on_draw(dt):
         imgui_renderer.shutdown()
 
 
+def mouse_coord_to_world(x, y):
+    VP = simWindow.projection * simWindow.view
+    VP = np.linalg.inv(VP)
+    return glm.unProject([x, y, 0], VP, [0, 0, WIDTH, HEIGHT])
+
 @window.event
 def on_mouse_press(x, y, button):
     if not simWindow.ready:
         return 
+    
+    world_coord = mouse_coord_to_world(x, y)
     # Case was right mouse button
     if button == 4:        
-        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(world_coord)
         
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1.0
     
     if button == 2:
-        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(world_coord)
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
         simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
         for c in simWindow.solver.mesh.faces[cell]:
@@ -94,24 +105,27 @@ def on_mouse_drag(x, y, dx, dy, buttons):
     """The mouse was moved with some buttons pressed."""
     if not simWindow.ready:
         return 
+    VP = simWindow.projection * simWindow.view
+    
+    VP = np.invert(VP)
     # Case was right mouse button
     if buttons == 4:
 
-        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(world_coord)
         
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1.0
 
     # Case was left mouse button
     if buttons == 1:       
 
-        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(world_coord)
         
         simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] += [
             simWindow.speed*dx, simWindow.speed*-dy
         ]
 
     if buttons == 2:
-        cell = simWindow.solver.mesh.triFinder(x/WIDTH*pi,y/HEIGHT*pi)
+        cell = simWindow.solver.mesh.triFinder(world_coord)
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
         simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
         for c in simWindow.solver.mesh.faces[cell]:

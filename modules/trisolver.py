@@ -11,6 +11,10 @@ try:
     from modules.interpolator import RBFInterpolator, CubicInterpolator
 except:
     from interpolator import RBFInterpolator, CubicInterpolator
+try:
+    from modules.ray_polygon_intersection import *
+except:
+    from ray_polygon_intersection import *
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
@@ -69,29 +73,25 @@ class TriSolver:
         self.apply_boundary_condition()
 
     def intersect_boundary(self, new_pos):
-        ray_origin = self.mesh.mesh.vertices[:,:2]
-        ray_dir = new_pos[:,:2] - ray_origin
-        t_list = []
-        for boundary in self.mesh.boundary.exterior.coords[:-1]:
-            boundary_point = np.array(boundary)
-            t = (boundary_point[1] - ray_origin[1]) / (ray_dir[1] - ray_origin[1])
-            t_list.append(t)
-        t_list = [t for t in t_list if t>0]
-        t_min = min(t_list)
-        intersect = ray_origin + t_min * ray_dir
-        return intersect
+        ray_origins = self.mesh.mesh.vertices[:,:2]
+        ray_directions = new_pos[:,:2] - ray_origins
+        rays = [Ray(o,d) for o,d in zip(ray_origins, ray_directions)]
 
-    
+        intersections = np.array([ray_intersection_point(self.mesh.mesh, ray, self.mesh.sorted_edges, self.mesh.boundary) for ray in rays])
+
+        mask = np.argwhere(intersections!=None).flatten()
+
+        if len(mask)!=0:
+            new_pos[mask] = intersections
+
+        return new_pos    
                     
     def computeAdvection(self, density, dt):
         #TODO stop on wall for any mesh
         new_pos = self.mesh.mesh.vertices - self.vectors*dt
         
         if (self.vectors.min != 0 and self.vectors.max != 0):
-            self.intersect_boundary(new_pos)
-        mask = np.argwhere(self.mesh.findTri(new_pos[:,0], new_pos[:,1])==-1).flatten()
-        if len(mask)!=0:
-            new_pos[mask], _, _ = trimesh.proximity.closest_point(self.mesh.mesh,new_pos[mask])
+            new_pos = self.intersect_boundary(new_pos)
         if density:
             self.density = np.clip(self.Interpolator(self.density, new_pos), 0, 1)
         else:
