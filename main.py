@@ -77,24 +77,35 @@ def on_draw(dt):
 
 
 def mouse_coord_to_world(x, y):
-    VP = simWindow.projection * simWindow.view
-    VP = np.linalg.inv(VP)
-    return glm.unProject([x, y, 0], VP, [0, 0, WIDTH, HEIGHT])
+    IP = np.linalg.inv(simWindow.projection)
+    IV = np.linalg.inv(simWindow.view)
+    IVP = IV * IP
+
+    norm_x = 2*x/WIDTH - 1
+    norm_y = 2*y/HEIGHT - 1
+
+    input = np.array([norm_x, norm_y, 0, 1])
+
+    pos = np.dot(IVP, input)
+    pos[-1] = 1.0/pos[-1]
+
+    pos[:-1] *= pos[-1]
+    return pos[:-1]
 
 @window.event
 def on_mouse_press(x, y, button):
     if not simWindow.ready:
         return 
     
-    world_coord = mouse_coord_to_world(x, y)
+    world_coord = mouse_coord_to_world(x, y)[:-1]
     # Case was right mouse button
     if button == 4:        
-        cell = simWindow.solver.mesh.triFinder(world_coord)
+        cell = simWindow.solver.mesh.triFinder(*world_coord)
         
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1.0
     
     if button == 2:
-        cell = simWindow.solver.mesh.triFinder(world_coord)
+        cell = simWindow.solver.mesh.triFinder(*world_coord)
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
         simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
         for c in simWindow.solver.mesh.faces[cell]:
