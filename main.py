@@ -38,12 +38,12 @@ q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
 view = np.eye(4)
 model = np.eye(4)
-projection = glm.perspective(45.0, 1, 0.1, 1000.0)
+projection = glm.perspective(45.0, 1, 0.1, 10000.0)
 h = math.tan(45.0 / 360.0 * math.pi) * 0.1
 aspect = float(WIDTH) / float(HEIGHT)
 w = h * aspect
-glm.translate(view, 0,0,-720)
-view_matrix = [0,0,-720]
+glm.translate(view, 0,0,-WIDTH)
+view_matrix = [0,0,-WIDTH]
 simWindow = SimulationWindow(w, h, view, model, projection, view_matrix, WIDTH, HEIGHT, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
@@ -84,12 +84,11 @@ def mouse_coord_to_world(x, y):
     norm_x = 2*x/WIDTH - 1
     norm_y = 2*y/HEIGHT - 1
 
-    input = np.array([norm_x, norm_y, 0, 1])
+    input = np.array([norm_x, norm_y, -1, 1])
 
     pos = np.dot(IVP, input)
-    pos[-1] = 1.0/pos[-1]
-
     pos[:-1] *= pos[-1]
+    print(pos[:-1])
     return pos[:-1]
 
 @window.event
@@ -116,27 +115,26 @@ def on_mouse_drag(x, y, dx, dy, buttons):
     """The mouse was moved with some buttons pressed."""
     if not simWindow.ready:
         return 
-    VP = simWindow.projection * simWindow.view
     
-    VP = np.invert(VP)
+    world_coord = mouse_coord_to_world(x, y)[:-1]
     # Case was right mouse button
     if buttons == 4:
 
-        cell = simWindow.solver.mesh.triFinder(world_coord)
+        cell = simWindow.solver.mesh.triFinder(*world_coord)
         
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1.0
 
     # Case was left mouse button
     if buttons == 1:       
 
-        cell = simWindow.solver.mesh.triFinder(world_coord)
+        cell = simWindow.solver.mesh.triFinder(*world_coord)
         
         simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] += [
             simWindow.speed*dx, simWindow.speed*-dy
         ]
 
     if buttons == 2:
-        cell = simWindow.solver.mesh.triFinder(world_coord)
+        cell = simWindow.solver.mesh.triFinder(*world_coord)
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
         simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
         for c in simWindow.solver.mesh.faces[cell]:
@@ -145,7 +143,7 @@ def on_mouse_drag(x, y, dx, dy, buttons):
 def on_mouse_scroll(x, y, dx, dy):
     'The mouse wheel was scrolled by (dx,dy).'
 
-    simWindow.view_matrix[-1] -= dy*0.1   
+    simWindow.view_matrix[-1] -= dy
     simWindow.update_view_matrix()
 
 @window.event

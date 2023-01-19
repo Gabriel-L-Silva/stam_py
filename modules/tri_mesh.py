@@ -19,7 +19,7 @@ class TriMesh:
     def triFinder(self, x, y):
         cells = self.findTri(x,y)
         if cells.min() == -1:
-            if(type(x) == float):
+            if(type(x) == float or type(x) == np.float64):
                 points= np.array([[x, y,0]])
             else:
                 points = np.stack([x,y,np.zeros(len(x))]).T

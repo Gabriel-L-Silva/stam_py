@@ -29,18 +29,19 @@ def TS(polygon, W, H):
     x_min, y_min, x_max, y_max = polygon.bounds
     cx = polygon.centroid.x
     cy = polygon.centroid.y
-    Sx = W/2/(x_max-x_min)
-    Sy = H/2/(y_max-y_min)
+    Sx = W/(x_max-x_min)
+    Sy = H/(y_max-y_min)
 
-    scale_factor = Sx if Sx > Sy else Sy
+    scale_factor = Sx if Sx < Sy else Sy
+
+    poly = affine_transform(polygon, [scale_factor, 0, 0, scale_factor, -cx*scale_factor, -cy*scale_factor])
     #move to origin
-    poly = affine_transform(polygon, [1, 0, 0, 1, -cx, -cy])
-    return affine_transform(poly, [scale_factor, 0, 0, scale_factor, 0, 0])
+    return poly
 
 def polygon_triangulation(polygon: Polygon, W, H):
     poly = TS(polygon, W, H)
     points, indices = trimesh.creation.triangulate_polygon(poly, 'pq30', engine='triangle')
-    return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices)
+    return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices), poly
 
 def get_geojson():
     '''

@@ -25,8 +25,6 @@ class SimulationWindow:
         self.grid_color = [1,0,0]
         self.quiv_color = [0,1,0,1]
 
-        self.w = w
-        self.h = h
         self.view = view
         self.model = model
         self.projection = projection
@@ -74,8 +72,7 @@ class SimulationWindow:
         poly: Polygon = shape(self.geojson[self.current_mesh]['geometry'])
         if type(poly) == MultiPolygon:
             poly = list(poly)[0]
-        self.mesh = polygon_triangulation(poly, self.width, self.height)
-        self.mesh.boundary = poly
+        self.mesh, self.mesh.boundary = polygon_triangulation(poly, self.width, self.height)
         # self.mesh.show(smooth=False, flags={'wireframe':True})
         self.program = gloo.Program(self.f_vertex, self.f_fragment, version='430')
         self.program['u_model'] = self.model
@@ -114,7 +111,7 @@ class SimulationWindow:
                 clicked, self.current_mesh = imgui.combo('Mesh selector', self.current_mesh, self.mesh_list)
                 if clicked:
                     self.update_mesh()
-            changed,  vm = imgui.drag_float3("View Matrix", *self.view_matrix, change_speed=0.01)
+            changed,  vm = imgui.drag_float3("View Matrix", *self.view_matrix, change_speed=1.0)
             self.view_matrix = list(vm)
             if changed:
                 self.update_view_matrix()
