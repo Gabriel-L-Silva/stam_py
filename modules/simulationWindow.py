@@ -85,6 +85,7 @@ class SimulationWindow:
         self.mesh, boundary, scale_factor = polygon_triangulation(poly, self.width, self.height)
         if self.current_mesh < len(self.obj_assets_names):
             self.mesh = trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+            self.mesh.vertices = np.stack([self.mesh.vertices[:,0], self.mesh.vertices[:,1], np.zeros(len(self.mesh.vertices))],axis=1)
             self.mesh.apply_transform(trimesh.transformations.scale_and_translate([scale_factor, scale_factor, 1], [-poly.centroid.x*scale_factor, -poly.centroid.y*scale_factor,0]))
         self.mesh.boundary = boundary
         # self.mesh.show(smooth=False, flags={'wireframe':True})
