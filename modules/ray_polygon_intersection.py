@@ -3,7 +3,8 @@ from shapely.geometry import Polygon
 from typing import Tuple, List, Optional
 from shapely.geometry import LineString, Point, shape, MultiPolygon
 import trimesh
-
+from numba import njit, prange
+from numba.np.extensions import cross2d
 try:
     from modules.generate_mesh import get_geojson, polygon_triangulation
 except:
@@ -17,63 +18,44 @@ class Ray:
     def __init__(self, ray_origin, ray_direction) -> None:
         self.origin = ray_origin
         self.direction = ray_direction
+    
+    def __iter__(self):
+        yield self.origin
+        yield self.direction
 
-def line_intersect(ray: Ray, edge):
-    ray = LineString([tuple(ray.origin[:2]), tuple(ray.origin+ ray.direction)[:2]])
-    line = LineString([edge[0], edge[1]])
+@njit(parallel=True)
+def ray_line_intersection(ray: np.ndarray, edge: np.ndarray):
+     # Convert to numpy arrays
+    rayOrigin = ray[0]
+    rayDirection = ray[1]
+    point1 = edge[0]
+    point2 = edge[1]
+    
+    # Ray-Line Segment Intersection Test in 2D
+    # http://bit.ly/1CoxdrG
+    v1 = rayOrigin - point1
+    v2 = point2 - point1
+    v3 = np.array([-rayDirection[1], rayDirection[0]])
+    t1 = cross2d(v2, v1) / np.dot(v2, v3)
+    t2 = np.dot(v1, v3) / np.dot(v2, v3)
+    if t1 >= 0.0 and t1 <= 1.0 and t2 >= 0.0 and t2 <= 1.0:
+        return rayOrigin + t1 * rayDirection
+    return np.array([np.nan, np.nan])
 
-    intersection = ray.intersection(line)
-
-    return not intersection.is_empty, intersection
-
-def ray_intersects_polygon(mesh, ray, edges) -> bool:
+@njit(parallel=True)
+def ray_intersects_polygon(vertices:np.ndarray, ray:np.ndarray, edges:np.ndarray) -> np.ndarray:
     """
     Given a ray specified as a tuple of two points (the starting point and the direction of the ray, each point is a tuple
     of x and y coordinates), and a simple closed polygon specified as a list of points (each point is a tuple of x and y
     coordinates), this function returns True if the ray intersects the polygon and False otherwise.
     """
-    intersections = []
+    intersections = np.zeros((len(edges),2))
     # Check if the ray intersects any edge of the polygon
-    for edge in edges:
-        intersect, intersection = line_intersect(ray, mesh.vertices[edge])
-        if intersect:
-            intersections.append([edge,intersection])
+    for e in prange(len(edges)):
+        edge = edges[e]
+        intersection = ray_line_intersection(ray[:,:2], vertices[edge][:,:2])
+        intersections[e] = intersection
     return intersections
-
-def is_point_on_infinite_line(point, line) -> bool:
-    """
-    Given a point specified as a tuple of x and y coordinates, and a line specified as a tuple of two points (each point is
-    a tuple of x and y coordinates), this function returns True if the point lies on the infinite line defined by the line
-    and False otherwise.
-    """
-    # Check if the point lies on the infinite line defined by the line
-    if (line[1][1] - line[0][1]) * (point[0] - line[0][0]) == (line[1][0] - line[0][0]) * (point[1] - line[0][1]):
-        return True
-    else:
-        return False
-
-def is_point_on_segment(point, segment) -> bool:
-    """
-    Given a point specified as a tuple of x and y coordinates, and a line segment specified as a tuple of two points (each
-    point is a tuple of x and y coordinates), this function returns True if the point lies on the segment and False otherwise.
-    """
-    # Check if the point lies on the infinite line defined by the segment
-    if not is_point_on_infinite_line(point, segment):
-        return False
-    
-    # Check if the point lies within the segment
-    x_coordinates = [segment[0][0], segment[1][0]]
-    y_coordinates = [segment[0][1], segment[1][1]]
-    if min(x_coordinates) <= point[0] <= max(x_coordinates) and min(y_coordinates) <= point[1] <= max(y_coordinates):
-        return True
-    else:
-        return False
-
-def distance(point1, point2):
-    """
-    Given two points specified as tuples of x and y coordinates, this function returns the distance between the points.
-    """
-    return ((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2) ** 0.5
 
 def ray_intersection_point(mesh, ray, edges, poly):
     """
@@ -81,32 +63,23 @@ def ray_intersection_point(mesh, ray, edges, poly):
     of x and y coordinates), and a simple closed shapely polygon, this function returns the intersection point of the ray 
     with the polygon if it exists, or None if the ray does not intersect the polygon.
     """
-    line = LineString([ray.origin[:2], ray.direction[:2]-ray.origin[:2]])
-    from shapely.geometry.polygon import LinearRing
-    lring = LinearRing(list(poly.exterior.coords))
     # Determine whether the ray and the polygon intersect
-    edge_intersections = ray_intersects_polygon(mesh, ray, edges)
-    if not edge_intersections:
-        return None
-    
-    # Loop through each edge of the polygon
-    candidate_intersection_points = []
-    ray_line = [tuple(ray.origin[:2]), tuple(ray.direction[:2])-ray.origin[:2]]
-    for edge, intersection in edge_intersections:
-        edge = mesh.vertices[edge]
-        candidate_intersection_points.append(np.copy(intersection.coords[0][:-1]))
-    
-    # Choose the candidate intersection point that is closest to the starting point of the ray, and return it as the intersection point of the ray with the polygon
-    if candidate_intersection_points:
-        return min(candidate_intersection_points, key=lambda p: distance(ray.origin, p))
-    else:
-        return None
+    intersections = ray_intersects_polygon(mesh.vertices, np.array(list(ray)), edges)
 
-def angle_between_vectors_in_space(v1, v2):
-    angle = np.arctan2(v1[:,1], v1[:,0]) - np.arctan2(v2[:,1],  v2[:,0])
-    return angle
+    intersections = np.array([x for x in intersections if ~np.isnan(x).any()])
+    # Determine the intersection point closest to the starting point of the ray
+    if len(intersections) == 0:
+        return None
+    intersections = intersections[:, :2]
+    ray_origin = ray.origin[:2]
+    distances = np.linalg.norm(intersections - ray_origin, axis=1)
+    closest_point = intersections[np.argmin(distances)]
+    return closest_point
 
 if __name__ == '__main__':
+    def angle_between_vectors_in_space(v1, v2):
+        angle = np.arctan2(v1[:,1], v1[:,0]) - np.arctan2(v2[:,1],  v2[:,0])
+        return angle
     scene = trimesh.Scene()
     n_rays = 100
     ray_origins = np.random.uniform(-1,1,size=(n_rays,3))*[100,100,0]
@@ -114,7 +87,7 @@ if __name__ == '__main__':
     # ray_origins = np.array([[58.26558144,  24.24415392,  0.        ]])
     ray_directions = np.random.uniform(-1,1,size=(n_rays,3))*[100,100,0]
     # ray_directions = np.array([100.0, 100.0, 0.0]).repeat(n_rays).reshape(n_rays, 3)
-    # ray_directions = np.array([[-200.48438449, -10.41023401,  -0.        ]])
+    # ray_directions = np.array([[-200.48438449, -100.41023401,  -0.        ]])
     rays = [Ray(o,d) for o,d in zip(ray_origins, ray_directions)]
     
     current_mesh: int = 0
@@ -123,8 +96,7 @@ if __name__ == '__main__':
     poly: Polygon = shape(geojson[current_mesh]['geometry'])
     if type(poly) == MultiPolygon:
         poly = list(poly)[0]
-    mesh = polygon_triangulation(poly, 720, 720)
-    mesh.boundary = poly
+    mesh, mesh.boundary, scale = polygon_triangulation(poly, 720, 720)
     t_mesh = TriMesh(mesh)
     axis_mesh = trimesh.creation.axis(axis_length=50)
     radius = 0.1
@@ -144,3 +116,4 @@ if __name__ == '__main__':
         scene.add_geometry(points)
     scene.show(smooth=False, flags={'wireframe':True})
 
+# [[-95.26336044 -52.64900173]]
