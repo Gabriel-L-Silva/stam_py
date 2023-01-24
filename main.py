@@ -87,9 +87,7 @@ def mouse_coord_to_world(x, y):
     input = np.array([norm_x, norm_y, -1, 1])
 
     pos = np.dot(IVP, input)
-    pos[:-1] *= pos[-1]
-    print(pos[:-1])
-    return pos[:-1]
+    return pos[:-1] * pos[-1]
 
 @window.event
 def on_mouse_press(x, y, button):

@@ -90,8 +90,8 @@ class TriSolver:
         #TODO stop on wall for any mesh
         new_pos = self.mesh.mesh.vertices - self.vectors*dt
         
-        if (self.vectors.min != 0 and self.vectors.max != 0):
-            new_pos = self.intersect_boundary(new_pos)
+        
+        new_pos = self.intersect_boundary(new_pos)
         if density:
             self.density = np.clip(self.Interpolator(self.density, new_pos), 0, 1)
         else:

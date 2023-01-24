@@ -36,12 +36,12 @@ def TS(polygon, W, H):
 
     poly = affine_transform(polygon, [scale_factor, 0, 0, scale_factor, -cx*scale_factor, -cy*scale_factor])
     #move to origin
-    return poly
+    return poly, scale_factor
 
 def polygon_triangulation(polygon: Polygon, W, H):
-    poly = TS(polygon, W, H)
+    poly, scale_factor = TS(polygon, W, H)
     points, indices = trimesh.creation.triangulate_polygon(poly, 'pq30', engine='triangle')
-    return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices), poly
+    return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices), poly, scale_factor
 
 def get_geojson():
     '''

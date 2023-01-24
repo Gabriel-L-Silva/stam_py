@@ -1,9 +1,12 @@
 from glumpy import glm, gl, gloo
 import numpy as np
 import imgui
+import trimesh
+from modules.tri_mesh import TriMesh
 from modules.trisolver import TriSolver
 from modules.generate_mesh import get_geojson, polygon_triangulation
-from shapely.geometry import Polygon, shape, MultiPolygon
+from shapely.geometry import Polygon, shape, MultiPolygon, box
+import os
 
 class SimulationWindow:
     def __init__(self, w, h, view, model, projection, view_matrix, width, height, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
@@ -45,10 +48,14 @@ class SimulationWindow:
         self.quiver_program['u_view'] = view
         self.quiver_program['u_projection'] = projection
 
-        self.current_mesh: int = 0
-        self.geojson, self.mesh_list = get_geojson()
-        self.mesh_list = list(self.mesh_list)
+        self.obj_assets_names = [f for f in os.listdir('./assets') if f.endswith('.obj')]
+        self.mesh_list = [x for x in self.obj_assets_names]
+
+        self.geojson, self.geo_list = get_geojson()
+        for x in self.geo_list:
+            self.mesh_list.append(x)
         
+        self.current_mesh: int = len(self.obj_assets_names)
         self.update_mesh()
         
     def build_solver(self):
@@ -69,10 +76,17 @@ class SimulationWindow:
             self.draw_grid()
 
     def update_mesh(self):
-        poly: Polygon = shape(self.geojson[self.current_mesh]['geometry'])
-        if type(poly) == MultiPolygon:
-            poly = list(poly)[0]
-        self.mesh, self.mesh.boundary = polygon_triangulation(poly, self.width, self.height)
+        if self.current_mesh >= len(self.obj_assets_names):
+            poly: Polygon = shape(self.geojson[self.current_mesh-len(self.obj_assets_names)]['geometry'])
+            if type(poly) == MultiPolygon:
+                poly = list(poly)[0]
+        else:
+            poly: Polygon = box(0,0,np.pi,np.pi)
+        self.mesh, boundary, scale_factor = polygon_triangulation(poly, self.width, self.height)
+        if self.current_mesh < len(self.obj_assets_names):
+            self.mesh = trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+            self.mesh.apply_transform(trimesh.transformations.scale_and_translate([scale_factor, scale_factor, 1], [-poly.centroid.x*scale_factor, -poly.centroid.y*scale_factor,0]))
+        self.mesh.boundary = boundary
         # self.mesh.show(smooth=False, flags={'wireframe':True})
         self.program = gloo.Program(self.f_vertex, self.f_fragment, version='430')
         self.program['u_model'] = self.model
