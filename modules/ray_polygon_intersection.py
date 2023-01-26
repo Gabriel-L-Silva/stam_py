@@ -23,63 +23,44 @@ class Ray:
         yield self.origin
         yield self.direction
 
-@njit(parallel=True)
-def ray_line_intersection(ray: np.ndarray, edge: np.ndarray):
-     # Convert to numpy arrays
+@njit
+def ray_line_intersection(ray: np.ndarray, edges: np.ndarray):
     rayOrigin = ray[0]
     rayDirection = ray[1]
-    point1 = edge[0]
-    point2 = edge[1]
+    point1 = edges[:, 0]
+    point2 = edges[:, 1]
     
-    # Ray-Line Segment Intersection Test in 2D
-    # http://bit.ly/1CoxdrG
     v1 = rayOrigin - point1
     v2 = point2 - point1
     v3 = np.array([-rayDirection[1], rayDirection[0]])
     t1 = cross2d(v2, v1) / np.dot(v2, v3)
     t2 = np.dot(v1, v3) / np.dot(v2, v3)
-    if t1 >= 0.0 and t1 <= 1.0 and t2 >= 0.0 and t2 <= 1.0:
-        return rayOrigin + t1 * rayDirection
-    return np.array([np.nan, np.nan])
+    mask=np.logical_and(np.logical_and(t1 >= 0.0, t1 <= 1.0), np.logical_and(t2 >= 0.0, t2 <= 1.0))
+    if len(np.where(mask)[0])==0:
+        return np.array([np.nan, np.nan])
+    return rayOrigin + t1[mask] * rayDirection
 
 @njit(parallel=True)
-def ray_intersects_polygon(vertices:np.ndarray, ray:np.ndarray, edges:np.ndarray) -> np.ndarray:
+def ray_intersects_polygon(vertices:np.ndarray, rays:np.ndarray, edges:np.ndarray) -> np.ndarray:
     """
     Given a ray specified as a tuple of two points (the starting point and the direction of the ray, each point is a tuple
     of x and y coordinates), and a simple closed polygon specified as a list of points (each point is a tuple of x and y
     coordinates), this function returns True if the ray intersects the polygon and False otherwise.
     """
-    intersections = np.zeros((len(edges),2))
+    intersections = np.zeros((len(rays),2))
+    edges = vertices[edges.flatten()].reshape(len(edges),2,3)[:,:,:2]
     # Check if the ray intersects any edge of the polygon
-    for e in prange(len(edges)):
-        edge = edges[e]
-        intersection = ray_line_intersection(ray[:,:2], vertices[edge][:,:2])
-        intersections[e] = intersection
+    for r in prange(len(rays)):
+        ray = rays[r]
+        intersection = ray_line_intersection(ray[:,:2], edges)
+        intersections[r] = intersection
     return intersections
-
-def ray_intersection_point(mesh, ray, edges, poly):
-    """
-    Given a ray specified as a tuple of two points (the starting point and the direction of the ray, each point is a tuple
-    of x and y coordinates), and a simple closed shapely polygon, this function returns the intersection point of the ray 
-    with the polygon if it exists, or None if the ray does not intersect the polygon.
-    """
-    # Determine whether the ray and the polygon intersect
-    intersections = ray_intersects_polygon(mesh.vertices, np.array(list(ray)), edges)
-
-    intersections = np.array([x for x in intersections if ~np.isnan(x).any()])
-    # Determine the intersection point closest to the starting point of the ray
-    if len(intersections) == 0:
-        return None
-    intersections = intersections[:, :2]
-    ray_origin = ray.origin[:2]
-    distances = np.linalg.norm(intersections - ray_origin, axis=1)
-    closest_point = intersections[np.argmin(distances)]
-    return closest_point
 
 if __name__ == '__main__':
     def angle_between_vectors_in_space(v1, v2):
         angle = np.arctan2(v1[:,1], v1[:,0]) - np.arctan2(v2[:,1],  v2[:,0])
         return angle
+    
     scene = trimesh.Scene()
     n_rays = 100
     ray_origins = np.random.uniform(-1,1,size=(n_rays,3))*[100,100,0]
@@ -88,7 +69,7 @@ if __name__ == '__main__':
     ray_directions = np.random.uniform(-1,1,size=(n_rays,3))*[100,100,0]
     # ray_directions = np.array([100.0, 100.0, 0.0]).repeat(n_rays).reshape(n_rays, 3)
     # ray_directions = np.array([[-200.48438449, -100.41023401,  -0.        ]])
-    rays = [Ray(o,d) for o,d in zip(ray_origins, ray_directions)]
+    rays = np.array([list(Ray(o,d)) for o,d in zip(ray_origins, ray_directions)])
     
     current_mesh: int = 0
     geojson, mesh_list = get_geojson()
@@ -108,8 +89,9 @@ if __name__ == '__main__':
     scene.add_geometry(t_mesh.mesh)
     scene.add_geometry(caps)
     
-    intersections = np.array([ray_intersection_point(mesh, ray, t_mesh.sorted_edges, poly) for ray in rays if ray_intersection_point(mesh, ray, t_mesh.sorted_edges,poly) is not None])
+    intersections = ray_intersects_polygon(mesh.vertices, rays, np.array(t_mesh.sorted_edges))
     
+    intersections = intersections[np.isfinite(intersections).all(axis=1)]
     if intersections.size != 0:
         intersections = np.stack([intersections[:,0],intersections[:,1],np.zeros((len(intersections)))], axis=1).reshape(-1,3)
         points = trimesh.PointCloud(intersections,colors=[255,0,0])
