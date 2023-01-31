@@ -120,12 +120,13 @@ class TriMesh:
         for idx, edge in enumerate(sorted_edges):
             e = self.mesh.vertices[edge[0]][:2] - self.mesh.vertices[edge[1]][:2]
             e_normals[idx] = R_matrix@e
-            e_normals[idx] = e_normals[idx] / np.sqrt(np.sum(e_normals[idx]**2))
+        e_normals /= np.linalg.norm(e_normals, axis=1)[:,None]
         for id, edge in enumerate(sorted_edges):
             normals[edge[0],:2] = (e_normals[id-1] + e_normals[id])/2
             normals[edge[0],2] = 0
-            normals[edge[0]] = normals[edge[0]] / np.sqrt(np.sum(normals[edge[0]]**2))
+        normals /= np.linalg.norm(normals, axis=1)[:,None]
 
+        # import matplotlib.pyplot as plt
         # fig = plt.figure()
         # ax = fig.add_subplot(111)
         # ax.plot(self.mesh.vertices[edges,0], self.mesh.vertices[edges,1], 'o')
