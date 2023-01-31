@@ -44,7 +44,7 @@ aspect = float(WIDTH) / float(HEIGHT)
 w = h * aspect
 glm.translate(view, 0,0,-WIDTH)
 view_matrix = [0,0,-WIDTH]
-simWindow = SimulationWindow(w, h, view, model, projection, view_matrix, WIDTH, HEIGHT, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
+simWindow = SimulationWindow(1000, view, model, projection, view_matrix, WIDTH, HEIGHT, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
 def preview_mesh():
@@ -104,7 +104,7 @@ def on_mouse_press(x, y, button):
     if button == 2:
         cell = simWindow.solver.mesh.triFinder(*world_coord)
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
-        simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
+        simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,simWindow.source_force]
         for c in simWindow.solver.mesh.faces[cell]:
             simWindow.solver.source_cells.add(c)
 
@@ -134,14 +134,14 @@ def on_mouse_drag(x, y, dx, dy, buttons):
     if buttons == 2:
         cell = simWindow.solver.mesh.triFinder(*world_coord)
         simWindow.solver.density[simWindow.solver.mesh.faces[cell]] = 1
-        simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,5]
+        simWindow.solver.vectors[simWindow.solver.mesh.faces[cell],:2] = [0,simWindow.source_force]
         for c in simWindow.solver.mesh.faces[cell]:
             simWindow.solver.source_cells.add(c)
 @window.event    
 def on_mouse_scroll(x, y, dx, dy):
     'The mouse wheel was scrolled by (dx,dy).'
 
-    simWindow.view_matrix[-1] -= dy
+    simWindow.view_matrix[-1] -= dy*5
     simWindow.update_view_matrix()
 
 @window.event
@@ -164,12 +164,11 @@ if __name__ == "__main__":
     # except:
     #     if simWindow.save_video:
     #         print('saving frames')
-    #         video = cv2.VideoWriter('video.avi', 0, 60, (WIDTH,HEIGHT))
+    #         video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
     #         for f, frame  in tqdm(enumerate(frames)):
     #             if len(frame) != WIDTH*HEIGHT*4:
     #                 break
     #             video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
-            
     #         video.release()
     #     print('acabou')
     # stats = pstats.Stats(profiler).sort_stats('tottime')
