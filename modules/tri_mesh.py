@@ -39,7 +39,7 @@ class TriMesh:
     def _init_mesh(self):
         self.t_mesh = tri.Triangulation(self.mesh.vertices[:,0], self.mesh.vertices[:,1], self.mesh.faces)
         self.mesh.vertices = np.stack((self.mesh.vertices[:,0],self.mesh.vertices[:,1], np.zeros(len(self.mesh.vertices))),axis=1)
-        self.points = np.asarray([p for p in zip(self.mesh.vertices[:,0],self.mesh.vertices[:,1])])
+        self.points = np.array([p for p in zip(self.mesh.vertices[:,0],self.mesh.vertices[:,1])])
         self.n_points = len(self.points)
         self.faces = self.mesh.faces
 
@@ -59,7 +59,7 @@ class TriMesh:
         self.boundary_set = set(np.unique(unique_edges.flatten()))
         self.boundary = self.mesh.boundary
 
-        self.normals = self._get_normals(unique_edges)
+        self.normals = self._get_normals(self.sort_edges(unique_edges))
 
     def sort_edges(self, edges):
         edge_count = len(edges)
@@ -109,12 +109,12 @@ class TriMesh:
     
         #remove last element (was added twice)
         del e[-1]
-        return e
+        return np.array(e)
 
     def _get_normals(self, edges):
         normals = np.zeros((self.n_points,3))
         e_normals = np.zeros((len(edges),2))
-        R_matrix = np.array([[0,1],[-1,0]])
+        R_matrix = np.array([[0,-1],[1,0]])
         sorted_edges = self.sort_edges(edges)
         self.sorted_edges = sorted_edges
         for idx, edge in enumerate(sorted_edges):
@@ -125,16 +125,12 @@ class TriMesh:
             normals[edge[0],:2] = (e_normals[id-1] + e_normals[id])/2
             normals[edge[0],2] = 0
             normals[edge[0]] = normals[edge[0]] / np.sqrt(np.sum(normals[edge[0]]**2))
-        # for id, b in zip(list(self.boundary),self.points[list(self.boundary)]):
-        #     if b[0] == 0:
-        #         normals[id] += [-1,0,0]
-        #     if b[1] == 0:
-        #         normals[id] += [0,-1,0]
-        #     if abs(b[0] - pi) <= 10e-3:
-        #         normals[id] += [1,0,0]
-        #     if abs(b[1] - pi) <= 10e-3:
-        #         normals[id] += [0,1,0]
-        #     normals[id] = normals[id] / np.sqrt(np.sum(normals[id]**2))
+
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # ax.plot(self.mesh.vertices[edges,0], self.mesh.vertices[edges,1], 'o')
+        # ax.quiver(self.mesh.vertices[edges,0], self.mesh.vertices[edges,1], normals[edges,0], normals[edges,1])
+        # plt.show()
 
         return normals
 
