@@ -49,11 +49,12 @@ class RBFInterpolator:
                 for c in n:
                     nring.add(c)
             self.nring.append(list(nring))
-        self.nring = np.asarray(self.nring,dtype=object)
+        self.nring = np.array(self.nring,dtype=object)
         self.rbf = []
         for f in tqdm(range(len(mesh.faces))):
             ret = rbf_interpolator_inv_matrix(mesh.points[self.nring[f]], self.s, self.d)
             self.rbf.append(ret)
+            
     def __call__(self, data, points):
         cells = self.mesh.triFinder(points[:,0],points[:,1])
         value_interp = np.zeros(points.shape[0])

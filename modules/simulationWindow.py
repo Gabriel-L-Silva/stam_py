@@ -9,7 +9,8 @@ from shapely.geometry import Polygon, shape, MultiPolygon, box
 import os
 
 class SimulationWindow:
-    def __init__(self, w, h, view, model, projection, view_matrix, width, height, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
+    def __init__(self, source_force, view, model, projection, view_matrix, width, height, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
+        self.source_force = source_force
 
         self.paused = True
         self.next_frame = False
@@ -21,6 +22,8 @@ class SimulationWindow:
         self.height = height
         self.ready = False
         
+        self.max_tri_area = 100
+
         self.show_vectors = True
         self.show_grid = True
         self.smoke_color = [1,1,1]
@@ -59,7 +62,7 @@ class SimulationWindow:
         self.update_mesh()
         
     def build_solver(self):
-        self.solver: TriSolver = TriSolver(self.mesh)
+        self.solver: TriSolver = TriSolver(self.mesh, self.source_force)
         self.quiver_program['position'] = self.solver.mesh.points
         self.quiver_program['Xvelocity'] = self.solver.vectors[:,0]
         self.quiver_program['Yvelocity'] = self.solver.vectors[:,1]
@@ -82,7 +85,7 @@ class SimulationWindow:
                 poly = list(poly)[0]
         else:
             poly: Polygon = box(0,0,np.pi,np.pi)
-        self.mesh, boundary, scale_factor = polygon_triangulation(poly, self.width, self.height)
+        self.mesh, boundary, scale_factor = polygon_triangulation(poly, self.width, self.height, self.max_tri_area)
         if self.current_mesh < len(self.obj_assets_names):
             self.mesh = trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
             self.mesh.vertices = np.stack([self.mesh.vertices[:,0], self.mesh.vertices[:,1], np.zeros(len(self.mesh.vertices))],axis=1)
@@ -99,6 +102,7 @@ class SimulationWindow:
         # normalized_y = 2* (self.mesh.vertices[:,1] - np.min(self.mesh.vertices[:,1]))/np.ptp(self.mesh.vertices[:,1]) - 1
         # self.mesh.vertices = np.stack((normalized_x, normalized_y, np.zeros(len(self.mesh.vertices))),axis=1)
         self.program['position'] = self.mesh.vertices[:,:2]
+        return self.mesh
 
     def draw_gui(self):
         # Imgui Interface
@@ -130,6 +134,11 @@ class SimulationWindow:
             self.view_matrix = list(vm)
             if changed:
                 self.update_view_matrix()
+            
+            changed, self.max_tri_area = imgui.drag_float("Max triangle area", self.max_tri_area, change_speed=1.0)
+            if changed:
+                self.update_mesh()
+
             _, self.save_video = imgui.checkbox("Save video", self.save_video)
             if imgui.button("Build Solver"):
                 self.build_solver()
@@ -152,9 +161,12 @@ class SimulationWindow:
         self.program["color"] = self.smoke_color
 
     def update_view_matrix(self):
+        self.view = glm.translate(np.eye(4), self.view_matrix[0], self.view_matrix[1], self.view_matrix[2])
         self.program["u_view"] = glm.translate(np.eye(4), self.view_matrix[0], self.view_matrix[1], self.view_matrix[2])
         self.quiver_program["u_view"] = glm.translate(np.eye(4), self.view_matrix[0], self.view_matrix[1], self.view_matrix[2])
 
     def advance_frame(self, dt):
         self.frame += 1
+        if self.frame == 1000:
+            self.paused = True
         self.solver.update_fields(dt, self.frame)
