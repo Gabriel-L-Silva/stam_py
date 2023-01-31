@@ -159,17 +159,17 @@ if __name__ == "__main__":
     import cProfile, pstats
     global profiler
     profiler = cProfile.Profile()
-    # try:
-    app.run()
-    # except:
-    #     if simWindow.save_video:
-    #         print('saving frames')
-    #         video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
-    #         for f, frame  in tqdm(enumerate(frames)):
-    #             if len(frame) != WIDTH*HEIGHT*4:
-    #                 break
-    #             video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
-    #         video.release()
-    #     print('acabou')
-    # stats = pstats.Stats(profiler).sort_stats('tottime')
-    # stats.print_stats()
+    try:
+        app.run()
+    except:
+        if simWindow.save_video:
+            print('saving frames')
+            video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
+            for f, frame  in tqdm(enumerate(frames)):
+                if len(frame) != WIDTH*HEIGHT*4:
+                    break
+                video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
+            video.release()
+        print('acabou')
+    stats = pstats.Stats(profiler).sort_stats('tottime')
+    stats.print_stats()

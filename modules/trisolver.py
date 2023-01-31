@@ -8,9 +8,9 @@ try:
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import RBFInterpolator, CubicInterpolator
+    from modules.interpolator import Interpolator, RBFInterpolator, CubicInterpolator
 except:
-    from interpolator import RBFInterpolator, CubicInterpolator
+    from interpolator import Interpolator, RBFInterpolator, CubicInterpolator
 try:
     from modules.ray_polygon_intersection import *
 except:
@@ -19,6 +19,9 @@ except:
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 from numba import njit, prange
+
+
+import matplotlib.pyplot as plt
 
 @njit(parallel=True)
 def gradient(rbf, nring, lapl, n_points):
@@ -38,7 +41,7 @@ def divergent(rbf, nring, vectors, n_points, boundary=np.array([])):
     return div
 
 class TriSolver:
-    def __init__(self, mesh):
+    def __init__(self, mesh, source_force):
         self.mesh = TriMesh(mesh)
 
         self.density = np.zeros((self.mesh.n_points))
@@ -49,9 +52,10 @@ class TriSolver:
         self.init_poisson_weights()
 
         self.source_cells = set()
+        self.source_force = source_force
 
     def apply_boundary_condition(self, field=None):
-        if type(field) == type(None):
+        if field is None:
             self.vectors[list(self.mesh.boundary_set),:2] = [0,0]
         else:
             field[list(self.mesh.boundary_set)] = 0
@@ -75,34 +79,33 @@ class TriSolver:
     def intersect_boundary(self, new_pos):
         ray_origins = self.mesh.mesh.vertices[:,:2]
         ray_directions = new_pos[:,:2] - ray_origins
-        rays = [Ray(o,d) for o,d in zip(ray_origins, ray_directions)]
 
-        intersections = np.array([ray_intersection_point(self.mesh.mesh, ray, self.mesh.sorted_edges, self.mesh.boundary) for ray in rays])
+        non_zero_mask = np.argwhere((ray_directions!=0).all(axis=1)).flatten()
+        intersections = ray_intersects_polygon(self.mesh.mesh.vertices, ray_origins[non_zero_mask], ray_directions[non_zero_mask], np.array(self.mesh.sorted_edges))
 
-        mask = np.argwhere(intersections!=None).flatten()
+        finite_mask = np.argwhere(np.isfinite(intersections).all(axis=1)).flatten()
 
-        if len(mask)!=0:
-            new_pos[mask] = intersections
+        if len(finite_mask)!=0:
+            new_pos[non_zero_mask[finite_mask],:2] = intersections[finite_mask]
 
         return new_pos    
                     
-    def computeAdvection(self, density, dt):
+    def computeAdvection(self, dt, boundary_intersection=None):
         #TODO stop on wall for any mesh
-        new_pos = self.mesh.mesh.vertices - self.vectors*dt
-        
-        
-        new_pos = self.intersect_boundary(new_pos)
-        if density:
-            self.density = np.clip(self.Interpolator(self.density, new_pos), 0, 1)
+        if boundary_intersection is not None:
+            self.density = np.clip(self.Interpolator(self.density, boundary_intersection), 0, 1)
+            self.apply_boundary_condition()
         else:
+            new_pos = self.mesh.mesh.vertices - self.vectors*dt
+            new_pos = self.intersect_boundary(new_pos)
             self.vectors[:,0] = self.Interpolator(self.vectors[:,0], new_pos)
             self.vectors[:,1] = self.Interpolator(self.vectors[:,1], new_pos)
-
-        self.apply_boundary_condition()
+            self.apply_boundary_condition()
+            return new_pos
 
     def computeSource(self, dt, frame):
         if frame <= 500:
-            self.vectors[list(self.source_cells),:2] = [0,5]
+            self.vectors[list(self.source_cells),:2] = [0,self.source_force]
             self.density[list(self.source_cells)] = 1
 
     def init_poisson_weights(self):
@@ -137,24 +140,32 @@ class TriSolver:
 
         self.computeViscosity(dt)
 
-        # self.computePressure(dt)
+        self.computePressure(dt)
 
-        self.computeAdvection(False, dt)
+        boundary_intersection = self.computeAdvection(dt)
 
         self.computePressure(dt)
 
-    def densityStep(self, dt, frame):
+        return boundary_intersection
+
+    def densityStep(self, dt, frame, boundary_intersection):
         self.computeSource(dt, frame)
 
         self.computeViscosity(dt)
 
-        self.computeAdvection(True, dt)
+        self.computeAdvection(dt, boundary_intersection)
 
     def update_fields(self, dt, frame):
         self.apply_boundary_condition()
-        self.velocityStep(dt)
+        boundary_intersection = self.velocityStep(dt)
         self.apply_boundary_condition()
-        self.densityStep(dt, frame)
+        # import matplotlib.pyplot as plt
+        # plt.triplot(self.mesh.t_mesh)
+        # plt.scatter(boundary_intersection[:,0], boundary_intersection[:,1], c='r', s=1)
+        # directions = (self.vectors - self.mesh.mesh.vertices)#/np.linalg.norm(self.vectors - self.mesh.mesh.vertices)
+        # plt.quiver(self.mesh.mesh.vertices[:,0], self.mesh.mesh.vertices[:,1], directions[:,0], directions[:,1],scale=10000)
+        # plt.show(block=True)
+        self.densityStep(dt, frame, boundary_intersection)
 
 
 def test_poisson():
@@ -198,7 +209,7 @@ def test_divergence():
     
     solver = TriSolver('./assets/mesh16.obj')
 
-    solver.vectors = np.asarray([div_problem(p[0],p[1]) for p in solver.mesh.points])
+    solver.vectors = np.array([div_problem(p[0],p[1]) for p in solver.mesh.points])
     div_sol = [div_solution(p[0],p[1]) for p in solver.mesh.points]
 
     for times in range(50):
@@ -234,8 +245,8 @@ def test_gradient():
     
     solver = TriSolver('./assets/mesh16.obj')
 
-    x0 = np.asarray([grad_problem(p[0],p[1]) for p in solver.mesh.points])
-    grad_sol = np.asarray([grad_solution(p[0],p[1]) for p in solver.mesh.points])
+    x0 = np.array([grad_problem(p[0],p[1]) for p in solver.mesh.points])
+    grad_sol = np.array([grad_solution(p[0],p[1]) for p in solver.mesh.points])
 
     grad = gradient(solver.mesh.rbf, solver.mesh.nring, x0, solver.mesh.n_points)
 
