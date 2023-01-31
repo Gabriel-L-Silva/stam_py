@@ -24,9 +24,7 @@ class Ray:
         yield self.direction
 
 @njit
-def ray_line_intersection(ray: np.ndarray, edges: np.ndarray):
-    rayOrigin = ray[0]
-    rayDirection = ray[1]
+def ray_line_intersection(rayOrigin, rayDirection, edges: np.ndarray):
     point1 = edges[:, 0]
     point2 = edges[:, 1]
     
@@ -38,21 +36,20 @@ def ray_line_intersection(ray: np.ndarray, edges: np.ndarray):
     mask=np.logical_and(np.logical_and(t1 >= 0.0, t1 <= 1.0), np.logical_and(t2 >= 0.0, t2 <= 1.0))
     if len(np.where(mask)[0])==0:
         return np.array([np.nan, np.nan])
-    return rayOrigin + t1[mask] * rayDirection
+    return rayOrigin + min(t1[mask]) * rayDirection
 
 @njit(parallel=True)
-def ray_intersects_polygon(vertices:np.ndarray, rays:np.ndarray, edges:np.ndarray) -> np.ndarray:
+def ray_intersects_polygon(vertices:np.ndarray, ray_origins:np.ndarray, ray_directions:np.ndarray, edges:np.ndarray) -> np.ndarray:
     """
     Given a ray specified as a tuple of two points (the starting point and the direction of the ray, each point is a tuple
     of x and y coordinates), and a simple closed polygon specified as a list of points (each point is a tuple of x and y
     coordinates), this function returns True if the ray intersects the polygon and False otherwise.
     """
-    intersections = np.zeros((len(rays),2))
+    intersections = np.zeros((len(ray_origins),2))
     edges = vertices[edges.flatten()].reshape(len(edges),2,3)[:,:,:2]
     # Check if the ray intersects any edge of the polygon
-    for r in prange(len(rays)):
-        ray = rays[r]
-        intersection = ray_line_intersection(ray[:,:2], edges)
+    for r in prange(len(ray_origins)):
+        intersection = ray_line_intersection(ray_origins[r], ray_directions[r], edges)
         intersections[r] = intersection
     return intersections
 
