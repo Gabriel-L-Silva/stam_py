@@ -1,6 +1,6 @@
 matplotlib
 scipy
-numpy
+numpy==1.22
 glumpy
 PyOpenGl
 imgui
@@ -14,3 +14,4 @@ rtree
 shapely
 geojson
 triangle
+numba
