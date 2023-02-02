@@ -104,7 +104,7 @@ class TriMesh:
     def _get_normals(self, edges):
         normals = np.zeros((self.n_points,3))
         e_normals = np.zeros((len(edges),2))
-        R_matrix = np.array([[0,1],[-1,0]])
+        R_matrix = np.array([[0,-1],[1,0]])
         sorted_edges = self.sort_edges(edges)
         for idx, edge in enumerate(sorted_edges):
             e = self.mesh.vertices[edge[0]][:2] - self.mesh.vertices[edge[1]][:2]
@@ -126,7 +126,11 @@ class TriMesh:
         #     if abs(b[1] - pi) <= 10e-3:
         #         normals[id] += [0,1,0]
         #     normals[id] = normals[id] / np.sqrt(np.sum(normals[id]**2))
-
+        
+        import matplotlib.pyplot as plt
+        plt.plot(self.points[edges,0], self.points[edges,1], 'o')
+        plt.quiver(self.points[edges,0], self.points[edges,1], normals[edges,0], normals[edges,1])
+        plt.show(block=True)
         return normals
 
     def find_one_ring(self, index):
