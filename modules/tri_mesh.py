@@ -127,10 +127,10 @@ class TriMesh:
         #         normals[id] += [0,1,0]
         #     normals[id] = normals[id] / np.sqrt(np.sum(normals[id]**2))
         
-        import matplotlib.pyplot as plt
-        plt.plot(self.points[edges,0], self.points[edges,1], 'o')
-        plt.quiver(self.points[edges,0], self.points[edges,1], normals[edges,0], normals[edges,1])
-        plt.show(block=True)
+        # import matplotlib.pyplot as plt
+        # plt.plot(self.points[edges,0], self.points[edges,1], 'o')
+        # plt.quiver(self.points[edges,0], self.points[edges,1], normals[edges,0], normals[edges,1])
+        # plt.show(block=True)
         return normals
 
     def find_one_ring(self, index):
