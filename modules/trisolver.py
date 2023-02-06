@@ -6,9 +6,9 @@ try:
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import RBFInterpolator, CubicInterpolator
+    from modules.interpolator import Interpolator, RBFInterpolator, CubicInterpolator
 except:
-    from interpolator import RBFInterpolator, CubicInterpolator
+    from interpolator import Interpolator, RBFInterpolator, CubicInterpolator
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
@@ -25,6 +25,8 @@ class TriSolver:
         self.init_poisson_weights()
 
         self.source_cells = set()
+
+        self.div_history = []
 
     def apply_boundary_condition(self, field=None):
         if type(field) == type(None):
@@ -43,10 +45,11 @@ class TriSolver:
         x0 = self.poisson_solver()
         grad = self.gradient(x0)
         
-        self.vectors[:,0] -= grad[:,0]
-        self.vectors[:,1] -= grad[:,1]
+        self.vectors -= grad
 
         self.apply_boundary_condition()
+
+        # assert np.allclose(max(abs(div)), 0, atol=1e-2), f'Pressure projection failed, div = {max(abs(div))}'
 
     def computeAdvection(self, density, dt):
         new_pos = self.mesh.points - self.vectors*dt
@@ -83,7 +86,7 @@ class TriSolver:
         print('Building Poisson matrix...')
         for pid in tqdm(range(self.mesh.n_points)): 
             if pid in self.mesh.boundary:
-                weights = (self.mesh.rbf[pid][:,1]*self.mesh.normals[pid,0] 
+                weights = (self.mesh.rbf[pid][:,1]*self.mesh.normals[pid,0]
                         + self.mesh.rbf[pid][:,2]*self.mesh.normals[pid,1])
             else:
                 weights = self.mesh.rbf[pid][:,0]
@@ -99,7 +102,7 @@ class TriSolver:
         if testing != None:
             b = testing
         else:
-            b = [self.divergent(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)]
+            b = np.array([self.divergent(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)])
         lapl = spsolve(self.w, b)
         return lapl
 
@@ -108,11 +111,14 @@ class TriSolver:
 
         self.computeViscosity(dt)
 
-        # self.computePressure(dt)
+        self.computePressure(dt)
 
         self.computeAdvection(False, dt)
 
         self.computePressure(dt)
+
+        div = np.array([self.divergent(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)])
+        self.div_history.append(div)
 
     def densityStep(self, dt, frame):
         self.computeSource(dt, frame)
@@ -127,14 +133,29 @@ class TriSolver:
         self.apply_boundary_condition()
         self.densityStep(dt, frame)
 
+def test_pressure_projection(solver):
+    def poisson_problem(x,y):
+        return y-x - 2*np.cos(x)*np.cos(y)
+    solver.vectors[:] = poisson_problem(solver.mesh.points[:,0], solver.mesh.points[:,1])[:,None]
+    solver.computePressure(0.1)
+    div = np.array([solver.divergent(pid) if pid not in solver.mesh.boundary else 0.0 for pid in range(solver.mesh.n_points)])
 
-def test_poisson():
+    fig = plt.figure(num='Pressure projection',figsize=plt.figaspect(0.5))
+    ax3 = fig.add_subplot(1, 1, 1, projection='3d')
+
+    ax3.set_title('Erro')
+
+    surf3 = ax3.plot_trisurf(solver.mesh.points[:,0], solver.mesh.points[:,1], div, cmap=cm.coolwarm                        )
+    fig.colorbar(surf3, ax=ax3, fraction=0.1, pad=0.2)
+    fig.suptitle(f'Norma infito do erro = {max(div):1e}', fontsize=20)
+    assert np.allclose(div, 0, atol=1e-2), f'Pressure projection failed, div = {np.sum(abs(div))}'
+    
+
+def test_poisson(solver):
     def poisson_problem(x,y):
         return -2*cos(x)*cos(y)
     def poisson_solution(x,y):
         return cos(x)*cos(y) - 1 
-    
-    solver = TriSolver('./assets/mesh8.obj')
 
     b = [poisson_problem(p[0],p[1]) if id not in solver.mesh.boundary else 0 for id, p in enumerate(solver.mesh.points)]
     poisson_sol = [poisson_solution(p[0],p[1]) for p in solver.mesh.points]
@@ -160,14 +181,12 @@ def test_poisson():
     fig.suptitle(f'Norma infito do erro = {max(error):1e}', fontsize=20)
     return max(error)
     
-def test_divergence():
+def test_divergence(solver):
     def div_problem(x,y):
         return -2*cos(x)*cos(y),-2*cos(x)*cos(y)
 
     def div_solution(x,y):
         return 2*sin(x+y)
-    
-    solver = TriSolver('./assets/mesh16.obj')
 
     solver.vectors = np.asarray([div_problem(p[0],p[1]) for p in solver.mesh.points])
     div_sol = [div_solution(p[0],p[1]) for p in solver.mesh.points]
@@ -190,14 +209,12 @@ def test_divergence():
     fig.colorbar(surf3, ax=ax3, fraction=0.1, pad=0.2)
     return max(error)
 
-def test_gradient():
+def test_gradient(solver):
     def grad_problem(x,y):
         return -2*cos(x)*cos(y)
 
     def grad_solution(x,y):
         return 2*cos(y)*sin(x), 2*cos(x)*sin(y)
-    
-    solver = TriSolver('./assets/mesh16.obj')
 
     x0 = np.asarray([grad_problem(p[0],p[1]) for p in solver.mesh.points])
     grad_sol = np.asarray([grad_solution(p[0],p[1]) for p in solver.mesh.points])
@@ -224,22 +241,32 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from math import cos, sin
     from matplotlib import cm
+    solver = TriSolver('./assets/regular_tri_grid64.obj')
     #######################################################################################
     #######################################################################################
     ########################           Poisson          ###################################
     #######################################################################################
     #######################################################################################
     print('Testing Poisson')
-    p_error = test_poisson()
+    p_error = test_poisson(solver)
     print('\tMax error: ', p_error)
     plt.show(block=True)
+    #######################################################################################
+    #######################################################################################
+    ########################      Pressure Projection   ###################################
+    #######################################################################################
+    #######################################################################################
+    # print('Testing Poisson')
+    # p_error = test_pressure_projection(solver)
+    # print('\tMax error: ', p_error)
+    # plt.show(block=True)
     #######################################################################################
     #######################################################################################
     ########################          Divergence        ###################################
     #######################################################################################
     #######################################################################################
     print("Testing Divergence")
-    d_error = test_divergence()
+    d_error = test_divergence(solver)
     print('\tMax error: ', d_error)
     plt.show(block=True)
     #######################################################################################
@@ -248,6 +275,6 @@ if __name__ == '__main__':
     #######################################################################################
     #######################################################################################
     print("Testing Gradient")
-    g_error = test_gradient()
+    g_error = test_gradient(solver)
     print('\tMax error: ', g_error)
     plt.show(block=True)

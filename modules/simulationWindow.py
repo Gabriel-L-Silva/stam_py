@@ -68,7 +68,7 @@ class SimulationWindow:
         self.solver.update_fields(dt, self.frame)
     
     def build_scene_1(self, dt):
-        dx = 1/256
+        dx = 1/64
         xx = np.arange(0.5*np.pi-3*dx, 0.5*np.pi+3*dx, dx/3)
         yy = np.arange(0.1*np.pi, 0.1*np.pi+15*dx, dx/3)
         cells = np.unique([int(self.solver.mesh.triFinder(x,y)) for x,y in np.array(np.meshgrid(xx, yy)).T.reshape(-1, 2)])

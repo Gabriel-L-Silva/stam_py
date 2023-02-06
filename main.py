@@ -1,3 +1,4 @@
+from matplotlib import animation, cm
 from numpy import pi
 import imgui
 from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer
@@ -35,7 +36,7 @@ f_fragment    = 'shaders/fluid.fs'
 q_vertex      = 'shaders/quiver.vs'
 q_fragment    = 'shaders/quiver.fs'
 q_geometry    = 'shaders/quiver.gs'
-solver = TriSolver('./assets/regular_tri_grid32.obj')
+solver = TriSolver('./assets/regular_tri_grid64.obj')
 simWindow = SimulationWindow(solver, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
@@ -161,18 +162,36 @@ def on_show():
     window.native_window.set_minimum_size(WIDTH, HEIGHT)
     window.native_window.set_maximum_size(WIDTH, HEIGHT)
 
-
 if __name__ == "__main__":
     import cv2
     import os
     from PIL import Image
     # run app
     import cProfile, pstats
+    import matplotlib.pyplot as plt
     global profiler
     profiler = cProfile.Profile()
     try:
         app.run()
     except:
+        def generate_triangular_surfaces(d):
+            ax.clear()
+            ax.set_xlim(0, pi)
+            ax.set_ylim(0, pi)
+            ax.set_zlim(0, 10)
+            ax.plot_trisurf(solver.mesh.points[:,0], solver.mesh.points[:,1], abs(solver.div_history[d]), cmap=cm.coolwarm)
+            
+        # Attaching 3D axis to the figure
+        my_dpi = 96
+        fig = plt.figure(figsize=(720/my_dpi, 720/my_dpi), dpi=my_dpi)
+        ax = fig.add_subplot(projection="3d")
+        ax.set_xlim(0, pi)
+        ax.set_ylim(0, pi)
+        ax.set_zlim(0, 10)
+
+        anim = animation.FuncAnimation(fig, generate_triangular_surfaces, len(solver.div_history), interval=1000/60.0, repeat=False)
+        progress_callback = lambda i, n: print(f'Saving frame {i} of {n}')
+        anim.save('div_anim.mp4', fps=60, progress_callback=progress_callback)
         if simWindow.save_video:
             print('saving frames')
             video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
@@ -180,7 +199,6 @@ if __name__ == "__main__":
                 if len(frame) != WIDTH*HEIGHT*4:
                     break
                 video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
-            
             video.release()
     #     print('acabou')
     stats = pstats.Stats(profiler).sort_stats('tottime')
