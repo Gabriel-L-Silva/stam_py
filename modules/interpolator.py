@@ -91,11 +91,12 @@ def main():
     from matplotlib import cm
 
     from tri_mesh import TriMesh
-    N = 64
+    N = 32
     mesh = TriMesh(f"./assets/regular_tri_grid{N}.obj")
     xy = np.random.rand(mesh.n_points, 2)*np.pi
     points = np.stack((xy[:,0],xy[:,1],np.zeros(mesh.n_points)),axis=1)
-
+    # xx, yy = np.meshgrid(np.linspace(0,np.pi,N*2), np.linspace(0,np.pi,2*N))
+    # points = np.stack((xx.flatten(), yy.flatten(),np.zeros(4*N*N)),axis=1)
     solution = func(points[:,0], points[:,1])
 
     Interp = Interpolator(mesh)
