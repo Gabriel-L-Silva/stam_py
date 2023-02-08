@@ -111,8 +111,6 @@ class TriMesh:
             e_normals[idx] = R_matrix@e
             e_normals[idx] = e_normals[idx] / np.sqrt(np.sum(e_normals[idx]**2))
         for id, edge in enumerate(sorted_edges):
-            if id==131:
-                print('aq')
             normals[edge[0],:2] = (e_normals[id-1] + e_normals[id])/2
             normals[edge[0],2] = 0
             normals[edge[0]] = normals[edge[0]] / np.sqrt(np.sum(normals[edge[0]]**2))

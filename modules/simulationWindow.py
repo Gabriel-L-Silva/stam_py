@@ -63,8 +63,8 @@ class SimulationWindow:
 
     def advance_frame(self, dt):
         self.frame += 1
-        if self.frame == 1000:
-            self.paused = True
+        # if self.frame == 1000:
+        #     self.paused = True
         self.solver.update_fields(dt, self.frame)
     
     def build_scene_1(self, dt):
