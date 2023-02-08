@@ -41,7 +41,7 @@ def divergent(rbf, nring, vectors, n_points, boundary=np.array([])):
     return div
 
 class TriSolver:
-    def __init__(self, mesh, source_force):
+    def __init__(self, mesh, source_force=100):
         self.mesh = TriMesh(mesh)
 
         self.density = np.zeros((self.mesh.n_points))
@@ -76,8 +76,8 @@ class TriSolver:
 
         self.apply_boundary_condition()
 
-    def intersect_boundary(self, new_pos):
-        ray_origins = self.mesh.mesh.vertices[:,:2]
+    def intersect_boundary(self, new_pos, ray_origins=None, ray_directions=None):
+        ray_origins = self.mesh.mesh.vertices[:,:2] if ray_origins is None else ray_origins
         ray_directions = new_pos[:,:2] - ray_origins
 
         non_zero_mask = np.argwhere((ray_directions!=0).all(axis=1)).flatten()
