@@ -46,7 +46,6 @@ class TriMesh:
         for id, ring in enumerate(self.nring):
             if len(ring) < 12:
                 ring = knn[id].append(id)
-                print('knn neighbours')
         print('Building rbf...')
         self.rbf = [rbf_fd_weights(self.points[self.nring[p]], self.points[p], 5, 2) for p in tqdm(range(self.n_points))]
         
