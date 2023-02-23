@@ -7,11 +7,12 @@ def plot(solver, error, name:str = 'error'):
     import matplotlib.pyplot as plt
     from matplotlib import cm
 
+    points = np.asarray([solver.mesh.points[pid] for pid in range(solver.mesh.n_points) if pid not in solver.mesh.boundary])
     fig = plt.figure(num=name, figsize=plt.figaspect(0.5))
     ax1 = fig.add_subplot(1, 1, 1, projection='3d')
     ax1.set_title('Erro')
     fig.suptitle(f'Norma infito do erro = {max(error):1e}',fontsize=20)
-    surf = ax1.plot_trisurf(solver.mesh.points[:,0], solver.mesh.points[:,1], error, cmap=cm.coolwarm)
+    surf = ax1.plot_trisurf(points[:,0], points[:,1], error, cmap=cm.coolwarm)
     fig.colorbar(surf, ax=ax1, fraction=0.1, pad=0.2)
     plt.show()
 
@@ -20,13 +21,14 @@ def plot(solver, error, name:str = 'error'):
     (lambda x, y: (x, -y), lambda x, y: 0),
     (lambda x, y: (cos(y), sin(x)), lambda x, y: 0),
     (lambda x, y: (cos(y)+x, sin(x)-y), lambda x, y: 0),
-    (lambda x, y: (cos(x**2+y), -2*x*cos(x**2+y)), lambda x, y: 0)
+    (lambda x, y: (cos(x**2+y), -2*x*cos(x**2+y)), lambda x, y: 0),
+    (lambda x, y: (y**2*(y*cos(x)**2*cos(y*cos(x)**2) + 3*sin(y*cos(x)**2)), y**4*sin(2*x)*cos(y*cos(x)**2)), lambda x, y: 0)
 ])
 def test_divergence(solver, problem, solution):    
     solver.vectors = np.asarray([problem(p[0],p[1]) for p in solver.mesh.points])
-    div_sol = [solution(p[0],p[1]) for p in solver.mesh.points]
 
-    div = np.asarray([solver.divergence(pid) for pid in range(solver.mesh.n_points)])
+    div = np.asarray([solver.divergence(pid) for pid in range(solver.mesh.n_points) if pid not in solver.mesh.boundary])
+    div_sol = [solution(p[0],p[1]) for id, p in enumerate(solver.mesh.points) if id not in solver.mesh.boundary]
 
     error = abs(div-div_sol)
     
