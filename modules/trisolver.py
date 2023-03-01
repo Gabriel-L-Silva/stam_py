@@ -14,8 +14,8 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
 class TriSolver:
-    def __init__(self, filename):
-        self.mesh = TriMesh(filename)
+    def __init__(self, filename, k=12, s=5, d=2, only_knn=False):
+        self.mesh = TriMesh(filename, k, s, d, only_knn)
 
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,2))
@@ -36,10 +36,10 @@ class TriSolver:
                     
 
     def computeExternalForces(self, dt):
-        pass
+        self.apply_boundary_condition()
 
     def computeViscosity(self, dt):
-        pass
+        self.apply_boundary_condition()
 
     def computePressure(self, dt):
         x0 = self.poisson_solver()
@@ -66,6 +66,8 @@ class TriSolver:
         if frame <= 500:
             self.vectors[list(self.source_cells)] = [0,3]
             self.density[list(self.source_cells)] = 1
+        
+        self.apply_boundary_condition()
 
     def divergence(self, pid):
         div = np.sum(self.mesh.rbf[pid][:,1]*self.vectors[self.mesh.nring[pid],0] 

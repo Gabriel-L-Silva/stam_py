@@ -17,12 +17,12 @@ def plot(solver, error, name:str = 'error'):
     plt.show()
 
 @pytest.mark.parametrize("problem, solution", [
-    (lambda x, y: (-2*cos(x)*cos(y),-2*cos(x)*cos(y)), lambda x, y: 2*sin(x+y)),
-    (lambda x, y: (x, -y), lambda x, y: 0),
-    (lambda x, y: (cos(y), sin(x)), lambda x, y: 0),
-    (lambda x, y: (cos(y)+x, sin(x)-y), lambda x, y: 0),
-    (lambda x, y: (cos(x**2+y), -2*x*cos(x**2+y)), lambda x, y: 0),
-    (lambda x, y: (y**2*(y*cos(x)**2*cos(y*cos(x)**2) + 3*sin(y*cos(x)**2)), y**4*sin(2*x)*cos(y*cos(x)**2)), lambda x, y: 0)
+    pytest.param(lambda x, y: (-2*cos(x)*cos(y),-2*cos(x)*cos(y)), lambda x, y: 2*sin(x+y), id='{-2*cos(x)*cos(y),-2*cos(x)*cos(y)}'),
+    pytest.param(lambda x, y: (x, -y), lambda x, y: 0, id='{x, -y}'),
+    pytest.param(lambda x, y: (cos(y), sin(x)), lambda x, y: 0, id='{cos(y), sin(x)}'),
+    pytest.param(lambda x, y: (cos(y)+x, sin(x)-y), lambda x, y: 0, id='{cos(y)+x, sin(x)-y'),
+    pytest.param(lambda x, y: (cos(x**2+y), -2*x*cos(x**2+y)), lambda x, y: 0, id='{cos(x**2+y), -2*x*cos(x**2+y)}'),
+    pytest.param(lambda x, y: (y**2*(y*cos(x)**2*cos(y*cos(x)**2) + 3*sin(y*cos(x)**2)), y**4*sin(2*x)*cos(y*cos(x)**2)), lambda x, y: 0, id='{y**2*(y*cos(x)**2*cos(y*cos(x)**2) + 3*sin(y*cos(x)**2)), y**4*sin(2*x)*cos(y*cos(x)**2)}')
 ])
 def test_divergence(solver, problem, solution):    
     solver.vectors = np.asarray([problem(p[0],p[1]) for p in solver.mesh.points])
@@ -40,7 +40,7 @@ def test_divergence(solver, problem, solution):
         assert max(error) <= 10e-1
 
 @pytest.mark.parametrize("problem, solution", [
-    (lambda x, y: -2*cos(x)*cos(y), lambda x, y: (2*cos(y)*sin(x), 2*cos(x)*sin(y)))
+    pytest.param(lambda x, y: -2*cos(x)*cos(y), lambda x, y: (2*cos(y)*sin(x), 2*cos(x)*sin(y)), id='-2*cos(x)*cos(y)')
 ])
 def test_gradient(solver, problem, solution):
     x0 = np.asarray([problem(p[0],p[1]) for p in solver.mesh.points])
@@ -53,7 +53,7 @@ def test_gradient(solver, problem, solution):
     assert max(error) <= 10e-3
 
 @pytest.mark.parametrize("problem, solution", [
-    (lambda x, y: -2*cos(x)*cos(y), lambda x, y: cos(x)*cos(y) - 1)
+    pytest.param(lambda x, y: -2*cos(x)*cos(y), lambda x, y: cos(x)*cos(y) - 1, id='-2*cos(x)*cos(y)')
 ])
 def test_poisson(solver, problem, solution):
     from scipy.sparse.linalg import spsolve
@@ -74,12 +74,12 @@ def test_poisson(solver, problem, solution):
     assert max(error) <= 10e-3
 
 @pytest.mark.parametrize("problem", [
-    lambda x, y: (x, -y),
-    lambda x, y: (cos(y), sin(x)),
-    lambda x, y: (cos(y)+x, sin(x)-y),
-    lambda x, y: (cos(x**2+y), -2*x*cos(x**2+y)),
-    lambda x, y: (y**2*(y*cos(x)**2*cos(y*cos(x)**2) + 3*sin(y*cos(x)**2)), y**4*sin(2*x)*cos(y*cos(x)**2)),
-    lambda x, y: (y**2*log(x)*(3*sin(y*(x + y)) + y*(x + 2*y)*cos(y*(x + y))), -(y**3*(sin(y*(x + y)) + x*y*log(x)*cos(y*(x + y))))/x)
+    pytest.param(lambda x, y: (x, -y), id='{x, -y}'),
+    pytest.param(lambda x, y: (cos(y), sin(x)), id='{cos(y), sin(x)}'),
+    pytest.param(lambda x, y: (cos(y)+x, sin(x)-y), id='{cos(y)+x, sin(x)-y'),
+    pytest.param(lambda x, y: (cos(x**2+y), -2*x*cos(x**2+y)), id='{cos(x**2+y), -2*x*cos(x**2+y)}'),
+    pytest.param(lambda x, y: (y**2*(y*cos(x)**2*cos(y*cos(x)**2) + 3*sin(y*cos(x)**2)), y**4*sin(2*x)*cos(y*cos(x)**2)), id='{y**2*(y*cos(x)**2*cos(y*cos(x)**2) + 3*sin(y*cos(x)**2)), y**4*sin(2*x)*cos(y*cos(x)**2)}'),
+    pytest.param(lambda x, y: (y**2*log(x)*(3*sin(y*(x + y)) + y*(x + 2*y)*cos(y*(x + y))), -(y**3*(sin(y*(x + y)) + x*y*log(x)*cos(y*(x + y))))/x), id='y**2*log(x)*(3*sin(y*(x + y)) + y*(x + 2*y)*cos(y*(x + y))), -(y**3*(sin(y*(x + y)')
 ])
 def test_pressure_projection(solver, problem):
     solver.vectors = np.asarray([problem(p[0],p[1]) for p in solver.mesh.points])

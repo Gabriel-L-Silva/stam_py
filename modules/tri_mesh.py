@@ -13,10 +13,13 @@ except:
 from libpysal.weights import KNN
 
 class TriMesh:
-    def __init__(self, filename, k=12):
+    def __init__(self, filename, k=12, s=5, d=2, only_knn=False):
         self.mesh = trimesh.load_mesh(filename)
 
         self.k = k
+        self.s = s
+        self.d = d
+        self.only_knn = only_knn
         self._init_mesh()
 
     
@@ -41,13 +44,16 @@ class TriMesh:
         
         print('Building neighborhood...')
         self.g = nx.from_edgelist(self.mesh.edges_unique)
-        self.nring = [list(self.find_Nring(2, p, set())) for p in tqdm(range(len(self.mesh.vertices)))]
         knn = list(KNN.from_array(self.points, k=self.k).neighbors.values())
-        for id, ring in enumerate(self.nring):
-            if len(ring) < 12:
-                ring = knn[id].append(id)
+        if self.only_knn: 
+            self.nring = [np.append(knn[p],[p]) for p in tqdm(range(len(self.mesh.vertices)))]
+        else:
+            self.nring = [list(self.find_Nring(2, p, set())) for p in tqdm(range(len(self.mesh.vertices)))]
+            for id, ring in enumerate(self.nring):
+                if len(ring) < self.k:
+                    ring = knn[id].append(id)
         print('Building rbf...')
-        self.rbf = [rbf_fd_weights(self.points[self.nring[p]], self.points[p], 5, 2) for p in tqdm(range(self.n_points))]
+        self.rbf = [rbf_fd_weights(self.points[self.nring[p]], self.points[p], self.s, self.d) for p in tqdm(range(self.n_points))]
         
         self._init_boundary()
 
