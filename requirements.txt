@@ -13,3 +13,4 @@ networkx
 rtree
 triangle==20160203
 libpysal
+pytest

@@ -9,8 +9,11 @@ try:
     from modules.rbf import rbf_fd_weights
 except:
     from rbf import rbf_fd_weights
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from libpysal.weights import KNN
 
-from libpysal.weights import KNN
 
 class TriMesh:
     def __init__(self, filename, k=12, s=5, d=2, only_knn=False):
