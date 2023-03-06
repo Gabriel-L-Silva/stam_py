@@ -1,6 +1,6 @@
 matplotlib
 scipy
-numpy
+numpy==1.23
 glumpy
 PyOpenGl
 imgui
@@ -11,3 +11,5 @@ tqdm
 pillow
 networkx
 rtree
+triangle==20160203
+libpysal
