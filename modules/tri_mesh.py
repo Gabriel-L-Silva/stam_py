@@ -9,12 +9,14 @@ try:
     from modules.rbf import rbf_fd_weights
 except:
     from rbf import rbf_fd_weights
+from libpysal.weights import KNN
 
 import matplotlib.pyplot as plt
 class TriMesh:
-    def __init__(self, mesh):
+    def __init__(self, mesh, k=12):
         self.mesh = mesh
 
+        self.k = k
         self._init_mesh()
 
     def triFinder(self, x, y):
@@ -29,8 +31,11 @@ class TriMesh:
 
     def _init_nring(self):
         self.nring = np.zeros((self.n_points,self.n_points), dtype = int)
+        knn = list(KNN.from_array(self.points, k=self.k).neighbors.values())
         for p in tqdm(range(len(self.mesh.vertices))):
             self.nring[p, list(self.find_Nring(2, p, set()))] = 1
+            if np.count_nonzero(self.nring[p]) < 12:
+                self.nring[p, knn[p]] = 1
 
     def _init_rbf(self):
         self.rbf = np.zeros((self.n_points, self.n_points, 3))
