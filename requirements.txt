@@ -1,6 +1,6 @@
 matplotlib
 scipy
-numpy==1.22
+numpy==1.23
 glumpy
 PyOpenGl
 imgui

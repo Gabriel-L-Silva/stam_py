@@ -47,7 +47,7 @@ class TriSolver:
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,3))
 
-        self.Interpolator = RBFInterpolator(self.mesh)
+        self.Interpolator = Interpolator(self.mesh)
 
         self.init_poisson_weights()
 
