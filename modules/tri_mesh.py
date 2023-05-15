@@ -64,8 +64,8 @@ class TriMesh:
         unique_edges = self.mesh.edges[trimesh.grouping.group_rows(self.mesh.edges_sorted, require_count=1)]
         self.boundary_set = set(np.unique(unique_edges.flatten()))
         self.boundary = self.mesh.boundary
-        plt.scatter(self.mesh.vertices[list(self.boundary_set),0], self.mesh.vertices[list(self.boundary_set),1], c='r')
-        plt.show(block=True)
+        # plt.scatter(self.mesh.vertices[list(self.boundary_set),0], self.mesh.vertices[list(self.boundary_set),1], c='r')
+        # plt.show(block=True)
         self.normals = self._get_normals(self.sort_edges(unique_edges))
 
     def sort_edges(self, edges):

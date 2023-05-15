@@ -97,7 +97,7 @@ class TriSolver:
             self.apply_boundary_condition()
         else:
             new_pos = self.mesh.mesh.vertices - self.vectors*dt
-            new_pos = self.intersect_boundary(new_pos)
+            new_pos = np.clip(new_pos, self.mesh.boundary.bounds[0], self.mesh.boundary.bounds[-1]) #self.intersect_boundary(new_pos)
             self.vectors[:,0] = self.Interpolator(self.vectors[:,0], new_pos)
             self.vectors[:,1] = self.Interpolator(self.vectors[:,1], new_pos)
             self.apply_boundary_condition()
@@ -120,18 +120,24 @@ class TriSolver:
             else:
                 weights = self.mesh.rbf[pid][np.argwhere(self.mesh.nring[pid]).flatten(),0]
             
-            data[0:0] = weights
-            data_row[0:0] = ([pid]*len(np.argwhere(self.mesh.nring[pid]).flatten()))
-            data_col[0:0] = np.argwhere(self.mesh.nring[pid]).flatten()
+            if pid == 0:
+                data[0:0] = np.identity(weights.shape[0])[0]
+                data_row[0:0] = ([pid]*len(np.argwhere(self.mesh.nring[pid]).flatten()))
+                data_col[0:0] = np.argwhere(self.mesh.nring[pid]).flatten()
+            else:
+                data[0:0] = weights
+                data_row[0:0] = ([pid]*len(np.argwhere(self.mesh.nring[pid]).flatten()))
+                data_col[0:0] = np.argwhere(self.mesh.nring[pid]).flatten()
         self.w = csr_matrix((data, (data_row, data_col)), 
                           shape = (self.mesh.n_points, self.mesh.n_points))
 
         
-    def poisson_solver(self, testing=None):        
+    def poisson_solver(self, testing=None):
         if testing != None:
             b = testing
         else:
             b = divergent(self.mesh.rbf, self.mesh.nring, self.vectors[:,:2], self.mesh.n_points, np.array(list(self.mesh.boundary_set)))
+            b[0] = 0 #dirichilet
         lapl = spsolve(self.w, b)
         return lapl
 
