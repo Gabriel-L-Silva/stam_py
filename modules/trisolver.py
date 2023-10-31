@@ -6,16 +6,16 @@ try:
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import Interpolator, RBFInterpolator, CubicInterpolator
+    from modules.interpolator import Interpolator, RBFInterpolator
 except:
-    from interpolator import Interpolator, RBFInterpolator, CubicInterpolator
+    from interpolator import Interpolator, RBFInterpolator
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
 class TriSolver:
-    def __init__(self, filename, k=12, s=5, d=2, only_knn=False):
-        self.mesh = TriMesh(filename, k, s, d, only_knn)
+    def __init__(self, mesh, k=12, s=5, d=2, only_knn=False):
+        self.mesh = TriMesh(mesh, k, s, d, only_knn)
 
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,2))

@@ -16,8 +16,8 @@ with warnings.catch_warnings():
 
 
 class TriMesh:
-    def __init__(self, filename, k=12, s=5, d=2, only_knn=False):
-        self.mesh = trimesh.load_mesh(filename)
+    def __init__(self, mesh, k=12, s=5, d=2, only_knn=False):
+        self.mesh = mesh
 
         self.k = k
         self.s = s
