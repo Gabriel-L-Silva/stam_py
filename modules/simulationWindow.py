@@ -60,7 +60,7 @@ class SimulationWindow:
         self.update_mesh()
         
     def build_solver(self):
-        self.solver: TriSolver = TriSolver(self.mesh, self.source_force)
+        self.solver = TriSolver(self.mesh)
         self.quiver_program['position'] = self.solver.mesh.points
         self.quiver_program['Xvelocity'] = self.solver.vectors[:,0]
         self.quiver_program['Yvelocity'] = self.solver.vectors[:,1]

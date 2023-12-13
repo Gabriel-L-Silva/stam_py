@@ -2,6 +2,7 @@ from matplotlib import tri
 import networkx as nx
 from functools import cache
 from math import pi
+from sklearn.preprocessing import normalize
 import trimesh
 import numpy as np
 from tqdm import tqdm
@@ -16,15 +17,22 @@ with warnings.catch_warnings():
 
 
 class TriMesh:
-    def __init__(self, mesh, k=12, s=5, d=2, only_knn=False):
+    def __init__(self, mesh, k=12, s=5, d=2, only_knn=True):
         self.mesh = mesh
-
+        self.filename = mesh.metadata['file_name']
         self.k = k
         self.s = s
         self.d = d
         self.only_knn = only_knn
         self._init_mesh()
 
+    def intersect_boundary(self, new_pos):
+        if 'circle' in self.filename:
+            out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) > 1)[0]
+            new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds])
+        elif 'square' in self.filename:
+            new_pos = np.clip(new_pos, 0, np.pi)
+        return new_pos
     
     def triFinder(self, x, y):
         cells = self.findTri(x,y)

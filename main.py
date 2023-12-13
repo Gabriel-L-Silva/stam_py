@@ -42,7 +42,7 @@ projection = glm.perspective(45.0, 1, 0.1, 10000.0)
 h = math.tan(45.0 / 360.0 * math.pi) * 0.1
 glm.translate(view, 0,0,-3)
 view_matrix = [0,0,-3]
-simWindow = SimulationWindow(1000, view, model, projection, view_matrix, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
+simWindow = SimulationWindow(5, view, model, projection, view_matrix, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
 def preview_mesh():
@@ -158,16 +158,17 @@ if __name__ == "__main__":
     global profiler
     profiler = cProfile.Profile()
 
-    app.run()
-    
-    if simWindow.save_video and len(frames) > 0:
-        print('saving frames')
-        video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
-        for f, frame  in tqdm(enumerate(frames)):
-            if len(frame) != WIDTH*HEIGHT*4:
-                break
-            video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
-        video.release()
-    print('acabou')
-    stats = pstats.Stats(profiler).sort_stats('tottime')
-    stats.print_stats()
+    try:
+        app.run()
+    except AttributeError:
+        if simWindow.save_video and len(frames) > 0:
+            print('saving frames')
+            video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
+            for f, frame  in tqdm(enumerate(frames)):
+                if len(frame) != WIDTH*HEIGHT*4:
+                    break
+                video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
+            video.release()
+        print('acabou')
+        stats = pstats.Stats(profiler).sort_stats('tottime')
+        stats.print_stats()
