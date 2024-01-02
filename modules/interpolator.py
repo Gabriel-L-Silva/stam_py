@@ -70,16 +70,6 @@ class RBFInterpolator:
             value_interp[idx] = np.sum(alphas[:-m]*rbf(sd.cdist([points[idx]],self.mesh.points[self.nring[c]]),self.s)) + np.sum(alphas[-m:]*P[idx])
         return value_interp
 
-class CubicInterpolator:
-    def __init__(self, mesh) -> None:
-        self.mesh = mesh
-        self.interp = tri.CubicTriInterpolator(mesh.t_mesh, func(mesh.points[:,0],mesh.points[:,1]), kind='min_E')
-
-    def __call__(self, data, points):
-        self.interp = tri.CubicTriInterpolator(self.mesh.t_mesh, data, kind='min_E')
-        return self.interp(points[:,0],points[:,1])
-
-
 def func(x,y):
     return np.sin(2*x+y**2)+np.cos(x*y-2*x**2)
 
@@ -100,41 +90,31 @@ def main():
     solution = func(points[:,0], points[:,1])
 
     Interp = Interpolator(mesh)
-    CInterp = CubicInterpolator(mesh)
     RBFInterp = RBFInterpolator(mesh)
     interp = Interp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
     rbfinterp = RBFInterp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
-    Cinterp = CInterp(func(mesh.points[:,0],mesh.points[:,1]), points[:,:2])
 
     error = (interp-solution)
-    Cerror = (Cinterp-solution)
     RBFerror = (rbfinterp-solution)
 
     print(f'max: {max(abs(error))}, rmse: {rmse(error, N)}')
-    print(f'Cmax: {max(abs(Cerror))}, Crmse: {rmse(Cerror, N)}')
     print(f'RBFmax: {max(abs(RBFerror))}, RBFrmse: {rmse(RBFerror, N)}')
 
     fig = plt.figure(figsize=plt.figaspect(0.5))
-    ax1 = fig.add_subplot(2, 3, 1, projection='3d')
-    ax2 = fig.add_subplot(2, 3, 4, projection='3d')
-    ax3 = fig.add_subplot(2, 3, 2, projection='3d')
-    ax4 = fig.add_subplot(2, 3, 5, projection='3d')
-    ax5 = fig.add_subplot(2, 3, 3, projection='3d')
-    ax6 = fig.add_subplot(2, 3, 6, projection='3d')
+    ax1 = fig.add_subplot(2, 2, 1, projection='3d')
+    ax2 = fig.add_subplot(2, 2, 3, projection='3d')
+    ax5 = fig.add_subplot(2, 2, 2, projection='3d')
+    ax6 = fig.add_subplot(2, 2, 4, projection='3d')
 
     # Plot the surface.
     ax1.set_title('Baricêntrica')
-    ax3.set_title('Cúbica')
     ax5.set_title('RBF')
     # Plot the surface.
     surf = ax1.plot_trisurf(points[:,0], points[:,1], interp, cmap=cm.coolwarm                        )
     surf2 = ax2.plot_trisurf(points[:,0], points[:,1], error, cmap=cm.coolwarm                       )
-    surf = ax3.plot_trisurf(points[:,0], points[:,1], Cinterp, cmap=cm.coolwarm                        )
-    surf4 = ax4.plot_trisurf(points[:,0], points[:,1], Cerror, cmap=cm.coolwarm                        )
     surf = ax5.plot_trisurf(points[:,0], points[:,1], rbfinterp, cmap=cm.coolwarm                        )
     surf6 = ax6.plot_trisurf(points[:,0], points[:,1], RBFerror, cmap=cm.coolwarm                        )
     fig.colorbar(surf2, ax=ax2, fraction=0.1, pad=0.2)
-    fig.colorbar(surf4, ax=ax4, fraction=0.1, pad=0.2)
     fig.colorbar(surf6, ax=ax6, fraction=0.1, pad=0.2)
     fig.suptitle(f'Comparação interpoladores', fontsize=20)
     plt.show(block=True)
