@@ -78,13 +78,17 @@ class SimulationWindow:
 
     def update_mesh(self):
         if self.current_mesh >= len(self.obj_assets_names):
-            poly: Polygon = shape(self.geojson[self.current_mesh-len(self.obj_assets_names)]['geometry'])
+            mesh_poly: Polygon = shape(self.geojson[self.current_mesh-len(self.obj_assets_names)]['geometry'])
             if type(poly) == MultiPolygon:
                 poly = list(poly)[0]
-            self.mesh, boundary= polygon_triangulation(poly, self.width, self.height, self.max_tri_area)
-            self.mesh.boundary = boundary
+        elif 'donut' in self.obj_assets_names[self.current_mesh]:
+            mesh = trimesh.load_mesh(f'./assets/circle128p.obj')
+            hole = trimesh.load_mesh(f'./assets/donut_hole.obj')
+            mesh_poly = Polygon(mesh.vertices[:,:2][:256], [hole.vertices[:,:2]])
         else:
-            self.mesh = trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+            mesh_poly = Polygon(trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}').vertices[:,:2][:256])
+        self.mesh = polygon_triangulation(mesh_poly, self.max_tri_area)
+        self.mesh.boundary = mesh_poly
         
         self.view_matrix = [-self.mesh.centroid[0],-self.mesh.centroid[1],-3]
         self.update_view_matrix()
@@ -128,10 +132,9 @@ class SimulationWindow:
             if changed:
                 self.update_view_matrix()
             
-            if self.current_mesh >= len(self.obj_assets_names):
-                changed, self.max_tri_area = imgui.drag_float("Max triangle area", self.max_tri_area, change_speed=1.0)
-                if changed:
-                    self.update_mesh()
+            changed, self.max_tri_area = imgui.drag_float("Max triangle area", self.max_tri_area, change_speed=1.0)
+            if changed:
+                self.update_mesh()
 
             _, self.save_video = imgui.checkbox("Save video", self.save_video)
             if imgui.button("Build Solver"):

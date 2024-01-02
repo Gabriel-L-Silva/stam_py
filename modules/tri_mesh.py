@@ -30,6 +30,12 @@ class TriMesh:
         if 'circle' in self.filename:
             out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) > 1)[0]
             new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds])
+        elif 'donut' in self.filename:
+            out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) > 1)[0]
+            new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds])
+
+            out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) < 0.5)[0]
+            new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds]) * 0.5
         elif 'square' in self.filename:
             new_pos = np.clip(new_pos, 0, np.pi)
         return new_pos
