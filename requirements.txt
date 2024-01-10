@@ -17,8 +17,7 @@ libpysal==4.7.0
 llvmlite==0.40.1rc1
 matplotlib==3.7.1
 networkx==3.1
-numba==0.57.0
-numpy==1.22.4
+numpy
 opencv-python==4.7.0.72
 packaging==23.1
 pandas==2.0.2
@@ -37,12 +36,11 @@ scikit-learn==1.2.2
 scipy==1.10.1
 shapely==2.0.1
 six==1.16.0
-sklearn==0.0.post5
 soupsieve==2.4.1
 threadpoolctl==3.1.0
 tomli==2.0.1
 tqdm==4.65.0
-triangle==20220202
+triangle==20230923
 trimesh==3.22.0
 tzdata==2023.3
 urllib3==2.0.6
