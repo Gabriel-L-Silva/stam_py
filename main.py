@@ -1,4 +1,5 @@
 import math
+from matplotlib import animation, cm
 from numpy import pi
 import imgui
 from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer
@@ -155,13 +156,32 @@ if __name__ == "__main__":
     from PIL import Image
     # run app
     import cProfile, pstats
+    import matplotlib.pyplot as plt
     global profiler
     profiler = cProfile.Profile()
-
     try:
         app.run()
-    except AttributeError:
-        if simWindow.save_video and len(frames) > 0:
+    except:
+        def generate_triangular_surfaces(d):
+            ax.clear()
+            ax.set_xlim(-1, 1)
+            ax.set_ylim(-1, 1)
+            ax.set_zlim(0, 10)
+            ax.plot_trisurf(simWindow.solver.mesh.points[:,0], simWindow.solver.mesh.points[:,1], abs(simWindow.solver.div_history[d]), cmap=cm.coolwarm)
+            
+        # Attaching 3D axis to the figure
+        my_dpi = 96
+        plt.plot(abs(np.array(simWindow.solver.div_history)).max(axis=1))
+        plt.show(block=True)
+        fig = plt.figure(figsize=(720/my_dpi, 720/my_dpi), dpi=my_dpi)
+        ax = fig.add_subplot(projection="3d")
+        ax.set_xlim(-1, 1)
+        ax.set_ylim(-1, 1)
+        ax.set_zlim(0, 10)
+        anim = animation.FuncAnimation(fig, generate_triangular_surfaces, len(simWindow.solver.div_history), interval=1000/60.0/simWindow.n_timesteps, repeat=False)
+        progress_callback = lambda i, n: print(f'Saving frame {i} of {n}')
+        anim.save('div_anim.mp4', fps=60, progress_callback=progress_callback)
+        if simWindow.save_video:
             print('saving frames')
             video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
             for f, frame  in tqdm(enumerate(frames)):
@@ -169,6 +189,6 @@ if __name__ == "__main__":
                     break
                 video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
             video.release()
-        print('acabou')
+    #     print('acabou')
         stats = pstats.Stats(profiler).sort_stats('tottime')
         stats.print_stats()

@@ -12,7 +12,7 @@ void build_arrow(vec4 position)
     fcolor = color[0];
     gl_Position = u_projection *(position);
     vec2 r = rotation[0]*0.1;
-    vec2 perp = 0.025*normalize(vec2(1.0,-r.x/r.y));
+    vec2 perp = 0.005*normalize(vec2(1.0,-r.x/r.y));
     EmitVertex();
     gl_Position = u_projection *(position + vec4(r, 0, 0));
     EmitVertex();

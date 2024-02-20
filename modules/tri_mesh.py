@@ -34,8 +34,8 @@ class TriMesh:
             out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) > 1)[0]
             new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds])
 
-            out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) < 0.5)[0]
-            new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds]) * 0.5
+            inside_hole = np.where(np.linalg.norm(new_pos, axis=1) < 0.2)[0]
+            new_pos[inside_hole] = normalize(new_pos[inside_hole]) * 0.2
         elif 'square' in self.filename:
             new_pos = np.clip(new_pos, 0, np.pi)
         return new_pos
@@ -79,7 +79,16 @@ class TriMesh:
         unique_edges = self.mesh.edges[trimesh.grouping.group_rows(self.mesh.edges_sorted, require_count=1)]
         self.boundary = set(np.unique(unique_edges.flatten()))
 
-        self.normals = self._get_normals(unique_edges)
+
+        self.normals = np.zeros_like(self.mesh.vertices)
+
+        exterior_edges = [edge for edge in unique_edges if edge[0] in self.mesh.exterior and edge[1] in self.mesh.exterior]
+        self.normals[self.mesh.exterior] = self._get_normals(exterior_edges)[self.mesh.exterior]
+        
+        hole_edges = []
+        for hole in self.mesh.holes:
+            hole_edges.append([edge for edge in unique_edges if edge[0] in hole and edge[1] in hole])
+            self.normals[hole] = self._get_normals(hole_edges[-1])[hole]
 
     def sort_edges(self, edges):
         edge_count = len(edges)

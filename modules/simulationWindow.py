@@ -18,9 +18,13 @@ class SimulationWindow:
         self.save_video = True
         self.speed = 0.1
 
+        self.adaptative_timestep = False
+        self.n_timesteps = 1
+
         self.ready = False
         
-        self.max_tri_area = 100
+        self.triangulate = False 
+        self.resolution = 1
 
         self.show_vectors = True
         self.show_grid = True
@@ -78,20 +82,55 @@ class SimulationWindow:
 
     def update_mesh(self):
         if self.current_mesh >= len(self.obj_assets_names):
-            mesh_poly: Polygon = shape(self.geojson[self.current_mesh-len(self.obj_assets_names)]['geometry'])
+            self.mesh: Polygon = shape(self.geojson[self.current_mesh-len(self.obj_assets_names)]['geometry'])
             if type(poly) == MultiPolygon:
                 poly = list(poly)[0]
         elif 'donut' in self.obj_assets_names[self.current_mesh]:
-            mesh = trimesh.load_mesh(f'./assets/circle128p.obj')
-            hole = trimesh.load_mesh(f'./assets/donut_hole.obj')
-            mesh_poly = Polygon(mesh.vertices[:,:2][:256], [hole.vertices[:,:2]])
+            if '0-04' in self.obj_assets_names[self.current_mesh]:
+                self.mesh =  trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+                self.mesh.holes = [np.arange(128)]
+                self.mesh.exterior = np.arange(128,192)
+                poly = Polygon(self.mesh.vertices[:128], [self.mesh.vertices[128:192]])
+            elif '00401' in self.obj_assets_names[self.current_mesh]:
+                self.mesh =  trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+                self.mesh.holes = [np.arange(128,192)]
+                self.mesh.exterior = np.arange(128)
+                poly = Polygon(self.mesh.vertices[self.mesh.exterior], [self.mesh.vertices[hole] for hole in self.mesh.holes])
+            elif '5' in self.obj_assets_names[self.current_mesh]:
+                self.mesh =  trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+                self.mesh.holes = [np.arange(300,350)]
+                self.mesh.exterior = np.arange(300)
+                poly = Polygon(self.mesh.vertices[self.mesh.exterior], [self.mesh.vertices[hole] for hole in self.mesh.holes])
+            elif '3(100)' in self.obj_assets_names[self.current_mesh]:
+                self.mesh =  trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+                self.mesh.holes = [np.arange(300,400)]
+                self.mesh.exterior = np.arange(300)
+                poly = Polygon(self.mesh.vertices[self.mesh.exterior], [self.mesh.vertices[hole] for hole in self.mesh.holes])
+            elif '2' in self.obj_assets_names[self.current_mesh]:
+                self.mesh =  trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+                self.mesh.holes = [np.arange(128,191)]
+                self.mesh.exterior = list(range(128))+list(range(192,320))
+                poly = Polygon(self.mesh.vertices[:128], [self.mesh.vertices[128:192]])
+            elif '1' in self.obj_assets_names[self.current_mesh]:
+                pass
+            elif 'hfun' in self.obj_assets_names[self.current_mesh]:
+                self.mesh =  trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+                self.mesh.holes = [np.arange(300,400)]
+                self.mesh.exterior = np.arange(300)
+                poly = Polygon(self.mesh.vertices[self.mesh.exterior], [self.mesh.vertices[hole] for hole in self.mesh.holes])
+
+            filename = 'donut'
         else:
-            mesh_poly = Polygon(trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}').vertices[:,:2][:256])
-        self.mesh = polygon_triangulation(mesh_poly, self.max_tri_area)
-        self.mesh.boundary = mesh_poly
+            self.mesh = trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
+            poly = Polygon(self.mesh.vertices[:,:2][:256])
+            self.mesh.holes = []
+            self.mesh.exterior = np.arange(256)
+            filename = 'circle'
+        if self.triangulate:
+            self.mesh = polygon_triangulation(poly, self.resolution)
+            self.mesh.metadata['file_name'] = filename
+            self.mesh.boundary = poly
         
-        self.view_matrix = [-self.mesh.centroid[0],-self.mesh.centroid[1],-3]
-        self.update_view_matrix()
         self.program = gloo.Program(self.f_vertex, self.f_fragment, version='430')
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
@@ -132,9 +171,14 @@ class SimulationWindow:
             if changed:
                 self.update_view_matrix()
             
-            changed, self.max_tri_area = imgui.drag_float("Max triangle area", self.max_tri_area, change_speed=1.0)
-            if changed:
-                self.update_mesh()
+            _, self.triangulate = imgui.checkbox("Force Triangulation", self.triangulate)
+            if self.triangulate:
+                changed, self.resolution = imgui.drag_float("Resolution", self.resolution, change_speed=0.1)
+            self.update_mesh()
+
+            _, self.adaptative_timestep = imgui.checkbox("Adaptative timestep", self.adaptative_timestep)
+            if self.adaptative_timestep:
+                changed, self.n_timesteps = imgui.drag_int("Num of substeps", self.n_timesteps, change_speed=0.1)
 
             _, self.save_video = imgui.checkbox("Save video", self.save_video)
             if imgui.button("Build Solver"):
@@ -164,6 +208,9 @@ class SimulationWindow:
 
     def advance_frame(self, dt):
         self.frame += 1
+        sim_dt = dt / self.n_timesteps
+        for _ in range(self.n_timesteps):
+            self.solver.update_fields(sim_dt, self.frame)
+
         if self.frame == 1000:
             self.paused = True
-        self.solver.update_fields(dt, self.frame)

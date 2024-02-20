@@ -2,13 +2,18 @@ from matplotlib import animation
 import numpy as np
 import pytest
 import sys
+import trimesh
+
 sys.path.append(sys.path[0]+'\\..')
 
 from modules.trisolver import TriSolver
 
 @pytest.fixture(scope="module")
 def solver():
-    return TriSolver('./assets/regular_tri_grid64.obj', 36, 9, 3, True)
+    mesh = trimesh.load_mesh(f'./assets/donut_0-04.obj')
+    mesh.holes = [np.arange(128)]
+    mesh.exterior = np.arange(128,192)
+    return TriSolver(mesh, k=24, s=5, d=2, only_knn=True)
 
 class Plot:
     def __init__(self, solver) -> None:

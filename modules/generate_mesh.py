@@ -38,8 +38,8 @@ def TS(polygon, W, H):
     #move to origin
     return poly, scale_factor
 
-def polygon_triangulation(polygon: Polygon, max_tri_area):
-    points, indices = trimesh.creation.triangulate_polygon(polygon, 'pq30a'+str(int(max_tri_area) if max_tri_area>0.0 else 1), engine='triangle')
+def polygon_triangulation(polygon: Polygon, resolution):
+    points, indices = trimesh.creation.triangulate_polygon(polygon, 'pq30a'+str(1/2**resolution if 1/2**resolution>0.0 else 1/2**13), engine='triangle')
     return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices)
 
 def get_geojson():
