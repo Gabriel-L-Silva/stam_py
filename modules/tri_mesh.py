@@ -17,10 +17,10 @@ with warnings.catch_warnings():
 
 
 class TriMesh:
-    def __init__(self, mesh, k=12, s=5, d=2, only_knn=True):
+    def __init__(self, mesh, k=None, s=5, d=2, only_knn=True):
         self.mesh = mesh
         self.filename = mesh.metadata['file_name']
-        self.k = k
+        self.k = (d+2)*(d+1)/2 if k is None else k
         self.s = s
         self.d = d
         self.only_knn = only_knn
