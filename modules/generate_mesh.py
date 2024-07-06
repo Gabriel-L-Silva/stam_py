@@ -25,7 +25,7 @@ def regular_tri_grid(size = 64):
             index += 6
     return points, indices
 
-def TS(polygon, W, H):
+def TS(polygon, W, H, offset=0):
     x_min, y_min, x_max, y_max = polygon.bounds
     cx = polygon.centroid.x
     cy = polygon.centroid.y
@@ -34,12 +34,13 @@ def TS(polygon, W, H):
 
     scale_factor = Sx if Sx < Sy else Sy
 
-    poly = affine_transform(polygon, [scale_factor, 0, 0, scale_factor, -cx*scale_factor, -cy*scale_factor])
+    poly = affine_transform(polygon, [scale_factor, 0, 0, scale_factor, -cx*scale_factor + offset, -cy*scale_factor + offset])
     #move to origin
     return poly, scale_factor
 
 def polygon_triangulation(polygon: Polygon, resolution):
-    points, indices = trimesh.creation.triangulate_polygon(polygon, 'pq30a'+str(1/2**resolution if 1/2**resolution>0.0 else 1/2**13), engine='triangle')
+    poly, scale_factor = TS(polygon, 720, 720)
+    points, indices = trimesh.creation.triangulate_polygon(poly, 'pq20a'+str(int(resolution)), engine='triangle')
     return trimesh.Trimesh(np.stack([points[:,0], points[:,1], np.zeros(len(points))], axis = 1), indices)
 
 def get_geojson():
@@ -62,8 +63,8 @@ def main():
     data, names = get_geojson()
     idx = np.where(names=='Niger')[0][0]
     poly: Polygon = shape(data['features'][idx]['geometry'])
-    tmesh= polygon_triangulation(poly)
-    tmesh.show(smooth=False, flags={'wireframe':True})
+    tmesh= polygon_triangulation(poly, 3)
+    trimesh.Scene(tmesh).show(smooth=False, flags={'wireframe':True}, axis=True)
 
 if __name__ == '__main__':
     main()

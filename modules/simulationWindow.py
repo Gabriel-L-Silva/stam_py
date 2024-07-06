@@ -24,7 +24,7 @@ class SimulationWindow:
         self.ready = False
         
         self.triangulate = False 
-        self.resolution = 1
+        self.resolution = 1000
 
         self.show_vectors = True
         self.show_grid = True
@@ -56,9 +56,9 @@ class SimulationWindow:
         self.obj_assets_names = [f for f in os.listdir('./assets') if f.endswith('.obj')]
         self.mesh_list = [x for x in self.obj_assets_names]
 
-        # self.geojson, self.geo_list = get_geojson()
-        # for x in self.geo_list:
-        #     self.mesh_list.append(x)
+        self.geojson, self.geo_list = get_geojson()
+        for x in self.geo_list:
+            self.mesh_list.append(x)
         
         self.current_mesh: int = 0
         self.update_mesh()
@@ -82,9 +82,12 @@ class SimulationWindow:
 
     def update_mesh(self):
         if self.current_mesh >= len(self.obj_assets_names):
-            self.mesh: Polygon = shape(self.geojson[self.current_mesh-len(self.obj_assets_names)]['geometry'])
-            if type(poly) == MultiPolygon:
-                poly = list(poly)[0]
+            poly: Polygon = shape([f['geometry'] for f in self.geojson['features'] if f['properties']['ADMIN'] == self.mesh_list[self.current_mesh]][0])
+            if poly.geom_type == 'MultiPolygon':
+                poly = list(poly.geoms)[0]
+            self.mesh = polygon_triangulation(poly, self.resolution)
+            self.mesh.metadata['file_name'] = self.mesh_list[self.current_mesh]
+            self.mesh.boundary = poly
         elif 'donut' in self.obj_assets_names[self.current_mesh]:
             if '0-04' in self.obj_assets_names[self.current_mesh]:
                 self.mesh =  trimesh.load_mesh(f'./assets/{self.obj_assets_names[self.current_mesh]}')
@@ -126,7 +129,7 @@ class SimulationWindow:
             self.mesh.holes = []
             self.mesh.exterior = np.arange(256)
             filename = 'circle'
-        if self.triangulate:
+        if self.triangulate and self.current_mesh < len(self.obj_assets_names):
             self.mesh = polygon_triangulation(poly, self.resolution)
             self.mesh.metadata['file_name'] = filename
             self.mesh.boundary = poly
@@ -173,7 +176,7 @@ class SimulationWindow:
             
             _, self.triangulate = imgui.checkbox("Force Triangulation", self.triangulate)
             if self.triangulate:
-                changed, self.resolution = imgui.drag_float("Resolution", self.resolution, change_speed=0.1)
+                changed, self.resolution = imgui.drag_float("Resolution", self.resolution, change_speed=1)
             self.update_mesh()
 
             _, self.adaptative_timestep = imgui.checkbox("Adaptative timestep", self.adaptative_timestep)
