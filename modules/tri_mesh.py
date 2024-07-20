@@ -22,8 +22,9 @@ with warnings.catch_warnings():
 
 
 class TriMesh:
-    def __init__(self, mesh, k=None, s=5, d=2, only_knn=True):
+    def __init__(self, mesh, k=None, s=5, d=2, only_knn=True, ghost_distance=0.1):
         self.mesh = mesh
+        self.ghost_distance = ghost_distance
         self.filename = mesh.metadata['file_name']
         self.k = (d+2)*(d+1)/2 if k is None else k
         self.s = s
@@ -78,11 +79,20 @@ class TriMesh:
             for id, ring in enumerate(self.nring):
                 if len(ring) < self.k:
                     ring = knn[id].append(id)
-        print('Building rbf...')
-        #adiconar o ghost no proximo passo
-        self.rbf = [rbf_fd_weights(self.points[self.nring[p]], self.points[p], self.s, self.d) for p in tqdm(range(self.n_points))]
         
         self._init_boundary()
+        
+        print('Building rbf...')
+        self.rbf = []
+        #adiconar o ghost no proximo passo
+        for p in tqdm(range(self.n_points)):
+            if p in self.boundary:
+                #create ghost node
+                ghost = self.points[p] + self.normals[p,:2]*self.ghost_distance
+                self.rbf.append(rbf_fd_weights(np.append(self.points[self.nring[p]], ghost.reshape(1,2), axis=0), self.points[p], self.s, self.d))
+            else:
+                self.rbf.append(rbf_fd_weights(self.points[self.nring[p]], self.points[p], self.s, self.d))
+        
 
     def _init_boundary(self):
         # Find edges at the boundary
