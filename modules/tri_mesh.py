@@ -6,6 +6,11 @@ from sklearn.preprocessing import normalize
 import trimesh
 import numpy as np
 from tqdm import tqdm
+
+try:
+    from modules.ray_polygon_intersection import IntersectionSolver
+except:
+    from ray_polygon_intersection import IntersectionSolver
 try:
     from modules.rbf import rbf_fd_weights
 except:
@@ -25,8 +30,12 @@ class TriMesh:
         self.d = d
         self.only_knn = only_knn
         self._init_mesh()
+        self.intersection_solver = IntersectionSolver(self.mesh, self.sorted_edges)
 
     def intersect_boundary(self, new_pos):
+        if self.intersection_solver is not None:
+            self.intersection_solver.intersect(self.mesh.vertices[:,:2], new_pos - self.mesh.vertices[:,:2])
+
         if 'circle' in self.filename:
             out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) > 1)[0]
             new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds])
@@ -70,6 +79,7 @@ class TriMesh:
                 if len(ring) < self.k:
                     ring = knn[id].append(id)
         print('Building rbf...')
+        #adiconar o ghost no proximo passo
         self.rbf = [rbf_fd_weights(self.points[self.nring[p]], self.points[p], self.s, self.d) for p in tqdm(range(self.n_points))]
         
         self._init_boundary()
@@ -78,8 +88,9 @@ class TriMesh:
         # Find edges at the boundary
         unique_edges = self.mesh.edges[trimesh.grouping.group_rows(self.mesh.edges_sorted, require_count=1)]
         self.boundary = set(np.unique(unique_edges.flatten()))
-
-
+        if not hasattr(self.mesh, 'exterior'):
+            self.mesh.exterior = list(set(unique_edges.flatten()))
+            self.mesh.holes = []
         self.normals = np.zeros_like(self.mesh.vertices)
 
         exterior_edges = [edge for edge in unique_edges if edge[0] in self.mesh.exterior and edge[1] in self.mesh.exterior]
@@ -145,6 +156,7 @@ class TriMesh:
         e_normals = np.zeros((len(edges),2))
         R_matrix = np.array([[0,-1],[1,0]])
         sorted_edges = self.sort_edges(edges)
+        self.sorted_edges = sorted_edges
         for idx, edge in enumerate(sorted_edges):
             e = self.mesh.vertices[edge[0]][:2] - self.mesh.vertices[edge[1]][:2]
             e_normals[idx] = R_matrix@e

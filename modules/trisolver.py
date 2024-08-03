@@ -20,7 +20,7 @@ class TriSolver:
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,2))
 
-        self.Interpolator = RBFInterpolator(self.mesh)
+        self.Interpolator = Interpolator(self.mesh)
 
         self.init_poisson_weights()
 
@@ -64,7 +64,7 @@ class TriSolver:
     
     def computeSource(self, dt, frame):
         if frame <= 500:
-            self.vectors[list(self.source_cells)] = [0,3]
+            self.vectors[list(self.source_cells)] = [0,30]
             self.density[list(self.source_cells)] = 1
         
         self.apply_boundary_condition()

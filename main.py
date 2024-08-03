@@ -41,7 +41,7 @@ view = np.eye(4)
 model = np.eye(4)
 projection = glm.perspective(45.0, 1, 0.1, 10000.0)
 h = math.tan(45.0 / 360.0 * math.pi) * 0.1
-glm.translate(view, 0,0,-3)
+glm.translate(view, 0,0,-300)
 view_matrix = [0,0,-3]
 simWindow = SimulationWindow(5, view, model, projection, view_matrix, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
@@ -59,7 +59,7 @@ def on_draw(dt):
         simWindow.draw()
         if not simWindow.paused or simWindow.next_frame:
             if simWindow.save_video:
-                dt = 1/60.0
+                dt = 10e-4
                 frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
             profiler.enable()
             simWindow.advance_frame(dt)
