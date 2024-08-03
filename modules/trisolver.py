@@ -14,8 +14,8 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
 class TriSolver:
-    def __init__(self, mesh, k=12, s=5, d=2, only_knn=True):
-        self.mesh = TriMesh(mesh, k, s, d, only_knn)
+    def __init__(self, mesh, k=12, s=5, d=2, only_knn=True, ghost_distance=0.1):
+        self.mesh = TriMesh(mesh, k, s, d, only_knn, ghost_distance)
 
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,2))
@@ -88,8 +88,17 @@ class TriSolver:
         print('Building Poisson matrix...')
         for pid in tqdm(range(self.mesh.n_points)): 
             if pid in self.mesh.boundary:
+                #removing ghost from rbf weights
+                w_ghost = self.mesh.rbf[pid][-1]
+                self.mesh.rbf[pid] = np.delete(self.mesh.rbf[pid],-1,0)
+
+                w_lap_ghost = w_ghost[0]
+                w_n_ghost = w_ghost[1]*self.mesh.normals[pid,0] + w_ghost[2]*self.mesh.normals[pid,1]
+
+                ghost_constant = 1 - w_lap_ghost/w_n_ghost
                 weights = (self.mesh.rbf[pid][:,1]*self.mesh.normals[pid,0]
                         + self.mesh.rbf[pid][:,2]*self.mesh.normals[pid,1])
+                weights = weights*ghost_constant
             else:
                 weights = self.mesh.rbf[pid][:,0]
             

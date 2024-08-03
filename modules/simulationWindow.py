@@ -11,6 +11,7 @@ import os
 class SimulationWindow:
     def __init__(self, source_force, view, model, projection, view_matrix, f_vertex = None, f_fragment = None, q_vertex = None, q_fragment = None, q_geometry = None) -> None:
         self.source_force = source_force
+        self.ghost_distance = 0.1
 
         self.paused = True
         self.next_frame = False
@@ -63,8 +64,8 @@ class SimulationWindow:
         self.current_mesh: int = 0
         self.update_mesh()
         
-    def build_solver(self):
-        self.solver = TriSolver(self.mesh)
+    def build_solver(self, ghost_distance):
+        self.solver = TriSolver(self.mesh, ghost_distance=ghost_distance)
         self.quiver_program['position'] = self.solver.mesh.points
         self.quiver_program['Xvelocity'] = self.solver.vectors[:,0]
         self.quiver_program['Yvelocity'] = self.solver.vectors[:,1]
@@ -169,6 +170,7 @@ class SimulationWindow:
                 clicked, self.current_mesh = imgui.combo('Mesh selector', self.current_mesh, self.mesh_list)
                 if clicked:
                     self.update_mesh()
+            changed, self.ghost_distance = imgui.drag_float("Ghost Distance", self.ghost_distance, change_speed=0.05)
             changed,  vm = imgui.drag_float3("View Matrix", *self.view_matrix, change_speed=1.0)
             self.view_matrix = list(vm)
             if changed:
@@ -185,7 +187,7 @@ class SimulationWindow:
 
             _, self.save_video = imgui.checkbox("Save video", self.save_video)
             if imgui.button("Build Solver"):
-                self.build_solver()
+                self.build_solver(ghost_distance=self.ghost_distance)
         imgui.end()
 
     def draw_grid(self):
@@ -214,6 +216,8 @@ class SimulationWindow:
         sim_dt = dt / self.n_timesteps
         for _ in range(self.n_timesteps):
             self.solver.update_fields(sim_dt, self.frame)
-
+        if self.frame == 50:
+            self.show_grid = False
+            self.show_vectors = False
         if self.frame == 1000:
             self.paused = True
