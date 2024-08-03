@@ -13,14 +13,14 @@ imgui==2.0.0
 iniconfig==2.0.0
 joblib==1.2.0
 kiwisolver==1.4.4
-libpysal==4.7.0
+libpysal<=4.7.0
 llvmlite==0.40.1rc1
 matplotlib==3.7.1
 networkx==3.1
-numpy
+numpy<=1.22.4
 opencv-python==4.7.0.72
 packaging==23.1
-pandas==2.0.2
+pandas<=2.0.2
 Pillow==10.0.1
 platformdirs==3.5.3
 pluggy==1.0.0

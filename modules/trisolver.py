@@ -6,16 +6,16 @@ try:
 except:
     from tri_mesh import TriMesh
 try:
-    from modules.interpolator import Interpolator, RBFInterpolator, CubicInterpolator
+    from modules.interpolator import Interpolator, RBFInterpolator
 except:
-    from interpolator import Interpolator, RBFInterpolator, CubicInterpolator
+    from interpolator import Interpolator, RBFInterpolator
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
 class TriSolver:
-    def __init__(self, filename, k=12, s=5, d=2, only_knn=False):
-        self.mesh = TriMesh(filename, k, s, d, only_knn)
+    def __init__(self, mesh, k=12, s=5, d=2, only_knn=True):
+        self.mesh = TriMesh(mesh, k, s, d, only_knn)
 
         self.density = np.zeros((self.mesh.n_points))
         self.vectors = np.zeros((self.mesh.n_points,2))
@@ -49,19 +49,19 @@ class TriSolver:
 
         self.apply_boundary_condition()
 
-        # assert np.allclose(max(abs(div)), 0, atol=1e-2), f'Pressure projection failed, div = {max(abs(div))}'
 
-    def computeAdvection(self, density, dt):
-        new_pos = self.mesh.points - self.vectors*dt
-        new_pos = np.clip(new_pos,0,pi)
-        if density:
-            self.density = np.clip(self.Interpolator(self.density, new_pos), 0, 1)
-        else:
+    def computeAdvection(self, dt, new_pos=None):
+        if new_pos is None:
+            new_pos = self.mesh.points - self.vectors*dt
+            new_pos = self.mesh.intersect_boundary(new_pos)
             self.vectors[:,0] = self.Interpolator(self.vectors[:,0], new_pos)
             self.vectors[:,1] = self.Interpolator(self.vectors[:,1], new_pos)
+        else:
+            self.density = np.clip(self.Interpolator(self.density, new_pos), 0, 1)
 
         self.apply_boundary_condition()
-
+        return new_pos
+    
     def computeSource(self, dt, frame):
         if frame <= 500:
             self.vectors[list(self.source_cells)] = [0,3]
@@ -106,6 +106,7 @@ class TriSolver:
         else:
             b = np.array([self.divergence(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)])
         lapl = spsolve(self.w, b)
+        assert(not np.isnan(lapl).any())
         return lapl
 
     def velocityStep(self, dt):
@@ -115,22 +116,24 @@ class TriSolver:
 
         self.computePressure(dt)
 
-        self.computeAdvection(False, dt)
+        new_pos = self.computeAdvection(dt)
 
         self.computePressure(dt)
 
         div = np.array([self.divergence(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)])
+        # assert np.allclose(max(abs(div)), 0, atol=1e-2), f'Pressure projection failed, div = {max(abs(div))}'
         self.div_history.append(div)
+        return new_pos
 
-    def densityStep(self, dt, frame):
+    def densityStep(self, dt, frame, new_pos):
         self.computeSource(dt, frame)
 
         self.computeViscosity(dt)
 
-        self.computeAdvection(True, dt)
+        self.computeAdvection(dt, new_pos)
 
     def update_fields(self, dt, frame):
         self.apply_boundary_condition()
-        self.velocityStep(dt)
+        new_pos = self.velocityStep(dt)
         self.apply_boundary_condition()
-        self.densityStep(dt, frame)
+        self.densityStep(dt, frame, new_pos)
