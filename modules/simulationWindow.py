@@ -171,6 +171,7 @@ class SimulationWindow:
                 if clicked:
                     self.update_mesh()
             changed, self.ghost_distance = imgui.drag_float("Ghost Distance", self.ghost_distance, change_speed=0.05)
+            changed, self.source_force = imgui.drag_float("Source Force", self.source_force, change_speed=0.1)
             changed,  vm = imgui.drag_float3("View Matrix", *self.view_matrix, change_speed=1.0)
             self.view_matrix = list(vm)
             if changed:

@@ -43,7 +43,7 @@ projection = glm.perspective(45.0, 1, 0.1, 10000.0)
 h = math.tan(45.0 / 360.0 * math.pi) * 0.1
 glm.translate(view, 0,0,-300)
 view_matrix = [0,0,-3]
-simWindow = SimulationWindow(5, view, model, projection, view_matrix, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
+simWindow = SimulationWindow(1, view, model, projection, view_matrix, f_vertex, f_fragment, q_vertex, q_fragment, q_geometry)
 frames = []
 
 def preview_mesh():
@@ -61,9 +61,7 @@ def on_draw(dt):
             if simWindow.save_video:
                 dt = 10e-4
                 frames.append(np.asarray(pyglet.image.get_buffer_manager().get_color_buffer().get_image_data().get_data()))
-            profiler.enable()
             simWindow.advance_frame(dt)
-            profiler.disable()
     else:
         preview_mesh()
 
@@ -155,10 +153,7 @@ if __name__ == "__main__":
     import os
     from PIL import Image
     # run app
-    import cProfile, pstats
     import matplotlib.pyplot as plt
-    global profiler
-    profiler = cProfile.Profile()
     try:
         app.run()
     except:
@@ -169,10 +164,16 @@ if __name__ == "__main__":
             ax.set_zlim(0, 10)
             ax.plot_trisurf(simWindow.solver.mesh.points[:,0], simWindow.solver.mesh.points[:,1], abs(simWindow.solver.div_history[d]), cmap=cm.coolwarm)
             
+        mesh_name = simWindow.solver.mesh.filename.split('.')[0]
+        prefix = f'{mesh_name}_g{simWindow.ghost_distance}_s{simWindow.source_force}'
         # Attaching 3D axis to the figure
         my_dpi = 96
-        plt.plot(abs(np.array(simWindow.solver.div_history)).max(axis=1))
-        plt.show(block=True)
+        fig = plt.figure(figsize=(720/my_dpi, 720/my_dpi), dpi=my_dpi)
+        ax = fig.add_subplot()
+        ax.plot(abs(np.array(simWindow.solver.div_history)).max(axis=1))
+        ax.set_xlabel('Frame')
+        ax.set_ylabel('Divergent')
+        fig.savefig(f'{prefix}_div_history.png')
         fig = plt.figure(figsize=(720/my_dpi, 720/my_dpi), dpi=my_dpi)
         ax = fig.add_subplot(projection="3d")
         ax.set_xlim(-1, 1)
@@ -180,15 +181,12 @@ if __name__ == "__main__":
         ax.set_zlim(0, 10)
         anim = animation.FuncAnimation(fig, generate_triangular_surfaces, len(simWindow.solver.div_history), interval=1000/60.0/simWindow.n_timesteps, repeat=False)
         progress_callback = lambda i, n: print(f'Saving frame {i} of {n}')
-        anim.save('div_anim.mp4', fps=60, progress_callback=progress_callback)
+        anim.save(f'{prefix}_div_anim.mp4', fps=60, progress_callback=progress_callback)
         if simWindow.save_video:
             print('saving frames')
-            video = cv2.VideoWriter('video.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
+            video = cv2.VideoWriter(f'{prefix}.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 60, (WIDTH,HEIGHT))
             for f, frame  in tqdm(enumerate(frames)):
                 if len(frame) != WIDTH*HEIGHT*4:
                     break
                 video.write(cv2.cvtColor(np.array(Image.frombuffer("RGBA", (WIDTH, HEIGHT), frame, "raw", "RGBA", 0, -1)), cv2.COLOR_RGBA2BGR))
             video.release()
-    #     print('acabou')
-        stats = pstats.Stats(profiler).sort_stats('tottime')
-        stats.print_stats()
