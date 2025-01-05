@@ -158,11 +158,14 @@ if __name__ == "__main__":
         app.run()
     except:
         def generate_triangular_surfaces(d):
+            from sklearn.preprocessing import MinMaxScaler
             ax.clear()
             ax.set_xlim(-1, 1)
             ax.set_ylim(-1, 1)
             ax.set_zlim(0, 10)
-            ax.plot_trisurf(simWindow.solver.mesh.points[:,0], simWindow.solver.mesh.points[:,1], abs(simWindow.solver.div_history[d]), cmap=cm.coolwarm)
+            scaler = MinMaxScaler(feature_range=(-1, 1))
+            scaled = scaler.fit_transform(simWindow.solver.mesh.points)
+            ax.plot_trisurf(scaled[:,0], scaled[:,1], abs(simWindow.solver.div_history[d]), cmap=cm.coolwarm)
             
         mesh_name = simWindow.solver.mesh.filename.split('.')[0]
         prefix = f'{mesh_name}_g{simWindow.ghost_distance}_s{simWindow.source_force}'

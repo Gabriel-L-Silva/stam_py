@@ -14,7 +14,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
 class TriSolver:
-    def __init__(self, mesh, k=12, s=5, d=2, only_knn=True, ghost_distance=0.1):
+    def __init__(self, mesh, k=12, s=5, d=2, only_knn=True, ghost_distance=0.1, source_force=30):
         self.mesh = TriMesh(mesh, k, s, d, only_knn, ghost_distance)
 
         self.density = np.zeros((self.mesh.n_points))
@@ -25,6 +25,7 @@ class TriSolver:
         self.init_poisson_weights()
 
         self.source_cells = set()
+        self.source_force = source_force
 
         self.div_history = []
 
@@ -64,7 +65,7 @@ class TriSolver:
     
     def computeSource(self, dt, frame):
         if frame <= 500:
-            self.vectors[list(self.source_cells)] = [0,30]
+            self.vectors[list(self.source_cells)] = [0, self.source_force ]
             self.density[list(self.source_cells)] = 1
         
         self.apply_boundary_condition()

@@ -64,8 +64,8 @@ class SimulationWindow:
         self.current_mesh: int = 0
         self.update_mesh()
         
-    def build_solver(self, ghost_distance):
-        self.solver = TriSolver(self.mesh, ghost_distance=ghost_distance)
+    def build_solver(self):
+        self.solver = TriSolver(self.mesh, ghost_distance=self.ghost_distance, source_force=self.source_force)
         self.quiver_program['position'] = self.solver.mesh.points
         self.quiver_program['Xvelocity'] = self.solver.vectors[:,0]
         self.quiver_program['Yvelocity'] = self.solver.vectors[:,1]
@@ -188,7 +188,7 @@ class SimulationWindow:
 
             _, self.save_video = imgui.checkbox("Save video", self.save_video)
             if imgui.button("Build Solver"):
-                self.build_solver(ghost_distance=self.ghost_distance)
+                self.build_solver()
         imgui.end()
 
     def draw_grid(self):
@@ -217,7 +217,7 @@ class SimulationWindow:
         sim_dt = dt / self.n_timesteps
         for _ in range(self.n_timesteps):
             self.solver.update_fields(sim_dt, self.frame)
-        if self.frame == 50:
+        if self.frame == 150:
             self.show_grid = False
             self.show_vectors = False
         if self.frame == 1000:
