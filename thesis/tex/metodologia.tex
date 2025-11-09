@@ -1,0 +1,314 @@
+\label{secao:metodologia}
+
+Neste capítulo, apresentamos a metodologia desenvolvida para a simulação de fumaça em malhas não-estruturadas utilizando o método RBF-FD. A abordagem proposta combina técnicas de simulação de fluidos baseadas no trabalho seminal de \citeonline{Stam1999} com uma nova formulação para lidar com malhas arbitrárias através de funções de base radial, conforme usado por \citeonline{Nakanishi2020}.
+
+Nossa metodologia está estruturada em quatro seções principais. Inicialmente, apresentamos uma adaptação do pipeline de \citeonline{Stam1999} para o contexto de malhas não-estruturadas, detalhando a discretização e resolução de cada termo das Equações de Navier-Stokes utilizando RBF-FD.
+
+A segunda seção introduz uma solução para o problema de intersecção entre raios e polígonos, contribuição fundamental para o tratamento adequado de partículas que ultrapassam os limites do domínio durante a simulação. Esta solução estende as capacidades do método semi-lagrangiano tradicional \cite{Stam1999} para operar em malhas arbitrárias, superando as limitações das abordagens anteriores que se restringiam a malhas estruturadas \cite{Stam2003}.
+
+A terceira seção aborda os desafios específicos relacionados ao uso de malhas não estruturadas. Apresentamos estratégias para melhorar a precisão do método RBF nas fronteiras do domínio, incluindo o desenvolvimento de técnicas especiais para o tratamento de vértices fantasma, utilizando o trabalho desenvolvido em \citeonline{FLYER201639}.
+
+Por fim, discutimos os aspectos computacionais da implementação, detalhando as estruturas de dados utilizadas e as otimizações realizadas para garantir a eficiência do método em aplicações práticas.
+
+
+O método é avaliado analisando as limitações conhecidas da abordagem que também são discutidas, proporcionando uma visão completa e crítica da proposta.
+\section{Pipeline do Stam}
+\label{sec:impl_terms}
+
+A implementação numérica das Equações de Navier-Stokes incompressíveis usando o método RBF-FD requer a discretização adequada de cada um dos termos apresentados na Seção~\ref{sec:anim_fumaca}. Nesta seção, detalharemos como cada termo foi implementado, mantendo a consistência com as propriedades matemáticas do escoamento e garantindo a estabilidade numérica da simulação.
+
+\subsection{Termo de Advecção}
+\label{subsec:impl_advec}
+
+O termo de advecção, $(\mathbf{u}\cdot\nabla)\mathbf{u}$, representa o transporte das propriedades do fluido pelo próprio campo de velocidades. Para sua implementação usando RBF-FD, adotamos uma abordagem semi-lagrangiana similar à apresentada por Stam~\cite{Stam1999}, porém adaptada ao contexto de malhas não-estruturadas. O procedimento pode ser descrito em três etapas principais:
+
+Para cada ponto $\mathbf{x}_i$ da malha computacional no tempo $t^n$, calculamos a posição de origem $\mathbf{x}_i^*$ através do \emph{backtracking}:
+
+\begin{equation}
+    \mathbf{x}_i^* = \mathbf{x}_i - \Delta t\mathbf{u}(\mathbf{x}_i, t^n)
+    \label{eq:backtrack}
+\end{equation}
+
+Como $\mathbf{x}_i^*$ geralmente não coincide com um ponto da malha, utilizamos interpolação RBF para aproximar o valor da velocidade nesta posição. A função de interpolação é construída usando os $N$ pontos mais próximos de $\mathbf{x}_i^*$, onde $N$ é o número de pontos do stencil:
+
+\begin{equation}
+    \mathbf{u}(\mathbf{x}_i^*, t^{n-1}) = \sum_{j=1}^N \lambda_j \phi(\|\mathbf{x}_i^* - \mathbf{x}_j\|)
+    \label{eq:rbf_interp}
+\end{equation}
+
+onde $\phi(r)$ é a função de base radial escolhida e $\lambda_j$ são os coeficientes de interpolação determinados pela solução de um sistema linear local.
+
+O valor interpolado é então atribuído ao ponto $\mathbf{x}_i$ no tempo $t^n$:
+
+\begin{equation}
+    \mathbf{u}(\mathbf{x}_i, t^n) = \mathbf{u}(\mathbf{x}_i^*, t^{n-1})
+    \label{eq:advec_update}
+\end{equation}
+
+\subsection{Termo do Gradiente de Pressão}
+\label{subsec:impl_press}
+
+O termo do gradiente de pressão, $-\frac{1}{\rho}\nabla p$, é implementado diretamente usando os pesos RBF-FD previamente calculados para o operador gradiente. Para um ponto $\mathbf{x}_i$ e seu stencil de $N$ pontos, temos:
+
+\begin{equation}
+    (\nabla p)_i = \sum_{j=1}^N w_{ij}^{\nabla} p_j
+    \label{eq:press_grad}
+\end{equation}
+
+onde $w_{ij}^{\nabla}$ são os pesos RBF-FD para o operador gradiente.
+\subsection{Termo de Força Externa}
+\label{subsec:impl_force}
+
+O termo de força externa $\mathbf{g}$ incorpora as forças volumétricas que atuam sobre o fluido, como a gravidade e forças de interação do usuário. No contexto da simulação de fumaça, este termo é particularmente importante para modelar o efeito de empuxo térmico. A implementação deste termo é direta, sendo adicionado explicitamente ao campo de velocidades:
+
+\begin{equation}
+    \mathbf{u}^{n+1} = \mathbf{u}^n + \Delta t\mathbf{g}
+    \label{eq:force_update}
+\end{equation}
+
+Para o caso específico da força de empuxo térmico, utilizamos a aproximação de Boussinesq:
+
+\begin{equation}
+    \mathbf{g} = \beta(T - T_{\infty})\mathbf{g}_0
+    \label{eq:buoyancy}
+\end{equation}
+
+onde $\beta$ é o coeficiente de expansão térmica, $T$ é a temperatura local, $T_{\infty}$ é a temperatura ambiente e $\mathbf{g}_0$ é o vetor da aceleração da gravidade.
+
+\subsection{Projeção do Campo de Velocidades}
+\label{subsec:impl_proj}
+
+A etapa de projeção é fundamental para garantir a condição de incompressibilidade do fluido ($\nabla\cdot\mathbf{u}=0$). Seguindo a decomposição de Helmholtz-Hodge apresentada na Seção~\ref{sec:anim_fumaca}, implementamos a projeção em três etapas:
+
+Primeiro, calculamos o divergente do campo de velocidades intermediário $\mathbf{w}$ usando os pesos RBF-FD para o operador divergente:
+
+\begin{equation}
+    (\nabla\cdot\mathbf{w})_i = \sum_{j=1}^N w_{ij}^{\mathrm{div}} \cdot \mathbf{w}_j
+    \label{eq:div_calc}
+\end{equation}
+
+Em seguida, resolvemos a equação de Poisson para a pressão:
+
+\begin{equation}
+    \nabla^2 p = \nabla\cdot\mathbf{w}
+    \label{eq:poisson_discrete}
+\end{equation}
+
+que, utilizando os pesos RBF-FD para o operador Laplaciano, resulta no sistema linear:
+
+\begin{equation}
+    \sum_{j=1}^N w_{ij}^{\nabla^2} p_j = (\nabla\cdot\mathbf{w})_i
+    \label{eq:poisson_system}
+\end{equation}
+
+Para este sistema, aplicamos a condição de contorno de Neumann na fronteira do domínio:
+
+\begin{equation}
+    \nabla p \cdot \mathbf{n} = 0
+    \label{eq:neumann_bc}
+\end{equation}
+
+Por fim, o campo de velocidades livre de divergência é obtido subtraindo o gradiente de pressão do campo intermediário:
+
+\begin{equation}
+    \mathbf{u}_i = \mathbf{w}_i - \nabla p_i
+    \label{eq:proj_final}
+\end{equation}
+
+onde $\nabla p_i$ é calculado usando a Equação~\eqref{eq:press_grad}.
+
+\subsection{Algoritmo Completo}
+\label{subsec:impl_alg}
+
+O algoritmo completo para a simulação do escoamento pode ser resumido nas seguintes etapas:
+
+Atualização das forças externas usando as Equações~\eqref{eq:force_update} e~\eqref{eq:buoyancy}
+Advecção do campo de velocidades através das Equações~\eqref{eq:backtrack}-\eqref{eq:advec_update}
+Projeção do campo para garantir a incompressibilidade usando as Equações~\eqref{eq:div_calc}-\eqref{eq:proj_final}
+
+Este procedimento é repetido a cada passo de tempo da simulação, garantindo a evolução estável e fisicamente consistente do escoamento.
+
+
+\section{Intersecção raio polígono}
+
+A interseção entre um raio e um polígono é um problema comum em computação gráfica e geometria computacional, fundamental em diversas aplicações, como jogos, simulações físicas e renderização de imagens. Um algoritmo amplamente utilizado para calcular essa interseção é o algoritmo de interseção de raio e polígono baseado no método de "Ray Casting" (lançamento de raio). Esse método consiste em disparar um raio a partir de um ponto de origem na direção desejada e determinar quantas vezes ele cruza as arestas do polígono. O algoritmo examina cada aresta do polígono para verificar se ocorre uma interseção com o raio. Utilizando conceitos matemáticos como o teste de interseção entre segmentos de reta e o teste de paridade, o algoritmo determina se o raio intersecta o polígono e, se o fizer, onde exatamente essa interseção ocorre.
+
+\subsection{Algoritmo}
+Para calcular a interseção entre um raio e um polígono em um ambiente 2D, focamos apenas na interseção do raio com as arestas do polígono. Um método eficaz para isso é o algoritmo de interseção de segmento de linha, como o algoritmo de Cohen-Sutherland ou o algoritmo de Liang-Barsky. Vamos considerar o algoritmo de Cohen-Sutherland, que é mais simples de entender e implementar para esse cenário específico.
+
+Para cada aresta do polígono, representada pelos pontos $P_1$ e $P_2$, calculamos a interseção com o raio utilizando a equação paramétrica da reta. Sejam $P_1(x_1,y_1)$ e $P_2(x_2,y_2)$ os pontos que definem a aresta e $(x,y)$ o ponto de interseção com o raio. A equação paramétrica da reta é dada por:
+
+\begin{align}
+x=x_1+t(x_2-x_1)\\
+y=y_1+t(y_2-y_1)    
+\end{align}
+
+
+Onde $t$ é um parâmetro que varia de 0 a 1. Substituindo essas equações na equação do raio, obtemos uma equação:
+\begin{equation}
+t=(x-x_1)(x_2-x_1)=(y-y_1)(y_2-y_1)
+\end{equation}
+
+Se $t$ estiver no intervalo [0, 1], então a interseção ocorre dentro do segmento de linha $P_1P_2$. Calculando $t$ para ambos os eixos, podemos verificar se o ponto de interseção está dentro do segmento de linha.
+
+Este procedimento é repetido para cada aresta do polígono. Se houver interseção, o algoritmo retorna o ponto de interseção mais próximo ao ponto de origem do raio. Se não houver interseção com nenhuma das arestas, então o raio não intersecta o polígono.
+
+Esse algoritmo é simples de implementar em ambientes 2D, fornecendo uma solução robusta para calcular a interseção entre um raio e um polígono.
+
+\begin{figure}
+     \centering
+     \caption{Exemplo de intersecção raio polígono. Malha em azul, $P_1$ ponto vermelho, direção do raio como seta vermelha, $P_2$ ponto preto, Ponto de intersecção em verde.}
+     \includegraphics[width=0.92\textwidth]{images/intersect.pdf}
+     \subcaption*{Fonte: elaborado pelo autor}
+     \label{fig:intersect}
+ \end{figure}
+
+\subsection{Desempenho}
+É possível aplicar uma vetorização a esse cálculo para tentar melhorar o desempenho, fazendo com que seja calculada a intersecção de um raio com todas as arestas de um polígono em um único passo. A técnica de vetorização permite uma abordagem eficiente e paralela para calcular a interseção de um raio com múltiplos segmentos de aresta de um polígono em um ambiente 2D, proporcionando uma solução escalável e otimizada para esse problema.
+
+Embora a técnica de vetorização ofereça uma abordagem eficiente para calcular a interseção de um raio com múltiplos segmentos de aresta de um polígono em um ambiente 2D, implementá-la diretamente em Python pode resultar em um desempenho insatisfatório para conjuntos de dados maiores. Isso ocorre devido à natureza interpretada do Python e à falta de otimização de baixo nível para operações matriciais.
+
+Para superar essa limitação de desempenho, podemos recorrer à técnica de compilação just-in-time (JIT) oferecida por bibliotecas como Numba em Python. Numba é uma biblioteca de Python que compila funções Python em código de máquina otimizado, melhorando significativamente o desempenho, especialmente para operações numéricas intensivas.
+
+Ao utilizar Numba, podemos decorar a função que calcula a interseção do raio com múltiplos segmentos de aresta com @jit para permitir a compilação JIT. Isso transformará a função em código de máquina otimizado, proporcionando uma melhoria significativa no desempenho.
+
+Além disso, ao trabalhar com grandes conjuntos de dados, podemos aproveitar técnicas de paralelismo oferecidas por Numba para distribuir as operações em múltiplos núcleos de CPU, acelerando ainda mais o processo de cálculo.
+
+Portanto, ao utilizar Numba em Python, podemos melhorar significativamente o desempenho do algoritmo de cálculo da interseção do raio com múltiplos segmentos de aresta, tornando-o adequado para lidar eficientemente com conjuntos de dados maiores em tempo real ou aplicações de alto desempenho.
+
+\subsection{Interpolação}
+
+O algoritmo de backtracking e os métodos de interpolação estão conectados por sua aplicação em problemas de otimização e modelagem computacional. Enquanto o algoritmo de backtracking é utilizado para explorar soluções em espaços de busca complexos, ajustando continuamente o caminho para alcançar uma solução ótima, os métodos de interpolação são empregados para estimar valores desconhecidos em regiões discretizadas, preenchendo lacunas no conhecimento dos dados. Essas técnicas são frequentemente combinadas em aplicações que envolvem modelagem numérica, como simulações de sistemas físicos ou computacionais, onde a precisão e a eficiência são essenciais. Por exemplo, em simulações de fluxo de fluidos, o algoritmo de backtracking pode ser utilizado para otimizar a distribuição de propriedades em um sistema fluido, enquanto os métodos de interpolação são usados para preencher lacunas nos dados observados, permitindo uma representação mais precisa do comportamento do fluido em regiões onde as medições são escassas ou inexistentes. Assim, a combinação dessas técnicas oferece uma abordagem poderosa para resolver uma variedade de problemas de modelagem e otimização em ciência e engenharia.
+
+Nas malhas triangulares, usamos dois métodos comuns de interpolação: trilinear e RBF (Radial Basis Function). O método trilinear é uma abordagem direta que interpola valores dentro de cada célula triangular usando uma combinação linear dos valores conhecidos nos vértices da célula. Por outro lado, o método RBF utiliza funções de base radial para interpolar os valores, permitindo uma maior flexibilidade na representação de dados irregulares.
+
+No entanto, embora o método RBF ofereça essa flexibilidade, ele é conhecido por sofrer de baixa precisão perto das bordas das células triangulares. Essa baixa precisão é atribuída à maneira como as funções de base radial são distribuídas, resultando em uma interpolação menos confiável em regiões próximas às fronteiras. Como consequência, a interpolação RBF pode gerar campos que não são divergentes nulos, o que significa que as propriedades físicas não estão sendo corretamente representadas, criando artefatos na simulação. Esses artefatos podem distorcer os resultados da simulação e comprometer a precisão do modelo, especialmente em problemas onde a conservação de massa e outras leis físicas são críticas.
+
+ Além disso, exploramos a influência dos métodos de interpolação do backtracking na simulação, comparando os resultados obtidos com os métodos trilinear e RBF (Radial Basis Function), visando identificar as diferenças de desempenho e suas implicações na precisão das previsões de dispersão de fumaça.
+
+ \section{Malhas arbitrárias}
+
+ Para criar malhas triangulares arbitrárias, aproveitamos uma biblioteca de malhas de países, que fornece uma representação precisa da topografia global em forma de fronteiras. Essa biblioteca permite gerar malhas de alta resolução para uma variedade de regiões geográficas, oferecendo uma base sólida para a simulação de dispersão de fumaça em diferentes ambientes. No entanto, é importante destacar que as malhas de países são descritas apenas pelas fronteiras, sem uma triangulação prévia. Para realizar a triangulação das fronteiras e obter as malhas triangulares necessárias para a simulação, utilizamos um porte da biblioteca Triangle para Python, uma ferramenta conhecida por sua capacidade de realizar triangulações de maneira eficiente e robusta. Essa abordagem possibilitou a triangulação da malha conforme necessário para a simulação. No entanto, vale ressaltar que, a triangulação pode gerar malhas com características que desafiam a solução de problemas de interpolação, especialmente quando utilizamos métodos baseados em RBF (Radial Basis Function). Essas malhas complexas podem apresentar regiões onde a solução do problema de RBF se torna instável ou até mesmo impossível de ser determinada devido à natureza irregular da malha.
+
+\subsection{Precisão do RBF}
+
+Conseguimos perceber resultados mais concisos em malhas com topologia convexa e sem uma densidade de vértices alta na fronteira, pois, na solução de problemas por interpolação radial de base (RBF), a proximidade entre vértices pode gerar problemas na obtenção de resultados precisos. Isso se deve à maneira como os pesos da função de interpolação são calculados. A função RBF utiliza uma operação que eleva a distância entre os vértices a um expoente para determinar a influência de cada ponto na interpolação.
+Essa operação, conhecida como "métrica de dispersão", pode levar a instabilidade na solução quando os vértices estão muito próximos uns dos outros. Em casos de extrema proximidade entre vértices, a matriz de coeficientes do sistema linear a ser solucionado torna-se mal condicionada. Isso significa que a solução pode ser altamente sensível a pequenas alterações nos dados, resultando em resultados imprecisos e oscilações indesejáveis na função interpolada.
+
+
+\section{Tratamento de Fronteiras}
+\label{sec:fronteiras}
+
+O tratamento adequado das fronteiras é essencial para manter a precisão e estabilidade do método RBF-FD em malhas não-estruturadas. Nossa abordagem para o tratamento de fronteiras difere da proposta por \citeonline{FLYER201639} ao implementar um sistema de vértices fantasma temporário que não modifica a estrutura da malha original.
+
+\subsection{Vértices Fantasma Temporários}
+\label{subsec:ghost_temp}
+
+Em vez de adicionar permanentemente vértices fantasma à malha computacional, nossa implementação cria vértices fantasma temporários apenas durante o processo de cálculo dos pesos RBF-FD. Para cada vértice da fronteira $\mathbf{x}_b$, criamos um vértice fantasma $\mathbf{x}_g$ na direção normal à fronteira:
+
+\begin{equation}
+   \mathbf{x}_g = \mathbf{x}_b + h\mathbf{n}
+   \label{eq:ghost_position}
+\end{equation}
+
+onde $\mathbf{n}$ é o vetor normal unitário à fronteira no vértice $\mathbf{x}_b$ e $h$ é a distância do vértice fantasma, definida como:
+
+\begin{equation}
+   h = \alpha \cdot \Delta x_{local}
+   \label{eq:ghost_distance}
+\end{equation}
+
+onde $\Delta x_{local}$ é uma medida do espaçamento local da malha e $\alpha$ é um parâmetro de ajuste que controla a influência do vértice fantasma.
+
+
+
+\subsection{Cálculo dos Pesos RBF-FD}
+\label{subsec:ghost_weights}
+
+O cálculo dos pesos RBF-FD para vértices próximos à fronteira segue um processo em três etapas:
+
+Inicialmente, identifica-se o estêncil original do vértice de fronteira.
+
+Um vértice fantasma é temporariamente adicionado ao estêncil, expandindo a matriz de interpolação:
+
+\begin{equation}
+   \begin{bmatrix}
+       \mathbf{A} & \mathbf{a}_g \\
+       \mathbf{a}_g^T & \phi(0)
+   \end{bmatrix}
+   \begin{bmatrix}
+       \boldsymbol{\lambda} \\
+       \lambda_g
+   \end{bmatrix}
+   =
+   \begin{bmatrix}
+       \mathbf{b} \\
+       b_g
+   \end{bmatrix}
+   \label{eq:expanded_system}
+\end{equation}
+
+onde $\mathbf{a}_g$ contém as avaliações da função de base radial entre o vértice fantasma e os demais pontos do estêncil.
+
+Os pesos são calculados considerando a condição de contorno apropriada. Para uma condição de Neumann, por exemplo:
+
+\begin{equation}
+   \frac{\partial u}{\partial n} = 0 \quad \text{na fronteira}
+   \label{eq:neumann_bc_ghost}
+\end{equation}
+
+Esta abordagem apresenta várias vantagens em relação à adição permanente de vértices fantasma:
+
+\begin{itemize}
+   \item Mantém a estrutura original da malha inalterada
+   \item Reduz o custo computacional por não aumentar o número total de vértices
+   \item Simplifica a implementação das condições de contorno
+   \item Permite ajuste local da influência dos vértices fantasma através do parâmetro $\alpha$
+\end{itemize}
+
+Os pesos resultantes deste processo são armazenados e utilizados durante toda a simulação, eliminando a necessidade de recálculo a cada passo de tempo e mantendo a eficiência computacional do método.
+
+\section{Aspectos Computacionais}
+\label{sec:aspectos_comp}
+
+A implementação do método proposto envolveu diversas decisões de projeto visando balancear eficiência computacional com facilidade de desenvolvimento e manutenção. Python foi escolhido como linguagem principal devido à sua versatilidade e rico ecossistema de bibliotecas científicas, embora uma implementação em C++ pudesse oferecer melhor performance.
+
+\subsection{Otimização de Desempenho}
+\label{subsec:optimization}
+
+Para mitigar as limitações de desempenho do Python em operações numéricas intensivas, utilizamos a biblioteca Numba para compilação just-in-time (JIT) em pontos críticos do código. Em particular, o algoritmo de intersecção raio-polígono foi otimizado através desta técnica, resultando em uma aceleração significativa no processo de backtracking, essencial para a advecção semi-lagrangiana.
+
+A compilação JIT permite que segmentos críticos do código sejam convertidos em código de máquina otimizado durante a execução, aproximando o desempenho de linguagens compiladas como C++. Esta otimização foi particularmente efetiva nas operações de intersecção geométrica e interpolação, que são executadas intensivamente durante a simulação.
+
+\subsection{Visualização}
+\label{subsec:visualization}
+
+A visualização da simulação foi implementada utilizando OpenGL, com uma abordagem direta onde cada vértice da malha é colorido de acordo com a densidade local do fluido. Esta escolha permite uma renderização eficiente em tempo real, essencial para aplicações interativas e validação visual dos resultados.
+
+O sistema de renderização foi projetado para minimizar transferências de dados entre CPU e GPU, mantendo na memória da placa gráfica apenas as informações necessárias para a visualização. A densidade do fluido é mapeada para uma escala de cores que permite a visualização clara das estruturas do escoamento.
+
+\subsection{Geração de Malhas}
+\label{subsec:mesh_generation}
+
+A geração de malhas triangulares a partir de contornos de países foi realizada utilizando a biblioteca Triangle, que implementa o algoritmo de triangulação de Delaunay com restrições. Esta biblioteca foi escolhida por sua robustez e capacidade de lidar com geometrias complexas. A abordagem permite a construção confiável de malhas computacionais a partir de dados geográficos que originalmente continham apenas informações de contorno.
+
+O processo de geração de malha inclui etapas de pré-processamento para garantir a qualidade dos elementos gerados, incluindo:
+
+\begin{itemize}
+   \item Verificação e correção de auto-intersecções nos contornos
+   \item Refinamento adaptativo baseado na curvatura local
+   \item Suavização dos elementos para melhorar a qualidade da malha
+\end{itemize}
+
+\subsection{Estruturas de Dados}
+\label{subsec:data_structures}
+
+A implementação utiliza estruturas de dados otimizadas para operações comuns em simulações de fluidos:
+
+\begin{itemize}
+   \item Arrays contíguos em memória para armazenamento eficiente de propriedades do fluido
+   \item Estruturas esparsas para matrizes de diferenciação RBF-FD
+   \item Árvores de busca espacial para operações de vizinhança
+\end{itemize}
+
+Estas escolhas de implementação permitem um equilíbrio entre facilidade de desenvolvimento e desempenho computacional, resultando em um sistema capaz de simular escoamentos de fumaça em malhas não-estruturadas com eficiência satisfatória para aplicações práticas.

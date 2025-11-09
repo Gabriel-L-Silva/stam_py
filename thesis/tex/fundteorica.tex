@@ -1,0 +1,288 @@
+\label{secao:fundteorica}
+\section{Aspectos numéricos}
+
+Para resolver as ENS que regem a simulação de fluidos precisamos usar um método numérico para discretizar os operadores diferenciais utilizados, sendo eles: laplaciano, divergente e gradiente. Um método usado para grades regulares é o de FD. Na abordagem Euleriana, por conta da discretização ser feita no espaço, não temos informações sobre as derivadas do material simulado, logo é necessário adotar um método para conseguir estes dados. Este método vem da definição de derivada já conhecida, seja $f(x)$ uma função diferenciável:
+\begin{equation}
+f'(x)\,=\lim_{h\to 0}\frac{f\left(x+h\right)-f\left(x\right)}{h}
+\end{equation}
+
+Porém, como o nosso domínio é discreto, precisamos adaptar este conceito. Assumindo uma grade regular com uma distância $\Delta x$ entre as amostras e uma função diferenciável $f(x)$, em que $f_i$ é a i-ésima amostra. Algumas aproximações de primeira ordem para as derivadas parciais são:
+\begin{equation}
+    \text{FD progressiva:} \quad \frac{\partial f }{\partial x}\bigg|_{x_{i}}\approx\frac{f_{i+1}-f_{i}}{\Delta x}
+\end{equation}
+
+\begin{equation}
+    \text{FD regressiva:} \quad \frac{\partial f }{\partial x}\bigg|_{x_{i}}\approx\frac{f_{i}-f_{i-1}}{\Delta x}
+\end{equation}
+%
+Uma aproximação de segunda ordem para a derivada também pode ser obtida:
+
+\begin{equation}
+\text{FD central:} \quad \frac{\partial f }{\partial x}\bigg|_{x_{i}}\approx\frac{f_{i+1}-f_{i-1}}{2\Delta x}
+\label{eq:fdcentral}
+\end{equation}
+%
+Além do cálculo da derivada segunda:
+\begin{equation}
+    \frac{\partial^{2}f }{\partial x^{2}}\bigg|_{x_{i}}=\frac{\partial\left(\frac{\partial f}{\partial x}\right)}{\partial x}\bigg|_{x_{i}}\approx\frac{\left(\frac{f_{i+1}-f_{i}}{\Delta x}\right)-\left(\frac{f_{i}-f_{i-1}}{\Delta x}\right)}{\Delta x}=\frac{f_{i+1}-2f_{i}+f_{i-1}}{\Delta x^{2}}.
+\end{equation}
+
+Definindo um campo vetorial 3D $\mathbf{u} = (u, v, w)^{\top}$ e um campo escalar~$p$. Os operadores diferenciais utilizados, gradiente, divergente e laplaciano, respectivamente, tem a seguinte forma:
+
+\begin{equation}
+   \text{Gradiente:} \quad \nabla p =
+\left( {\frac{\partial p}{\partial x}},
+{\frac{\partial p}{\partial y}},
+{\frac{\partial p}{\partial z}} \right)^{\top}
+\label{eq:grad}
+\end{equation}
+
+\begin{equation}
+\text{Divergente:} \quad \nabla \cdot\mathbf{u}=\frac{\partial u}{\partial x}+\frac{\partial v}{\partial y}+\frac{\partial w}{\partial z},
+\label{eq:div}
+\end{equation}
+    
+\begin{equation}
+\text{Laplaciano:} \quad  {\nabla ^{2} p}={\frac{\partial^{2} p}{\partial x^{2}}+\frac{\partial^{2} p}{\partial y^{2}}+\frac{\partial^{2} p}{\partial z^{2}}}.	
+\label{eq:lapl}
+\end{equation}
+%
+E suas respectivas formas com a aproximação com FD:
+
+\begin{equation}
+    \nabla p \approx 
+\left( {\frac{p_{i+1,j,k}-p_{i-1,j,k}}{\Delta x}},
+{\frac{p_{i,j+1,k}-p_{i,j-1,k}}{\Delta y}},
+{\frac{p_{i,j,k+1}-p_{i,j,k-1}}{\Delta z}} \right)^{\top}
+,
+\label{eq:gradFD}
+\end{equation}
+
+\begin{equation}
+    \nabla \cdot\mathbf{u}\approx\frac{ u_{i+1,j,k}-u_{i-1,j,k}}{\Delta x}+\frac{ v_{i,j+1,k}-v_{i,j-1,k}}{\Delta y}+\frac{ w_{i,j,k+1}-w_{i,j,k-1}}{\Delta z},
+    \label{eq:divFD}
+\end{equation}
+
+\begin{equation}
+{\nabla ^{2} p}\approx{\frac{ p_{i+1,j,k}-2 p_{i,j,k}+p_{i-1,j,k}}{\Delta x^{2}}+\frac{ p_{i,j+1,k}-2 p_{i,j,k}+p_{i,j-1,k}}{\Delta y^{2}}+\frac{ p_{i,j,k+1}-2 p_{i,j,k}+p_{i,j,k-1}}{\Delta z^{2}}.}
+\label{eq:laplFD}
+\end{equation}
+
+\section{Método RBF-FD}
+Uma RBF é uma função radialmente simétrica entre o centro $\mathbf{x}_k$ e o ponto avaliado $\mathbf{x}$, ambos no domínio $\Omega \subset \mathbb{R}^d$. Matematicamente pode ser representada como $\Phi_k(\mathbf{x}) = \phi(||\mathbf{x}-\mathbf{x}_k||)$, onde $\phi(r)$ representa uma função escalar $[0, \infty)$ e $||\cdot||$ denota a norma euclidiana. Existem várias escolhas para $\phi$, uma é a \emph{spline poliharmônica}:
+\begin{equation}
+    \phi(r) = r^s\text{, com s = 1, 3, 5,...}
+\end{equation}
+
+Para realizar a solução dos operadores diferencias na nossa malha, não-estruturada, escolhemos a técnica de RBF-FD. Seja uma nuvem de pontos, $\{x_k\}_{k=1}^N$, os valores das funções $y_k=y(x_k)\in\mathbb{R}$, queremos acha um interpolador $S_y: \Omega \xrightarrow{} \mathbb{R}$, tal que:
+\begin{equation}
+    S_y(x_i)=y_i\,\text{,   }\forall i = 1, ..., N\,.
+\end{equation}
+
+A forma generalizada de um interpolador RBF é dada por:
+\begin{equation}
+    S_y(x) = \sum_{k=1}^N \alpha_k \phi(||x-x_k||) + \sum^M_{j=1}\beta_jP_j(x)\,.
+    \label{eq:rbf0}
+\end{equation}
+%
+No qual $\{P_1(x), ..., P_M(x)\}$ é a base para o espaço $M=\binom{m+d}{d}$-dimensional $\prod^d_m$ de todos os  polinômios multivariados com grau  $\leq m$. Para garantir que os coeficientes $\alpha_k$ e $\beta_j$ são únicos, precisamos impor a seguinte restrição:
+
+\begin{equation}
+    \sum_{k=1}^N\alpha_k P_j(x_k) = 0\,\text{,   }\forall 1,...,M\,.
+\end{equation}
+%
+%
+Com isso temos o seguinte sistema para resolver:
+\begin{equation}
+    \left[ 
+        \begin{array}{cc}
+            \mathbf{A}
+             & 
+            \mathbf{P}\\
+           
+           \mathbf{P}^{\top}& 
+           \mathbf{O}\\
+        \end{array} 
+    \right]
+    \left[ 
+        \begin{array}{c}
+            \mathbf{\alpha}\\
+           \mathbf{\beta}
+        \end{array} 
+    \right]
+    =
+    \left[ 
+        \begin{array}{c}
+            \mathbf{y}\\
+            \mathbf{0}
+        \end{array} 
+    \right]\,,
+    \label{eq:interpoladorrbf}
+\end{equation}
+%
+onde $\mathbf{A}$ é uma matriz de ordem $N$ com $\mathbf{A}_{ij} = \phi(||x_i-x_j)||$, $\mathbf{P}$ é uma matriz de ordem $N \times M$ e $\mathbf{P}_{ij}=P_j(x_i)$, $\mathbf{O}$ é uma matriz nula de ordem $M$, $\mathbf{\alpha}=[\alpha_1,...\alpha_N]^{\top}$, $\mathbf{\beta}=[\beta,...\beta_M]^{\top}$, $\mathbf{y}=[y_1,...,y_N]^{\top}$ e $\mathbf{0}$ é o vetor nulo de tamanho $M$. Para mais detalhes de como é feita a solução desse sistema consultar \cite{Nakanishi2020}.
+%
+
+Seja $\mathcal{L}$ o operador diferencial que queremos aproximar, e $\mathcal{X}_i$ a vizinhança composta por uma nuvem de pontos $\{x_k\}_{k=1}^N$. Para uma dada posição $x_i$, queremos aproximar $\mathcal{L}y$ avaliado no ponto central $x_i$ como uma combinação linear dos valores das funções $\{y_k\}_{k=1}^N$, tal que:
+
+\begin{equation}
+    \mathcal{L}y = \sum_{k=1}^N\omega_ky_k\,.
+\end{equation}
+%
+Similar ao interpolador RBF, os pesos $\omega$ são obtidos resolvendo o seguinte sistema:
+
+\begin{equation}
+    \left[ 
+        \begin{array}{cc}
+            \mathbf{A}
+             & 
+            \mathbf{P}\\
+           
+           \mathbf{P}^T& 
+           \mathbf{O}\\
+        \end{array} 
+    \right]
+    \left[ 
+        \begin{array}{c}
+            \mathbf{\omega}\\
+           \mathbf{\gamma}
+        \end{array} 
+    \right]
+    =
+    \left[ 
+        \begin{array}{c}
+            \mathbf{\mathcal{L}\phi}\\
+            \mathbf{\mathcal{L}\mathbf{P}}
+        \end{array} 
+    \right]\,,
+    \label{eq:pesos_rbf}
+\end{equation}
+
+O método de FD é bastante usado em malhas regulares, pois, se beneficia da uniformidade do espaçamento das amostras. Quando trabalhamos com RBF-FD, temos uma generalização de FD para uma nuvem de pontos qualquer. Caso essa vizinhança esteja organizada de maneira uniforme, como uma grade regular, temos a redução de RBF-FD para FD. No caso 1D, ilustrado pela \figref{fig:rbffdtofd}, queremos calcular $\partial f_i/\partial x_k \approx \omega_{i-1}f_{i-1} + \omega_{i+1}f_{i+1}$. A matriz para cálculo de pesos fica da seguinte forma:
+\begin{figure}
+    \centering
+    \caption{Redução de RBF-FD em FD no caso 1D, mostrando como é necessário estar organizado a vizinhança; colinear e equidistante.}
+    \includegraphics{images/rbffdfd.pdf}
+    \subcaption*{Fonte: Elaborada pelo autor.}
+    \label{fig:rbffdtofd}
+\end{figure}
+\begin{equation}
+    \left[
+        \begin{matrix}
+                \phi(0) & \phi(2r) & 1 & (x_{i-1})_k \\
+                \phi(2r) & \phi(0) & 1 & (x_{i+1})_k \\
+                1 & 1 & 0 & 0 \\
+                (x_{i-1})k & (x_{i +1})_k & 0 & 0
+        \end{matrix}
+    \right]
+    \left[
+        \begin{matrix}
+                \omega_{i-1}\\
+                \omega_{i+1}\\
+                \gamma_{i-1}\\
+                \gamma+{i+1}
+        \end{matrix}
+    \right]
+    =
+    \left[
+        \begin{matrix}
+                \frac{\partial\phi}{\partial z}(r)\\
+                \frac{\partial\phi}{\partial z}(r)\\
+                0\\
+                1
+        \end{matrix}
+    \right]\,,
+    \label{eq:rbf1D}
+\end{equation}
+%
+com $r=||x_{i+1} - x_i|| = ||x_{i-1} - x_i||$ e $(\cdot)_k$ a k-ésima coordenada do ponto. Resolvendo o sistema \eqref{eq:rbf1D}, temos $\omega_{i+1} = 1/2r$ e $\omega_{i-1} = -1/2r$. Portanto,
+
+\begin{equation}
+    \frac{\partial f_i}{\partial x_k}\approx \frac{f_{i+1} - f_{i-1}}{2r}.
+    \label{eq:resultrbf1d}
+\end{equation}
+%
+Como podemos ver, a Equação~\eqref{eq:resultrbf1d} coincide com a aproximação por FD central~\eqref{eq:fdcentral}.
+
+\section{Animação de fumaça}
+\label{sec:anim_fumaca}
+As ENS regem uma simulação de escoamento de fluidos, sua forma final para fluidos incompressíveis é representada pelas seguintes equações:
+\begin{gather}
+    \dot{\mathbf{u}}=-\left(\mathbf{u\cdot\nabla}\right)\mathbf{u-}\frac{1}{\rho}\nabla p+\nu\nabla^{2}\mathbf{u}+\mathbf{g},\label{eq:ENS}\\
+    \nabla\cdot\mathbf{u}=0.\label{eq:restrENS}
+\end{gather}
+%
+onde $\mathbf{u}$ denota o campo de velocidade, $p$ a pressão e $\rho$ a densidade de fluido. A Equação~\eqref{eq:restrENS} é a condição de incompressibilidade do fluido. O primeiro termo da Equação~\eqref{eq:ENS}, $\left(\mathbf{u\cdot\nabla}\right)$, é conhecido como o termo de convecção, este é responsável pelo transporte de propriedades do fluido ao longo do escoamento. A advecção em específico é a convecção da velocidade. O segundo termo é o termo gradiente de pressão local, $\frac{1}{\rho}\nabla p$. O fluido escoa conforme o gradiente negativo da pressão. O terceiro termo, $\nu\nabla^{2}\mathbf{u}$, é o termo de viscosidade ou difusão, este considera forças de cisalhamento. A constante $\nu$ é o coeficiente de viscosidade dinâmica, com efeito de gerar resistência ao escoamento, criando forças que difundem as velocidades através do fluido e pode criar turbulências se existirem gradientes de alta velocidade. O~quarto e último termo é o termo de forças externas, este exerce forças como a gravidade $\mathbf{g}$ e força centrífuga que atuam uniformemente através do fluido. Além de também poder incluir forças de interação do usuário com a simulação.
+
+Quando tratamos de fumaça podemos considerar como um fluido invíscido, isto é, $\nu=0$. Logo podemos reescrever a equação de momento~\eqref{eq:ENS} da seguinte forma:
+
+\begin{equation}
+\dot{\mathbf{u}}=-\left(\mathbf{u\cdot\nabla}\right)\mathbf{u-}\frac{1}{\rho}\nabla p+\mathbf{g}
+    \label{eq:nseinvis}
+\end{equation}
+Assim, dado um campo vetorial de velocidades $\mathbf{w}$ e o campo escalar de pressão $p$. O pipeline de animação de fumaça de Stam pode ser simplificar em 3 passos~\cite{Stam1999}:
+\begin{description}
+%
+\item[\textbf{Passo 1:}]
+    O primeiro passo acelera o campo de velocidade conforme o campo de velocidade externa, $\mathbf{g}$, que pode ser afetado por forças aplicadas pelo usuário. Neste trabalho utilizamos o método de Euler para resolver a integração temporal, logo:
+    \begin{equation}
+        \mathbf{w}^n = \mathbf{w}^{n-1} + \Delta t \cdot \mathbf{g} \,,
+    \end{equation}
+    %
+    onde $\Delta t$ é o passo de tempo da simulação. 
+\item[\textbf{Passo 2:}]
+    Este se resume ao transporte de propriedades do fluido ao longo do escoamento, este passo é resolvido pela técnica semi-lagrangiana. Que consiste em pegar cada nó da malha, no passo de tempo $n$, $x_i^n$, verificar o valor de um atributo nesta posição, $v_i^n$, andar no sentido contrário do escoamento (\textit{backtracking}), achando a posição no passo anterior, $x_i^{n-1}$ e copiar o valor da posição final, $v_i^{n-1}$, para a posição inicial (ver \figref{fig:backtracking}).
+    Como não é garantido que $x_i^{n-1}$ será um valor disponível na nossa malha, precisamos utilizar um método de interpolação para aproximar $v_i^{n-1}$. O método escolhido, no caso 2D com malha estruturada, é a interpolação bilinear, que precisa de 4 pontos em topologia retangular para interpolar o valor corretamente.
+\item[\textbf{Passo 3:}]
+    Nenhumas das operações anteriores se preocupa em manter o campo com divergente-nulo, condição \eqref{eq:restrENS}. Logo, este passo aproxima o campo calculado para o campo divergente-nulo através de uma projeção. De acordo com a decomposição de Helmholtz-Hodge, um campo vetorial suave $\mathbf{w}$, pode sempre ser decomposto na soma de dois campos vetoriais $\mathbf{u}$ e $\mathbf{v}$, tal que $\mathbf{u}$ é divergente-nulo e $\mathbf{v}$ é um campo com rotacional nulo.
+\begin{gather}
+{\mathbf{w}=\mathbf{u}+\mathbf{v},}\label{eq:helmhod} \\
+{\nabla\cdot\mathbf{u}\,=\,0\;\text{ e }\;\nabla\times\mathbf{v}=\mathbf{0}.}	\label{eq:helmhod2}
+\end{gather}
+Se um campo tem rotacional nulo, isso implica que existe um campo~$p$, que satisfaz:
+\begin{equation}
+\mathbf{v}=\nabla p
+\label{eq:rotNulo}
+\end{equation}
+Substituindo a Equação~\eqref{eq:helmhod} na Equação~\eqref{eq:rotNulo}, temos:
+\begin{equation}
+    \mathbf{w} = \mathbf{u} + \nabla p
+\end{equation}
+Aplicando o divergente dos dois lados, pela Equação~\eqref{eq:helmhod2} segue que:
+\begin{equation}
+    \nabla^{2} p=\nabla\cdot\mathbf{w}
+    \label{eq:poisson}
+\end{equation}
+Esta equação é conhecida como a \textit{Equação de Poisson}. Com isso conseguimos projetar o campo~$\mathbf{w}$, em uma aproximação que seja divergente-nulo. Para isso basta resolver a Equação~\eqref{eq:poisson} usando as discretizações FD dadas pelas Equações~\eqref{eq:laplFD} e~\eqref{eq:divFD} impondo a condição de Neumann $\nabla p \cdot \mathbf{n} = 0$ na fronteira do domínio, onde $\mathbf{n} $ é o vetor normal na fronteira do domínio, obtemos o campo de pressão $p$. Finalmente, $\mathbf{u}$ é dado por:
+$$
+{\mathbf{u} = \mathbf{w}-\nabla p} \,.
+$$
+%
+\end{description}
+ 
+\subsection{Advecção Semi-Lagrangiana}
+\label{sec:semi_lagrangiano}
+
+O método semi-lagrangiano para advecção, introduzido por \citeonline{Stam1999}, é uma técnica incondicionalmente estável para resolver o termo não-linear $({\mathbf{u} \cdot \nabla})\mathbf{u}$ das Equações de Navier-Stokes. O método baseia-se na técnica das características, que pode ser entendida intuitivamente como o rastreamento reverso das partículas de fluido.
+
+Para obter a velocidade $\mathbf{u}({\mathbf{x}}, t + \Delta t)$ em um ponto $\mathbf{x}$ no tempo $t + \Delta t$, o algoritmo:
+
+Retrocede o ponto $\mathbf{x}$ através do campo de velocidades $\mathbf{w}_1$ por um tempo $\Delta t$.
+Define uma trajetória $\mathbf{p}(\mathbf{x}, s)$ correspondente a uma linha de corrente parcial. E
+atribui a nova velocidade como sendo a velocidade que a partícula tinha em sua posição anterior (\figref{fig:backtracking}):
+
+\begin{equation}
+   \mathbf{w}_2(\mathbf{x}) = \mathbf{w}_1(\mathbf{p}(\mathbf{x}, -\Delta t))
+   \label{eq:backtrack_teoria}
+\end{equation}
+
+A estabilidade incondicional do método é consequência direta desta formulação, pois o valor máximo do novo campo nunca será maior que o maior valor do campo anterior. Diferentemente das abordagens por diferenças finitas que requerem passos de tempo pequenos satisfazendo a condição $\Delta t < \Delta x/|\mathbf{u}|$, o método semi-lagrangiano permanece estável para qualquer passo de tempo.
+
+\begin{figure}
+    \centering
+    \caption{O ponto analisado, $x_i^n$, mostra o caminho contrário(em vermelho) à velocidade do escoamento, e o ponto final, $x_i^{n-1}$, tem seu valor copiado para o ponto inicial. Em azul podemos ver os pontos utilizados na interpolação deste exemplo.}
+    \includegraphics[width=0.5\textwidth]{images/backtracking.pdf}
+    \subcaption*{Fonte: Elaborada pelo autor.}
+    \label{fig:backtracking}
+\end{figure}
+
