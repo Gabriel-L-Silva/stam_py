@@ -1,0 +1,128 @@
+% ------------------------------------------------------------------------
+% ------------------------------------------------------------------------
+% ICMC: Modelo de Trabalho Acadêmico (tese de doutorado, dissertação de
+% mestrado e trabalhos monográficos em geral) em conformidade com 
+% ABNT NBR 14724:2011: Informação e documentação - Trabalhos acadêmicos -
+% Apresentação
+% ------------------------------------------------------------------------
+% ------------------------------------------------------------------------
+
+% Opções: 
+%   Qualificação          = qualificacao 
+%   Curso                 = doutorado/mestrado
+%   Situação do trabalho  = pre-defesa/pos-defesa (exceto para qualificação)
+%   Versão para impressão = impressao
+\documentclass[mestrado, pre-defesa]{packages/icmc}
+
+% ---------------------------------------------------------------------------
+% Pacotes Opcionais
+% ---------------------------------------------------------------------------
+\usepackage{rotating}           % Usado para rotacionar o texto
+\usepackage[all,knot,arc,import,poly]{xy}   % Pacote para desenhos gráficos
+% Este pacote pode conflitar com outros pacotes gráficos como o ``pictex''
+% Então é necessário usar apenas um dos pacotes conflitantes
+\newcommand{\VerbL}{0.52\textwidth}
+\newcommand{\LatL}{0.42\textwidth}
+\newcommand{\figref}[1]{\figurename~\ref{#1}}
+% ---------------------------------------------------------------------------
+
+
+% ---
+% Informações de dados para CAPA e FOLHA DE ROSTO
+% ---
+% Tanto na capa quanto nas folhas de rosto apenas a primeira letra da primeira palavra (ou nomes próprios) devem estar em letra maiúscula, todas as demais devem ser em letra minúscula.
+\tituloPT{Animação de fumaça em malhas não-estruturadas usando RBF-FD}
+\tituloEN{Smoke animation on unstructured meshes using RBF-FD}
+\autor[da Silva, G. L.]{Gabriel Lucas da Silva}
+\genero{M} % Gênero do autor (M = Masculino / F = Feminino)
+\orientador[Orientador]{Prof. Dr.}{Afonso Paiva Neto}
+%\coorientador{Prof. Dr.}{Fulano de Tal}
+\curso{CCMC}
+\data{19}{08}{2025} % Data do depósito
+\idioma{PT} % Idioma principal do documento (PT = português / EN = inglês)
+% ---
+
+
+% ---
+% RESUMOS
+% ---
+
+% Resumo em PORTUGUÊS
+% conter no máximo 500 palavras
+% conter no mínimo 1 e no máximo 5 palavras-chave
+\textoresumo[brazil]{
+    Durante as últimas décadas, os estudos de simulações numéricas de escoamento de fluidos e de novas técnicas de processamento geométrico têm sido áreas de intensa pesquisa e com aplicações que vão da engenharia industrial à indústria do entretenimento. Nesse projeto de mestrado, propomos o estudo de novas técnicas de animação de escoamento de fumaça em domínios arbitrários usando interpolações que não necessitam de malha. Essas técnicas consistem na aplicação do método numérico sem malha conhecido como RBF (Radial Basis Function) e sua versão com diferenças finitas generalizadas (RBF-FD).
+    }{RBF-FD, Animação de fumaça, Malhas não-estruturada, Domínios arbitrários}
+
+
+% resumo em INGLÊS
+% conter no máximo 500 palavras
+% conter no mínimo 1 e no máximo 5 palavras-chave
+\textoresumo[english]{
+    Over the last decades, studies of numerical simulations of fluid flow and new geometric processing techniques have been areas of intense research with applications ranging from industrial engineering to the entertainment industry. In this master's project, we propose the study of new smoke flow animation techniques in arbitrary domains using mesh-free interpolations. These techniques consist of applying the meshless numerical method known as RBF (Radial Basis Function) and its version with generalized finite differences (RBF-FD).
+    }{RBF-FD, Smoke animation, Unstructured mesh, Arbitrary domains}
+
+
+% ----------------------------------------------------------
+% ELEMENTOS PRÉ-TEXTUAIS
+% ----------------------------------------------------------
+
+% Inserir a ficha catalográfica
+\incluifichacatalografica{tex/pre-textual/ficha-catalografica.pdf}
+
+% DEDICATÓRIA / AGRADECIMENTO / EPÍGRAFE
+\textoagradecimentos*{tex/pre-textual/agradecimentos}
+
+% Inclui a lista de figuras
+\incluilistadefiguras
+
+% Inclui a lista de tabelas
+\incluilistadetabelas
+
+% ----
+% Início do documento
+% ----
+\begin{document}
+% ----------------------------------------------------------
+% ELEMENTOS TEXTUAIS
+% ----------------------------------------------------------
+\textual
+\chapter{Introdução}
+\label{chapter:introducao}
+\input{tex/introducao}
+
+\chapter{Revisão Bibliográfica}
+\label{chapter:revisao}
+\input{tex/revisao}
+
+\chapter{Fundamentação Teórica}
+\label{chapter:fundteorica}
+\input{tex/fundteorica}
+
+\chapter{Metodologia}
+\label{chapter:metodologia}
+\input{tex/metodologia}
+
+\chapter{Resultados}
+\label{chapter:Resultados}
+\input{tex/resultados}
+
+
+% ---
+% Finaliza a parte no bookmark do PDF, para que se inicie o bookmark na raiz
+% ---
+\bookmarksetup{startatroot}% 
+% ---
+
+% ----------------------------------------------------------
+% ELEMENTOS PÓS-TEXTUAIS
+% ----------------------------------------------------------
+\postextual
+
+% ----------------------------------------------------------
+% Referências bibliográficas
+% ----------------------------------------------------------
+\bibliography{references}
+
+
+\end{document}

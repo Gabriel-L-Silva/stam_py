@@ -1,0 +1,511 @@
+% This file was created with JabRef 2.10.
+% Encoding: UTF8
+
+@article{Nascimento:2014,
+title = "Approximating implicit curves on plane and surface triangulations with affine arithmetic ",
+journal = "Computers {\&} Graphics ",
+volume = "40",
+number = "",
+pages = "36--48",
+year = "2014",
+author = "Filipe de Carvalho Nascimento and Afonso Paiva and Luiz Henrique de Figueiredo and Jorge Stolfi"
+}
+
+@article{Mahmood2019,
+   abstract = {In this paper, we implement the non-conforming finite elements for the simulation of two dimensional incompressible Newtonian fluid flows. The classical driven cavity benchmark problem is simulated on a very fine uniform grid. In order to discretize the governing partial differential equations (PDEs) we employ the rotated bilinearQ˜1element for velocity and piecewise constant Q0element for the pressure on the general quadrilateral meshes. In L2-norm this pair is 2ndorder accurate for velocity and provides 1st order accuracy for pressure approximations. For the solution of non-linear systems arising from the discretization, Newton's method is used as an outer nonlinear iteration and for the inner linear sub problems, the direct solver UMFPACK is utilized. The results have been compared with the reference data present in the literature and a good agreement is found.},
+   author = {R. Mahmood and N. Kousar and Khalil Ur Rehman and M. Mohasan},
+   doi = {10.1016/j.physa.2019.121198},
+   issn = {03784371},
+   journal = {Physica A: Statistical Mechanics and its Applications},
+   keywords = {Driven-cavity,Finite element method,Non-conforming finite element,UMFPACK},
+   month = {8},
+   publisher = {Elsevier B.V.},
+   title = {Lid driven flow field statistics: A non-conforming finite element Simulation},
+   volume = {528},
+   year = {2019},
+}
+
+
+@article{nonconf1,
+   abstract = {We propose a general algorithm for nonconforming adaptive mesh refinement (AMR) of unstructured meshes in high-order finite element codes. Our focus is on h-refinement with a fixed polynomial order. The algorithm handles triangular, quadrilateral, hexahedral, and prismatic meshes of arbitrarily high-order curvature, for any order finite element space in the de Rham sequence. We present a flexible data structure for meshes with hanging nodes and a general procedure to construct the conforming interpolation operator, both in serial and in parallel. The algorithm and data structure allow anisotropic refinement of tensor product elements in two and three dimensions and support unlimited refinement ratios of adjacent elements. We report numerical experiments verifying the correctness of the algorithms and perform a parallel scaling study to show that we can adapt meshes containing billions of elements and run efficiently on 393,000 parallel tasks. Finally, we illustrate the integration of dynamic AMR into a high-order Lagrangian hydrodynamics solver.},
+   author = {Jakub Červený and Veselin Dobrev and Tzanio Kolev},
+   doi = {10.1137/18M1193992},
+   issn = {1064-8275},
+   issue = {4},
+   journal = {SIAM Journal on Scientific Computing},
+   keywords = {Adaptive mesh refinement,Anisotropic refinement,High-order finite elements,Nonconforming meshes,Parallel computations,Unstructured grids},
+   month = {1},
+   pages = {C367-C392},
+   title = {Nonconforming Mesh Refinement for High-Order Finite Elements},
+   volume = {41},
+   url = {https://epubs.siam.org/doi/10.1137/18M1193992},
+   year = {2019},
+}
+
+
+@book{rbf,
+author = {Fasshauer, Gregory E},
+title = {Meshfree Approximation Methods with Matlab},
+publisher = {WORLD SCIENTIFIC},
+year = {2007},
+doi = {10.1142/6437},
+address = {},
+edition   = {},
+URL = {https://www.worldscientific.com/doi/abs/10.1142/6437},
+eprint = {https://www.worldscientific.com/doi/pdf/10.1142/6437}
+}
+
+@article{WRIGHT200699,
+title = {Scattered node compact finite difference-type formulas generated from radial basis functions},
+journal = {Journal of Computational Physics},
+volume = {212},
+number = {1},
+pages = {99-123},
+year = {2006},
+issn = {0021-9991},
+doi = {https://doi.org/10.1016/j.jcp.2005.05.030},
+url = {https://www.sciencedirect.com/science/article/pii/S0021999105003116},
+author = {Grady B. Wright and Bengt Fornberg},
+keywords = {Radial basis functions, Partial differential equations, Finite difference method, Compact, , Mesh-free},
+abstract = {In standard equispaced finite difference (FD) formulas, symmetries can make the order of accuracy relatively high compared to the number of nodes in the FD stencil. With scattered nodes, such symmetries are no longer available. The generalization of compact FD formulas that we propose for scattered nodes and radial basis functions (RBFs) achieves the goal of still keeping the number of stencil nodes small without a similar reduction in accuracy. We analyze the accuracy of these new compact RBF-FD formulas by applying them to some model problems, and study the effects of the shape parameter that arises in, for example, the multiquadric radial function.}
+}
+
+@article{incompressible,
+author = {Gresho, P M},
+title = {Incompressible Fluid Dynamics: Some Fundamental Formulation Issues},
+journal = {Annual Review of Fluid Mechanics},
+volume = {23},
+number = {1},
+pages = {413-453},
+year = {1991},
+doi = {10.1146/annurev.fl.23.010191.002213},
+
+URL = { 
+        https://doi.org/10.1146/annurev.fl.23.010191.002213
+    
+},
+eprint = { 
+        https://doi.org/10.1146/annurev.fl.23.010191.002213
+    
+}
+
+}
+
+@article{medusa2021,
+  title={Medusa: A C++ Library for solving PDEs using Strong Form Mesh-Free methods},
+  author={Slak, Jure and Kosec, Gregor},
+  journal={ACM Transactions on Mathematical Software},
+  year={2021}
+}
+
+
+@article{quadtree2,
+   abstract = {In this paper, a computational method for solving fluid flow problems with moving interfaces is presented. Herein, adaptive quadtree grids are used coupled with the CICSAM [O. Ubbink, Numerical prediction of two fluid systems with sharp interfaces, PhD Thesis, Imperial College of Science, Technology and Medicine, London, 1997] free surface capturing volume of fluid (VoF) method and PLIC reconstruction to interpolate the volume fraction field during refinement and derefinement processes. The combination of high resolution adaptive hierarchical remeshing and CICSAM interface advection is shown to overcome the problems of interface smearing and high CPU intensivity inherent in most VoF schemes. The result is a combination of free surface tracking and free surface capturing in that the interface is effectively tracked by the adapting refinements in the quadtree grid. In this way, a sharp interface is achieved and the advantages of both free surface tracking and capturing are combined. The new method is applied to interface advection examples in translating, rotating and shearing flow fields, and the benefits of using adapting quadtree grids demonstrated. © 2003 Elsevier B.V. All rights reserved.},
+   author = {Deborah Greaves},
+   doi = {10.1016/j.jcp.2003.08.018},
+   issn = {00219991},
+   issue = {1},
+   journal = {Journal of Computational Physics},
+   keywords = {Adaptive grids,Grid refinement,Moving fluid interface,Quadtrees,Volume of fluid},
+   month = {2},
+   pages = {35-56},
+   publisher = {Academic Press Inc.},
+   title = {A quadtree adaptive method for simulating fluid flows with moving interfaces},
+   volume = {194},
+   year = {2004},
+}
+
+@report{quadtree1,
+   abstract = {ÐQuadtree-based adaptive Cartesian/Quad (quadrilateral) grid generator, grid adaptor and ¯ow solver have been developed and fully demonstrated in this study. Given the de®nition of geome-tries (cubic B-splines and straight line segments), geometrically-adaptive, body-®tted Quad grids are generated automatically. These grids are then overlapped with a large Cartesian cell which is subdivided recursively until the Cartesian cells which are intersected by the outer boundaries of the Quad grids have similar grid resolutions to the Quad cells. The ®nal computational grid is then automatically produced through cell cutting. A Quadtree data structure has been used to store the grids. As a result, grid re®nement and coarsening are trivial to accomplish. A cell-centered, second-order accurate viscous ¯ow solver has been developed. The ¯ow solver supports arbitrary control volumes. Solution-based grid adaptations are carried out after converged solutions are obtained on a given grid. Grid independent inviscid and viscous solutions have been obtained through automatic grid adaptations. The overall solution procedure integrates grid generation, grid adaptation and ¯ow solver into an automated computing environment to achieve maximum eciency and accuracy with minimum human and computer resources. #},
+   author = {Z J Wang},
+   title = {A QUADTREE-BASED ADAPTIVE CARTESIAN/QUAD GRID FLOW SOLVER FOR NAVIER-STOKES EQUATIONS},
+}
+
+@article{RBF2,
+   abstract = {Immersed boundary methods are efficient tools of growing interest as they allow to use generic CFD codes to deal with complex, moving and deformable geometries, for a reasonable computational cost compared to classical body-conformal or unstructured mesh approaches. In this work, we propose a new immersed boundary method based on a radial basis functions framework for the spreading-interpolation procedure. The radial basis function approach allows for dealing with a cloud of scattered nodes around the immersed boundary, thus enabling the application of the devised algorithm to any underlying mesh system. The proposed method can also keep into account both Dirichlet and Neumann type conditions. To demonstrate the capabilities of our novel approach, the imposition of Dirichlet boundary conditions on a 2D cylinder geometry in a Navier-Stokes CFD solver, and the imposition of Neumann boundary conditions on an adiabatic wall in an unsteady heat conduction problem are considered. One of the most significant advantage of the proposed method lies in its simplicity given by the algorithmic possibility of carrying out the interpolation and spreading steps all together, in a single step.},
+   author = {Francisco Toja-Silva and Julien Favier and Alfredo Pinelli},
+   doi = {10.1016/j.compfluid.2014.09.026},
+   issn = {00457930},
+   journal = {Computers and Fluids},
+   keywords = {Immersed-boundary method,Interpolation-spreading,Radial basis functions},
+   month = {12},
+   pages = {66-75},
+   publisher = {Elsevier Ltd},
+   title = {Radial basis function (RBF)-based interpolation and spreading for the immersed boundary method},
+   volume = {105},
+   year = {2014},
+}
+
+
+@article{RBF1,
+   abstract = {In this study, we examine numerical solutions of Zakharov–Rubenchik system which is a coupled nonlinear partial differential equation. The numerical method in the current study is based on radial basis function finite difference (RBF-FD) meshless method and an explicit Runge–Kutta method. As a radial basis function we choose polyharmonic spline augmented with polynomials. The essential motivation for choosing polyharmonic spline is that it is free of shape parameter which has a crucial role in accuracy and stability of meshless methods. The main benefit of the proposed method is the approximation of the differential operators is performed on local-support domain which produces sparse differentiation matrices. This reduces computational cost remarkably. To see performance of the proposed method, some test problems are solved. L∞ error norms and conserved quantities such as mass and energy are calculated. Numerical outcomes are presented and compared with other methods available in the literature. From the comparison it can be deduced that the proposed method gives reliable and precise results with low computational cost. Stability of the proposed method is also discussed.},
+   author = {Omer Oruc},
+   doi = {10.1016/j.amc.2020.125787},
+   issn = {00963003},
+   journal = {Applied Mathematics and Computation},
+   keywords = {Nonlinear partial differential equation,Polyharmonic spline,Radial basis functions-finite difference method,Zakharov–Rubenchik equations},
+   month = {4},
+   publisher = {Elsevier Inc.},
+   title = {A radial basis function finite difference (RBF-FD) method for numerical simulation of interaction of high and low frequency waves: Zakharov–Rubenchik equations},
+   volume = {394},
+   year = {2021},
+}
+
+@article{Nakanishi2020,
+   abstract = {We introduce a novel liquid simulation approach that combines a spatially adaptive pressure projection solver with the Particle-in-Cell (PIC) method. The solver relies on a generalized version of the Finite Difference (FD) method to approximate the pressure field and its gradients in tree-based grid discretizations, possibly non-graded. In our approach, FD stencils are computed by using meshfree interpolations provided by a variant of Radial Basis Function (RBF), known as RBF-Finite-Difference (RBF-FD). This meshfree version of the FD produces differentiation weights on scattered nodes with high-order accuracy. Our method adapts a quadtree/octree dynamically in a narrow-band around the liquid interface, providing an adaptive particle sampling for the PIC advection step. Furthermore, RBF affords an accurate scheme for velocity transfer between the grid and particles, keeping the system's stability and avoiding numerical dissipation. We also present a data structure that connects the spatial subdivision of a quadtree/octree with the topology of its corresponding dual-graph. Our data structure makes the setup of stencils straightforward, allowing its updating without the need to rebuild it from scratch at each time-step. We show the effectiveness and accuracy of our solver by simulating incompressible inviscid fluids and comparing results with regular PIC-based solvers available in the literature.},
+   author = {Rafael Nakanishi and Filipe Nascimento and Rafael Campos and Paulo Pagliosa and Afonso Paiva},
+   doi = {10.1145/3414685.3417794},
+   issn = {15577368},
+   issue = {6},
+   journal = {ACM Transactions on Graphics},
+   keywords = {adaptive grids,liquid animation,particle-in-cell (PIC),radial basis function (RBF)},
+   month = {11},
+   publisher = {Association for Computing Machinery},
+   title = {RBF liquids: An Adaptive PIC Solver Using RBF-FD},
+   volume = {39},
+   year = {2020},
+}
+
+@report{Klingner2006,
+   abstract = {Figure 1: Top: A paddle mixes smoke in a tank. Bottom: A cross-section of the simulation meshes used for each frame. Abstract This paper presents a method for animating fluid using un-structured tetrahedral meshes that change at each time step. We show that meshes that conform well to changing boundaries and that focus computation in the visually important parts of the domain can be generated quickly and reliably using existing techniques. We also describe a new approach to two-way coupling of fluid and rigid bodies that, while general , benefits from remeshing. Overall, the method provides a flexible environment for creating complex scenes involving fluid animation.},
+   author = {Bryan M Klingner and Bryan E Feldman and Nuttapong Chentanez and James F O'brien},
+   keywords = {Natural phenomena,computational fluid dynamics.,physically based animation},
+   title = {Fluid Animation with Dynamic Meshes},
+   year = {2006},
+}
+
+@article{Feldman2005,
+author = {Park, Jinho and Seol, Yeongho and Cordier, Frederic and Noh, Junyong},
+title = {A Smoke Visualization Model for Capturing Surface-Like Features},
+journal = {Computer Graphics Forum},
+volume = {29},
+number = {8},
+pages = {2352-2362},
+keywords = {smoke, fluid animation, surface, streakline, visualization, I.3.7 Computer Graphics: Three-Dimensional Graphics and Realism-Animation, I.3.8 Computer Graphics: Applications},
+doi = {https://doi.org/10.1111/j.1467-8659.2010.01719.x},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-8659.2010.01719.x},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1467-8659.2010.01719.x},
+abstract = {Abstract Incense, candle smoke and cigarette smoke often exhibit smoke flows with a surface-like appearance. Although delving into well-known computational fluid dynamics may provide a solution to create such an appearance, we propose a much efficient alternative that combines a low-resolution fluid simulation with explicit geometry provided by NURBS surfaces. Among a wide spectrum of fluid simulation, our algorithm specifically tailors to reproduce the semi-transparent surface look and motion of the smoke. The main idea is that we follow the traces called streaklines created by the advected particles from a simulation and reconstruct NURBS surfaces passing through them. Then, we render the surfaces by applying an opacity map to each surface, where the opacity map is created by utilizing the smoke density and the characteristics of the surface contour. Augmenting the results from low-resolution simulations such a way requires a low computational cost and memory usage by design.},
+year = {2010}
+}
+
+
+
+
+@article{Stam2003,
+   abstract = {In this paper we present a simple and rapid implementation of a fluid dynamics solver for game engines. Our tools can greatly enhance games by providing realistic fluid-like effects such as swirling smoke past a moving character. The potential applications are endless. Our algorithms are based on the physical equations of fluid flow, namely the Navier-Stokes equations. These equations are notoriously hard to solve when strict physical accuracy is of prime importance. Our solvers on the other hand are geared towards visual quality. Our emphasis is on stability and speed, which means that our simulations can be advanced with arbitrary time steps. We also demonstrate that our solvers are easy to code by providing a complete C code implementation in this paper. Our algorithms run in real-time for reasonable grid sizes in both two and three dimensions on standard PC hardware, as demonstrated during the presentation of this paper at the conference.},
+   author = {Jos Stam},
+   issn = {09574174},
+   issue = {11},
+   journal = {Proceedings of the Game Developer Conference},
+   pages = {17},
+   title = {Real-Time Fluid Dynamics for Games},
+   volume = {18},
+   url = {http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.12.6736&amp;rep=rep1&amp;type=pdf},
+   year = {2003},
+}
+
+@article{Stam1999,
+   abstract = {Building animation tools for fluid-like motions is an important and challenging problem with many applications in computer graphics. The use of physics-based models for fluid flow can greatly assist in creating such tools. Physical models, unlike key frame or procedural based techniques, permit an animator to almost effortlessly create interesting, swirling fluid-like behaviors. Also, the interaction of flows with objects and virtual forces is handled elegantly. Until recently, it was believed that physical fluid models were too expensive to allow real-time interaction. This was largely due to the fact that previous models used unstable schemes to solve the physical equations governing a fluid. In this paper, for the first time, we propose an unconditionally stable model which still produces complex fluid-like flows. As well, our method is very easy to implement. The stability of our model allows us to take larger time steps and therefore achieve faster simulations. We have used our model in conjuction with advecting solid textures to create many fluid-like animations interactively in two- and three-dimensions. Copyright ACM 1999.},
+   author = {Jos Stam},
+   doi = {10.1145/311535.311548},
+   isbn = {0201485605},
+   journal = {Proceedings of the 26th Annual Conference on Computer Graphics and Interactive Techniques, SIGGRAPH 1999},
+   keywords = {Advected textures,Animation of fluids,Gaseous phenomena,Implicit elliptic PDE solvers,Interactive modeling,Navier-Stokes,Stable solvers},
+   pages = {121-128},
+   title = {Stable fluids},
+   year = {1999},
+}
+
+
+@article{Huang2015,
+   abstract = {We present an up-to-date survey on physically-based smoke simulation. Physically-based method becomes predominant in smoke simulation in computer graphics community. It prevails over traditional methods for its plausible visual effect. Significant results have been carried out over past two decades. We give a latest overview of state-of-the-art of smoke simulation and also compare various techniques according to their characteristics. We discuss several issues in terms of computational efficiency, numerical stability, numerical dissipation, and runtime performance. A number of open challenging problems are also addressed for further exploration.},
+   author = {Zhanpeng Huang and Guanghong Gong and Liang Han},
+   doi = {10.1007/s11042-014-1992-4},
+   issn = {15737721},
+   issue = {18},
+   journal = {Multimedia Tools and Applications},
+   keywords = {Animation control,Physically-based methods,Real-time rendering,Smoke and gaseous phenomena},
+   pages = {7569-7594},
+   title = {Physically-based smoke simulation for computer graphics: a survey},
+   volume = {74},
+   year = {2015},
+}
+
+
+@MANUAL{frasson:2005:classe_abnt,
+  title = {Classe ABNT: Confec{\c c}\~ao de trabalhos acad\^emicos em LATEX
+	segundo as normas ABNT Vers\~ao 1.15},
+  author = {Miguel V. S. Frasson and Gerald Weber},
+  year = {2005},
+  howpublished = {http://abntex.codigolivre.org.br}
+}
+
+@MISC{janos:2005:algpseudocode,
+  month = {Abril},
+  year = {2005},
+  url = {http://www.tug.org/texlive/Contents/live/texmf-dist/doc/latex/algorithmicx/algorithmicx.pdf},
+  urlaccessdate = {29/03/2011},
+  author = {Sz\'asz J\'anos},
+  owner = {marcos},
+  timestamp = {2011.03.29},
+  title = {The algorithmicx package}
+}
+
+@MISC{cassagojr:1997:amslatex,
+  year = {1997},
+  url = {http://www.icmc.usp.br/~sma/suporte/Ams-manual.pdf},
+  urlaccessdate = {30/03/2011},
+  author = {Herminio Cassago Junior and Luiz Carlos Franco},
+  owner = {marcos},
+  timestamp = {2011.03.30},
+  title = {AMS-Latex}
+}
+
+@MISC{moses:2006:listings,
+  year = {2006},
+  url = {http://ftp.tex.ac.uk/tex-archive/macros/latex/contrib/listings/listings.pdf},
+  urlaccessdate = {29/03/2011},
+  author = {Brooks Moses},
+  owner = {marcos},
+  timestamp = {2011.03.29},
+  title = {The Listings Package}
+}
+
+@ELECTRONIC{marcos:site,
+  url = {http://sites.google.com/site/ultramarcos},
+  urlaccessdate = {01/02/2012},
+  author = {Marcos Roberto Ribeiro},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@techreport{usp:logo,
+  url = {http://www.scs.usp.br/identidadevisual/wp-content/uploads/myriamkrasilchik_1996.pdf},
+  urlaccessdate = {18 nov. 2014},
+  year={1996},
+  address={São Paulo},
+  author = {KRASILCHIK, Myriam and Gomes, Celso de Barros and Melo, Francisco In\'acio Homem and Filho, Heliodoro Teixeira Bastos and Katinsky, Julio Roberto and Corr\^ea, Tup\~a Gomes},
+  title={A USP e sua identidade visual},
+  owner = {USP},
+  timestamp = {18/11/2014}
+}
+
+
+@INBOOK{silva:inbook,
+  author = {Jos\'e Silva},
+  title = {Título do capítulo do livro},
+  editor = {Maria da Silva},
+  booktitle = {Título do Livro},
+  chapter = {3},
+  pages = {102-187},
+  publisher = {Nome da Editora},
+  address = {Cidade da Editora},
+  year = {2011},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@INCOLLECTION{silva:incollection,
+  author = {Jos\'e Silva},
+  title = {Título do livro},
+  booktitle = {Título da Coletânea},
+  editor = {Maria da Silva},
+  pages = {350},
+  publisher = {Nome da Editora},
+  address = {Cidade da Editora},
+  year = {2011},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@INPROCEEDINGS{silva:inproceedings,
+  author = {Jos\'e Silva},
+  title = {Título do trabalho},
+  organization = {Nome do evento},
+  conference-number = {20},
+  year = {2011},
+  address = {Cidade do Evento},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@MASTERSTHESIS{silva:master,
+  author = {Jos\'e Silva},
+  title = {Título da dissertação},
+  school = {Instituto Federal Minas Gerais - Campus Bambuí},
+  year = {2011},
+  address = {Bambuí},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@MONOGRAPHY{silva:monography,
+  author = {Jos\'e Silva},
+  title = {Título da monografia},
+  type = {Graduação},
+  school = {Instituto Federal Minas Gerais - Campus Bambuí},
+  year = {2011},
+  address = {Bambuí},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@TECHREPORT{silva:tech,
+  author = {Jos\'e Silva},
+  title = {Título do relatório técnico},
+  organization = {Instituto Federal Minas Gerais - Campus Bambuí},
+  year = {2011},
+  address = {Bambuí},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@ARTICLE{silva:artigo,
+  author = {Jos\'e Silva and Maria Silva},
+  title = {Título do artigo},
+  journal = {Nome da Revista},
+  year = {2012},
+  volume = {I},
+  number = {2},
+  pages = {37-48},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@BOOKLET{silva:booklet,
+  title = {Título do trabalho sem editora},
+  author = {Jos\'e Silva and Maria Silva},
+  year = {2012},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@MANUAL{silveira:2006:manual_tcc,
+  title = {Manual de Normalização para Apresentação de Trabalho de Conclusão
+	de Curso (TCC)},
+  author = {Simoni J\'ulia da Silveira},
+  organization = {Centro Federal de Educa{\c c}\~ao Tecnol\'ogica de Bambu\'i},
+  address = {Bambuí},
+  year = {2006},
+  owner = {marcos},
+  timestamp = {2011.03.23}
+}
+
+@BOOK{wazlawick:2009,
+  title = {Metodologia de pesquisa para ciência da computação},
+  author = {Wazlawick, Raul Sidnei},
+  publisher = {Elsevier},
+  year = {2009},
+  address = {Rio de Janeiro},
+  owner = {marcos},
+  timestamp = {05/06/2012}
+}
+
+@MISC{wikipedia:2011:america_sul,
+  year = {2011},
+  url = {http://pt.wikipedia.org/wiki/América do Sul},
+  urlaccessdate = {23/03/2011},
+  author = {Wikip\'edia},
+  owner = {marcos},
+  timestamp = {2011.03.23},
+  title = {Am\'erica do Sul}
+}
+
+@comment{jabref-entrytype: Monography: req[author;title;type;school;year;address] opt[pages;pagename;url;urlaccessdate;note]}
+
+
+@manual{NBR14724:2011,
+Address = {Rio de Janeiro},
+Date-Added = {2013-03-18 14:19:32 +0000},
+Date-Modified = {2013-03-18 14:20:15 +0000},
+Month = mar,
+Org-Short = {ABNT},
+Organization = {Associa{\c c}\~ao Brasileira de Normas T\'ecnicas},
+Pages = 15,
+Subtitle = {Informa{\c c}\~ao e documenta{\c c}\~ao --- Trabalhos acad\^emicos --- Apresenta{\c c}\~ao},
+Title = {{ABNT NBR} 14724:2011},
+Year = 2011}
+
+@manual{NBR6024:2012,
+Address = {Rio de Janeiro},
+Date-Added = {2013-03-18 13:32:00 +0000},
+Date-Modified = {2013-03-18 13:33:17 +0000},
+Month = feb,
+Org-Short = {ABNT},
+Organization = {Associa{\c c}\~ao Brasileira de Normas T\'ecnicas},
+Pages = 4,
+Subtitle = {Informa{\c c}\~ao e Documenta{\c c}\~ao - Numera{\c c}\~ao progressiva das se{\c c}\~oes de um documento - Apresenta{\c c}\~ao},
+Title = {{ABNT NBR} 6024: 2012},
+Year = 2012}
+
+@book{ibge1993,
+	Address = {Rio de Janeiro},
+	Author = {IBGE},
+	Date-Added = {2013-08-21 13:48:18 +0000},
+	Date-Modified = {2013-08-21 13:55:50 +0000},
+	Edition = {3},
+	Organization = {http://biblioteca.ibge.gov.br/visualizacao/livros/liv23907.pdf},
+	Publisher = {Centro de Documenta{\c c}{\~a}o e Dissemina{\c c}{\~a}o de Informa{\c c}{\~o}es. Funda{\c c}{\~a}o Intituto Brasileiro de Geografia e Estat{\'\i}stica},
+	Title = {Normas de apresenta{\c c}{\~a}o tabular},
+	Urlaccessdate = {21 ago 2013},
+	Year = {1993}}
+	
+	@manual{abntex2classe,
+Annote = {Este documento substitui o \cite{abnt-classe-doc}},
+Author = {abnTeX2 and Lauro C{\'e}sar Araujo},
+Date-Added = {2012-12-19 13:08:40 +0000},
+Date-Modified = {2013-04-05 11:03:25 +0000},
+Organization = {Equipe abnTeX2},
+Title = {A classe abntex2: Modelo can{\^o}nico de trabalhos acad{\^e}micos brasileiros compat{\'\i}vel com as normas ABNT NBR 14724:2011, ABNT NBR 6024:2012 e outras},
+Url = {http://abntex2.googlecode.com/},
+Year = {2012},
+Bdsk-Url-1 = {http://code.google.com/p/abntex2/}}
+
+@manual{NBR10520:2002,
+	Address = {Rio de Janeiro},
+	Date-Added = {2012-12-15 21:43:38 +0000},
+	Date-Modified = {2013-01-12 22:17:20 +0000},
+	Month = {ago.},
+	Org-Short = {ABNT},
+	Organization = {Associa{\c c}\~ao Brasileira de Normas T\'ecnicas},
+	Pages = 7,
+	Subtitle = {Informa{\c c}\~ao e documenta{\c c}\~ao --- Apresenta{\c c}\~ao de cita{\c c}\~oes em documentos},
+	Title = {{NBR} 10520},
+	Year = 2002}
+	
+@manual{abntex2cite-alf,
+	Annote = {Este documento {\'e} derivado do \cite{abnt-bibtex-alf-doc}},
+	Author = {abnTeX2 and Lauro C{\'e}sar Araujo},
+	Date-Added = {2013-01-09 10:37:45 +0000},
+	Date-Modified = {2013-04-05 11:03:05 +0000},
+	Organization = {Equipe abnTeX2},
+	Title = {O pacote abntex2cite: t{\'o}picos espec{\'\i}ficos da ABNT NBR 10520:2002 e o estilo bibliogr{\'a}fico alfab{\'e}tico (sistema autor-data)},
+	Url = {http://abntex2.googlecode.com/},
+	Year = {2013},
+	Bdsk-Url-1 = {http://code.google.com/p/abntex2/}}	
+	
+	@manual{babel,
+	Author = {Johannes Braams},
+	Date-Added = {2013-02-17 13:37:14 +0000},
+	Date-Modified = {2013-02-17 13:38:38 +0000},
+	Month = {Apr.},
+	Title = {Babel, a multilingual package for use with LATEX's standard document classes},
+	Url = {http://mirrors.ctan.org/info/babel/babel.pdf},
+	Urlaccessdate = {17 fev. 2013},
+	Year = {2008},
+	Bdsk-Url-1 = {http://mirrors.ctan.org/info/babel/babel.pdf}}
+
+@article{FLYER201639,
+title = {Enhancing finite differences with radial basis functions: Experiments on the Navier–Stokes equations},
+journal = {Journal of Computational Physics},
+volume = {316},
+pages = {39-62},
+year = {2016},
+issn = {0021-9991},
+doi = {https://doi.org/10.1016/j.jcp.2016.02.078},
+url = {https://www.sciencedirect.com/science/article/pii/S0021999116300195},
+author = {Natasha Flyer and Gregory A. Barnett and Louis J. Wicker},
+keywords = {RBF-FD, Radial basis functions, Finite differences, Polynomials, Splines, Navier–Stokes},
+abstract = {Polynomials are used together with polyharmonic spline (PHS) radial basis functions (RBFs) to create local RBF-finite-difference (RBF-FD) weights on different node layouts for spatial discretizations that can be viewed as enhancements of the classical finite differences (FD). The presented method replicates the convergence properties of FD but for arbitrary node layouts. It is tested on the 2D compressible Navier–Stokes equations at low Mach number, relevant to atmospheric flows. Test cases are taken from the numerical weather prediction community and solved on bounded domains. Thus, attention is given on how to handle boundaries with the RBF-FD method, as well as a novel implementation for hyperviscosity. Comparisons are done on Cartesian, hexagonal, and quasi-uniform node layouts. Consideration and guidelines are given on PHS order, polynomial degree and stencil size. The main advantages of the present method are: 1) capturing the basic physics of the problem surprisingly well, even at very coarse resolutions, 2) high-order accuracy without the need of tuning a shape parameter, and 3) the inclusion of polynomials eliminates stagnation (saturation) errors. A MATLAB code is given to calculate the differentiation weights for this novel approach.}
+}
