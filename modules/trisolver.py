@@ -96,10 +96,13 @@ class TriSolver:
                 w_lap_ghost = w_ghost[0]
                 w_n_ghost = w_ghost[1]*self.mesh.normals[pid,0] + w_ghost[2]*self.mesh.normals[pid,1]
 
-                ghost_constant = 1 - w_lap_ghost/w_n_ghost
-                weights = (self.mesh.rbf[pid][:,1]*self.mesh.normals[pid,0]
-                        + self.mesh.rbf[pid][:,2]*self.mesh.normals[pid,1])
-                weights = weights*ghost_constant
+                weights = []
+                for w_j, neighbor_idx in zip(self.mesh.rbf[pid], self.mesh.nring[pid]):
+                    w_lap_j = w_j[0]
+                    w_n_j = w_j[1]*self.mesh.normals[neighbor_idx,0] + w_j[2]*self.mesh.normals[neighbor_idx,1]
+
+                    w = w_lap_j - w_lap_ghost/w_n_ghost*w_n_j
+                    weights.append(w)
             else:
                 weights = self.mesh.rbf[pid][:,0]
             
@@ -114,7 +117,9 @@ class TriSolver:
         if testing != None:
             b = testing
         else:
-            b = np.array([self.divergence(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)])
+            # we need to 0 only on collocation method, with ghost we are in fact calculating the laplacian
+            # b = np.array([self.divergence(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)])
+            b = np.array([self.divergence(pid) for pid in range(self.mesh.n_points)])
         lapl = spsolve(self.w, b)
         assert(not np.isnan(lapl).any())
         return lapl
