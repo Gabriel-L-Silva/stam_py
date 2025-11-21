@@ -96,7 +96,7 @@ Em seguida, resolvemos a equação de Poisson para a pressão:
 \noindent utilizando os pesos RBF-FD para o operador Laplaciano, resulta no sistema linear:
 
 \begin{equation}
-    \sum_{j=1}^N \omega_{ij}^{\nabla^2} p_j = (\nabla\cdot\mathbf{w})_i
+    \sum_{j=1}^N \omega_{ij}^L p_j = (\nabla\cdot\mathbf{w})_i
     \label{eq:poisson_system}
 \end{equation}
 
@@ -242,7 +242,7 @@ O sistema linear resultante combina as equações do Laplaciano para os nós int
 \omega_1^n & \omega_2^n & \omega_3^n & 0 & \omega_5^n \\
 0 & \omega_2^n & \omega_3^n & \omega_4^n & \omega_5^n \\
 \omega_1^n & 0 & \omega_3^n & \omega_4^n & \omega_5^n \\
-\omega_1^{\nabla^2} & \omega_2^{\nabla^2} & \omega_3^{\nabla^2} & \omega_4^{\nabla^2} & \omega_5^{\nabla^2}
+\omega_1^L & \omega_2^L & \omega_3^L & \omega_4^L & \omega_5^L
 \end{bmatrix}
 \begin{bmatrix}
 p_1 \\ p_2 \\ p_3 \\ p_4 \\ p_5
@@ -320,11 +320,11 @@ Considere um nó de fronteira $\mathbf{x}_b$ com seu estêncil original $\mathca
 Com o estêncil estendido, o operador Laplaciano é aproximado por:
 
 \begin{equation}
-   \nabla^2 u(\mathbf{x}_b) \approx \sum_{j=1}^N \omega_j^{\nabla^2} u_j + \omega_g^{\nabla^2} u_g
+   \nabla^2 u(\mathbf{x}_b) \approx \sum_{j=1}^N \omega_j^L u_j + \omega_g^L u_g
    \label{eq:laplacian_with_ghost}
 \end{equation}
 
-\noindent onde $u_j = u(\mathbf{x}_j)$ são os valores da função nos nós do estêncil, $u_g = u(\mathbf{x}_g)$ é o valor no nó fantasma, e $\omega_j^{\nabla^2}$ e $\omega_g^{\nabla^2}$ são os pesos RBF-FD calculados normalmente com o estêncil estendido. Da mesma forma, obtemos pesos para as derivadas parciais: $\omega_j^x$, $\omega_g^x$, $\omega_j^y$ e $\omega_g^y$.
+\noindent onde $u_j = u(\mathbf{x}_j)$ são os valores da função nos nós do estêncil, $u_g = u(\mathbf{x}_g)$ é o valor no nó fantasma, e $\omega_j^L$ e $\omega_g^L$ são os pesos RBF-FD calculados normalmente com o estêncil estendido. Da mesma forma, obtemos pesos para as derivadas parciais: $\omega_j^x$, $\omega_g^x$, $\omega_j^y$ e $\omega_g^y$.
 
 Como o nó fantasma não faz parte do domínio original e não possui valores físicos associados, é necessário eliminar a dependência de $u_g$ na expressão acima. Esta eliminação é realizada através da condição de contorno de Neumann, conforme descrito a seguir.
 
@@ -369,22 +369,22 @@ Da Equação~\eqref{eq:neumann_rbffd}, podemos isolar o valor da função no nó
 Substituindo a Equação~\eqref{eq:ghost_value} na Equação~\eqref{eq:laplacian_with_ghost}, realizamos a eliminação do nó fantasma:
 
 \begin{align}
-   \nabla^2 u(\mathbf{x}_b) &\approx \sum_{j=1}^N \omega_j^{\nabla^2} u_j + \omega_g^{\nabla^2} u_g \nonumber \\
-   &= \sum_{j=1}^N \omega_j^{\nabla^2} u_j + \omega_g^{\nabla^2} \left( -\frac{1}{\omega_g^n} \sum_{j=1}^N \omega_j^n u_j \right) \nonumber \\
-   &= \sum_{j=1}^N \omega_j^{\nabla^2} u_j - \frac{\omega_g^{\nabla^2}}{\omega_g^n} \sum_{j=1}^N \omega_j^n u_j \nonumber \\
-   &= \sum_{j=1}^N \left( \omega_j^{\nabla^2} - \frac{\omega_g^{\nabla^2}}{\omega_g^n} \omega_j^n \right) u_j \nonumber \\
-   &= \sum_{j=1}^N \tilde{\omega}_j^{\nabla^2} u_j
+   \nabla^2 u(\mathbf{x}_b) &\approx \sum_{j=1}^N \omega_j^L u_j + \omega_g^L u_g \nonumber \\
+   &= \sum_{j=1}^N \omega_j^L u_j + \omega_g^L \left( -\frac{1}{\omega_g^n} \sum_{j=1}^N \omega_j^n u_j \right) \nonumber \\
+   &= \sum_{j=1}^N \omega_j^L u_j - \frac{\omega_g^L}{\omega_g^n} \sum_{j=1}^N \omega_j^n u_j \nonumber \\
+   &= \sum_{j=1}^N \left( \omega_j^L - \frac{\omega_g^L}{\omega_g^n} \omega_j^n \right) u_j \nonumber \\
+   &= \sum_{j=1}^N \tilde{\omega}_j^L u_j
    \label{eq:effective_weights}
 \end{align}
 
 \noindent onde os pesos efetivos do Laplaciano são:
 
 \begin{equation}
-   \tilde{\omega}_j^{\nabla^2} = \omega_j^{\nabla^2} - \frac{\omega_g^{\nabla^2}}{\omega_g^n} \omega_j^n
+   \tilde{\omega}_j^L = \omega_j^L - \frac{\omega_g^L}{\omega_g^n} \omega_j^n
    \label{eq:final_weights}
 \end{equation}
 
-Esta é a fórmula central para o cálculo do Laplaciano em nós de fronteira. Os pesos efetivos $\tilde{\omega}_j^{\nabla^2}$ combinam os pesos padrão do Laplaciano $\omega_j^{\nabla^2}$ com uma correção baseada nos pesos da derivada normal. Esta correção, dada pelo termo $-\frac{\omega_g^{\nabla^2}}{\omega_g^n} \omega_j^n$, incorpora automaticamente a condição de contorno de Neumann e elimina completamente a dependência do nó fantasma. O resultado são pesos que envolvem apenas os nós do domínio original, mas fornecem aproximações mais precisas do Laplaciano em nós de fronteira devido ao balanceamento do estêncil proporcionado pelo ghost node.
+Esta é a fórmula central para o cálculo do Laplaciano em nós de fronteira. Os pesos efetivos $\tilde{\omega}_j^L$ combinam os pesos padrão do Laplaciano $\omega_j^L$ com uma correção baseada nos pesos da derivada normal. Esta correção, dada pelo termo $-\frac{\omega_g^L}{\omega_g^n} \omega_j^n$, incorpora automaticamente a condição de contorno de Neumann e elimina completamente a dependência do nó fantasma. O resultado são pesos que envolvem apenas os nós do domínio original, mas fornecem aproximações mais precisas do Laplaciano em nós de fronteira devido ao balanceamento do estêncil proporcionado pelo ghost node.
 
 Com os pesos efetivos definidos, podemos agora descrever como eles são utilizados na prática para construir o sistema linear global que resolve a equação de Poisson na etapa de projeção.
 
@@ -394,15 +394,15 @@ Na prática computacional, a matriz esparsa do operador Laplaciano é construíd
 
 \begin{equation}
    L_{ij} = \begin{cases}
-      \tilde{\omega}_j^{\nabla^2} & \text{se } i \text{ é nó de fronteira (usando Equação~\eqref{eq:final_weights})} \\
-      \omega_j^{\nabla^2} & \text{se } i \text{ é nó interno (pesos RBF-FD padrão)}
+      \tilde{\omega}_j^L & \text{se } i \text{ é nó de fronteira (usando Equação~\eqref{eq:final_weights})} \\
+      \omega_j^L & \text{se } i \text{ é nó interno (pesos RBF-FD padrão)}
    \end{cases}
    \label{eq:laplacian_matrix}
 \end{equation}
 
-Esta matriz $L$ é então utilizada diretamente na resolução da equação de Poisson durante a etapa de projeção. A cada passo de tempo da simulação, a equação $\nabla^2 p = \nabla \cdot \mathbf{w}$ é resolvida através do sistema linear $L\mathbf{p} = \mathbf{b}$, onde $\mathbf{b}$ contém os valores de divergência calculados em cada nó e $\mathbf{p}$ é o vetor de pressões a ser determinado. A condição de Neumann nas fronteiras já está automaticamente incorporada nos pesos efetivos $\tilde{\omega}_j^{\nabla^2}$, não sendo necessário tratamento adicional das condições de contorno.
+Esta matriz $L$ é então utilizada diretamente na resolução da equação de Poisson durante a etapa de projeção. A cada passo de tempo da simulação, a equação $\nabla^2 p = \nabla \cdot \mathbf{w}$ é resolvida através do sistema linear $L\mathbf{p} = \mathbf{b}$, onde $\mathbf{b}$ contém os valores de divergência calculados em cada nó e $\mathbf{p}$ é o vetor de pressões a ser determinado. A condição de Neumann nas fronteiras já está automaticamente incorporada nos pesos efetivos $\tilde{\omega}_j^L$, não sendo necessário tratamento adicional das condições de contorno.
 
-Os pesos $\tilde{\omega}_j^{\nabla^2}$ resultantes deste processo são pré-calculados e armazenados para todos os nós de fronteira, sendo reutilizados durante toda a simulação sem necessidade de recálculo a cada passo de tempo. Esta estratégia garante eficiência computacional, uma vez que o custo de calcular os pesos com ghost nodes é pago apenas uma vez na inicialização.
+Os pesos $\tilde{\omega}_j^L$ resultantes deste processo são pré-calculados e armazenados para todos os nós de fronteira, sendo reutilizados durante toda a simulação sem necessidade de recálculo a cada passo de tempo. Esta estratégia garante eficiência computacional, uma vez que o custo de calcular os pesos com ghost nodes é pago apenas uma vez na inicialização.
 
 A formulação matemática apresentada nesta seção define completamente o tratamento de fronteiras no método RBF-FD. A próxima seção aborda os aspectos práticos da implementação computacional, incluindo as estruturas de dados utilizadas e as otimizações realizadas para garantir eficiência na simulação.
 
