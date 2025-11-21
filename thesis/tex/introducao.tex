@@ -18,15 +18,15 @@ Na visão lagrangiana (ver \figref{fig:lagrangiana}), o fluido é discretizado e
     \caption{Tipos de simulações de escoamento de fluidos}
     \begin{subfigure}[b]{0.45\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/lagrangeana.pdf}
         \caption{Simulação pela visão lagrangiana.}
+        \includegraphics[width=\textwidth]{images/lagrangeana.pdf}
         \label{fig:lagrangiana}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.45\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/euleriana.pdf}
         \caption{Simulação pela visão euleriana.}
+        \includegraphics[width=\textwidth]{images/euleriana.pdf}
         \label{fig:euleriana}
     \end{subfigure}
     \subcaption*{Fonte: Elaborada pelo autor.}
@@ -40,29 +40,29 @@ Existem diversas características que diferem na representação da malha. Por e
     \caption{Tipos de células presentes na abordagem euleriana em duas dimensões.}
     \begin{subfigure}[b]{0.23\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/quad_collocated.pdf}
         \caption{Célula quadricular co-localizada.}
+        \includegraphics[width=\textwidth]{images/quad_collocated.pdf}
         \label{fig:quadcollo}
     \end{subfigure}
     \hspace{0.1\textwidth}
     \begin{subfigure}[b]{0.23\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/quad_staggered.pdf}
         \caption{Célula quadricular deslocada.}
+        \includegraphics[width=\textwidth]{images/quad_staggered.pdf}
         \label{fig:quadstagg}
     \end{subfigure}
     \newline
     \begin{subfigure}[b]{0.23\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/tri_collocated.pdf}
         \caption{Célula triangular co-localizada.}
+        \includegraphics[width=\textwidth]{images/tri_collocated.pdf}
         \label{fig:tricollo}
     \end{subfigure}
     \hspace{0.1\textwidth}
     \begin{subfigure}[b]{0.23\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/tri_staggered.pdf}
         \caption{Célula triangular deslocada.}
+        \includegraphics[width=\textwidth]{images/tri_staggered.pdf}
         \label{fig:tristagg}
     \end{subfigure}
     \subcaption*{Fonte: Elaborada pelo autor.}
@@ -73,8 +73,8 @@ Em geral, simulações de fluidos baseadas em física têm como base as Equaçõ
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.3\textwidth]{images/stencil-2d.pdf}
     \caption{Estêncil em grade uniforme bidimensional.}
+    \includegraphics[width=0.3\textwidth]{images/stencil-2d.pdf}
     \subcaption*{Fonte: Elaborada pelo autor.}
     \label{fig:stencil2d}
 \end{figure}
@@ -91,7 +91,6 @@ Outra propriedade importante de malhas que deve ser considerada é a conformidad
     \includegraphics[width=0.7\textwidth]{images/africa-conforme.jpg}
     \subcaption*{Fonte: \cite{Nascimento:2014}}
     \label{fig:conforme}
-    \vspace{-1.2cm}
 \end{figure}
 
 \begin{figure}
@@ -102,7 +101,7 @@ Outra propriedade importante de malhas que deve ser considerada é a conformidad
     \label{fig:africa}
 \end{figure}
 
-O método baseado em Funções de Base Radial (do inglês, \textit{Radial Basis Function} - RBF) \cite{rbf} realiza uma interpolação independente de malha, e sua aproximação de FD, conhecida como \textit{Radial Basis Function Finite Differences} (RBF-FD) \cite{WRIGHT200699}, resolve os operadores diferenciais necessários. Com a aplicação do RBF-FD em malhas não-conformes, pretendemos resolver as ENS e representar visualmente a simulação de fumaça.
+O método baseado em Funções de Base Radial (do inglês, \textit{Radial Basis Function} - RBF) \cite{rbf} realiza uma interpolação independente de malha, e sua aproximação de FD, conhecida como \textit{Radial Basis Function Finite Differences} (RBF-FD) \cite{WRIGHT200699}, resolve os operadores diferenciais necessários através de uma aproximação de alta ordem. Com a aplicação do RBF-FD em malhas não-conformes, pretendemos resolver as ENS e representar visualmente a simulação de fumaça.
 
 Um desafio fundamental na resolução numérica das ENS é a correta aplicação de condições de fronteira, essenciais para garantir o comportamento físico apropriado do fluido nos limites do domínio. Existem diferentes tipos de condições de fronteira, sendo as mais comuns as condições de Dirichlet, que prescrevem o valor da função no contorno, e as condições de Neumann, que prescrevem o valor da derivada normal no contorno.
 

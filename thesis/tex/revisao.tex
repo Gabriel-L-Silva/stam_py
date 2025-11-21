@@ -14,19 +14,19 @@ Métodos com malha baseada em árvores são amplamente utilizados em abordagens 
 %\usepackage{booktabs}   
 \begin{sidewaystable}
 \caption{Resumo dos artigos revisados.}
-\begin{tabular}{@{}ccccccc@{}}
+\begin{tabular}{@{}cccccccc@{}}
 \toprule
-Artigo                                                               & Malha                              & Célula          & Método Numérico & Adaptativa & Dinâmica & Conforme\\ \midrule
+Artigo                                                               & Malha                              & Célula          & Método Numérico & Adaptativa & Dinâmica & Conforme & Dim.\\ \midrule
 \hline\\[.125cm]
-\cite{Stam1999} \& \cite{Stam2003} & Co-localizada & Quad            & FD              & Não        & Não      & Sim      \\[.5cm]
+\cite{Stam1999} \& \cite{Stam2003} & Co-localizada & Quad            & FD              & Não        & Não      & Sim      & 2D/3D \\[.5cm]
 
-\cite{Feldman2005}                                  & deslocada  & Tri             & FV              & Não        & Sim      & Sim      \\[.5cm]
+\cite{Feldman2005}                                  & deslocada  & Tri/Quad             & FV              & Não        & Sim      & Sim      & 2D/3D \\[.5cm]
 
-\cite{Klingner2006}                                 & deslocada  & Híbrido         & FV              & Sim        & Não      & Sim      \\[.5cm]
+\cite{Klingner2006}                                 & deslocada  & Tet         & FV              & Não        & Sim      & Sim      & 3D \\[.5cm]
 
-\cite{Nakanishi2020}                                & deslocada  & Quadtree/Octree & RBF-FD          & Sim        & Não      & Não      \\ [.5cm]
+\cite{Nakanishi2020}                                & deslocada  & Quadtree/Octree & RBF-FD          & Sim        & Não      & Não      & 2D/3D \\ [.5cm]
 
-Nossa proposta                              & deslocada  & Tri & RBF-FD          & Sim        & Não      & Não      \\ [.5cm]
+Nossa proposta                              & deslocada  & Tri & RBF-FD          & Sim        & Não      & Não      & 2D \\ [.5cm]
 \bottomrule
 \end{tabular}
 \subcaption*{Fonte: Elaborada pelo autor.}

@@ -14,7 +14,7 @@ iniconfig==2.0.0
 joblib==1.2.0
 kiwisolver==1.4.4
 libpysal<=4.7.0
-llvmlite==0.40.1rc1
+llvmlite>=0.40.1rc1
 matplotlib==3.7.1
 networkx==3.1
 numpy<=1.22.4

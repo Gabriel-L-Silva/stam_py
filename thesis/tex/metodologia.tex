@@ -27,7 +27,7 @@ O termo de advecção, $(\mathbf{u}\cdot\nabla)\mathbf{u}$, representa o transpo
         \label{eq:backtrack}
     \end{equation}
 
-    \item[Etapa 2:] Como $\mathbf{x}_i^*$ geralmente não coincide com um ponto da malha, utilizamos interpolação RBF para aproximar o valor da velocidade nesta posição. A função de interpolação é construída usando os $N$ pontos mais próximos de $\mathbf{x}_i^*$, onde $N$ é o número de pontos do stencil:
+    \item[Etapa 2:] Como $\mathbf{x}_i^*$ geralmente não coincide com um ponto da malha, utilizamos interpolação RBF para aproximar o valor da velocidade nesta posição. A função de interpolação é construída usando os $N$ pontos mais próximos de $\mathbf{x}_i^*$, onde $N$ é o número de pontos do estêncil:
 
     \begin{equation}
         \mathbf{u}(\mathbf{x}_i^*, t^{n-1}) = \sum_{j=1}^N \lambda_j \phi(\|\mathbf{x}_i^* - \mathbf{x}_j\|)
@@ -47,14 +47,14 @@ O termo de advecção, $(\mathbf{u}\cdot\nabla)\mathbf{u}$, representa o transpo
 \subsection{Termo do Gradiente de Pressão}
 \label{subsec:impl_press}
 
-O termo do gradiente de pressão, $-\frac{1}{\rho}\nabla p$, é implementado diretamente usando os pesos RBF-FD previamente calculados para o operador gradiente. Para um ponto $\mathbf{x}_i$ e seu stencil de $N$ pontos, temos:
+O termo do gradiente de pressão, $-\frac{1}{\rho}\nabla p$, é implementado diretamente usando os pesos RBF-FD previamente calculados para o operador gradiente. Para um ponto $\mathbf{x}_i$ e seu estêncil de $N$ pontos, temos:
 
 \begin{equation}
-    (\nabla p)_i = \sum_{j=1}^N w_{ij}^{\nabla} p_j
+    (\nabla p)_i = \sum_{j=1}^N \omega_{ij}^{\nabla} p_j
     \label{eq:press_grad}
 \end{equation}
 
-\noindent onde $w_{ij}^{\nabla}$ são os pesos RBF-FD para o operador gradiente.
+\noindent onde $\omega_{ij}^{\nabla}$ são os pesos RBF-FD para o operador gradiente.
 \subsection{Termo de Força Externa}
 \label{subsec:impl_force}
 
@@ -82,7 +82,7 @@ A etapa de projeção é fundamental para garantir a condição de incompressibi
 Primeiro, calculamos o divergente do campo de velocidades intermediário $\mathbf{w}$ usando os pesos RBF-FD para o operador divergente:
 
 \begin{equation}
-    (\nabla\cdot\mathbf{w})_i = \sum_{j=1}^N w_{ij}^{\mathrm{div}} \cdot \mathbf{w}_j
+    (\nabla\cdot\mathbf{w})_i = \sum_{j=1}^N \omega_{ij}^{\mathrm{div}} \cdot \mathbf{w}_j
     \label{eq:div_calc}
 \end{equation}
 
@@ -96,7 +96,7 @@ Em seguida, resolvemos a equação de Poisson para a pressão:
 \noindent utilizando os pesos RBF-FD para o operador Laplaciano, resulta no sistema linear:
 
 \begin{equation}
-    \sum_{j=1}^N w_{ij}^{\nabla^2} p_j = (\nabla\cdot\mathbf{w})_i
+    \sum_{j=1}^N \omega_{ij}^{\nabla^2} p_j = (\nabla\cdot\mathbf{w})_i
     \label{eq:poisson_system}
 \end{equation}
 
@@ -114,15 +114,15 @@ Por fim, o campo de velocidades livre de divergência é obtido subtraindo o gra
     \label{eq:proj_final}
 \end{equation}
 
-onde $\nabla p_i$ é calculado usando a Equação~\eqref{eq:press_grad}.
+\noindent onde $\nabla p_i$ é calculado usando a Equação~\eqref{eq:press_grad}.
 
 \subsection{Algoritmo Completo}
 \label{subsec:impl_alg}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{images/pipeline.pdf}
     \caption{Fluxograma do pipeline de simulação de fluidos.}
+    \includegraphics[width=0.8\textwidth]{images/pipeline.pdf}
     \subcaption*{Fonte: Elaborada pelo autor.}
     \label{fig:pipeline}
 \end{figure}
@@ -146,7 +146,7 @@ Durante o processo de advecção semi-lagrangiana descrito na Etapa 1 da Seção
 A solução deste problema requer o cálculo eficiente da interseção entre um raio (definido pela trajetória de \emph{backtracking}) e os segmentos que compõem a fronteira do polígono que delimita o domínio computacional. Um algoritmo amplamente utilizado para calcular essa interseção baseia-se no método de \emph{Ray Casting} (lançamento de raio), que consiste em disparar um raio a partir de um ponto de origem na direção desejada e determinar onde ele cruza as arestas do polígono. O algoritmo examina cada aresta do polígono para verificar se ocorre uma interseção com o raio, determinando o ponto exato onde essa interseção acontece.
 
 \subsection{Algoritmo}
-Para calcular a interseção entre um raio e um polígono em 2D, focamos apenas na interseção do raio com as arestas do polígono. Um método eficaz para isso é o algoritmo de interseção de segmento de linha, como o algoritmo de Cohen-Sutherland ou o algoritmo de Liang-Barsky. Vamos considerar o algoritmo de Cohen-Sutherland, que é mais simples de entender e implementar para esse cenário específico.
+Para calcular a interseção entre um raio e um polígono em 2D, focamos apenas na interseção do raio com as arestas do polígono. Um método eficaz para isso é o algoritmo de interseção de segmento de linha, como o algoritmo de Cohen-Sutherland ou o algoritmo de Liang-Barsky \cite{foley1996computer}. Vamos considerar o algoritmo de Cohen-Sutherland, que é mais simples de entender e implementar para esse cenário específico.
 
 Para cada aresta do polígono, representada pelos pontos $P_1$ e $P_2$, calculamos a interseção com o raio utilizando a equação paramétrica da reta. Sejam $P_1(x_1,y_1)$ e $P_2(x_2,y_2)$ os pontos que definem a aresta e $(x,y)$ o ponto de interseção com o raio. A equação paramétrica da reta é dada por:
 
@@ -169,7 +169,7 @@ Este algoritmo é simples de implementar em 2D, fornecendo uma solução robusta
 \begin{figure}[H]
     \centering
     \caption{Exemplo de interseção entre raio de \emph{backtracking} e fronteira do domínio. A malha é representada em azul, $P_1$ é o ponto de origem (vermelho) do raio, a direção do raio é indicada pela seta vermelha, $P_2$ é o ponto final (preto), e o ponto de interseção com a fronteira é mostrado em verde.}
-    \includegraphics[width=0.92\textwidth]{images/intersect.pdf}
+    \includegraphics[width=0.8\textwidth]{images/intersect.pdf}
     \subcaption*{Fonte: Elaborada pelo autor.}
     \label{fig:intersect}
 \end{figure}
@@ -179,7 +179,7 @@ Este algoritmo é simples de implementar em 2D, fornecendo uma solução robusta
 
 Embora a técnica de vetorização ofereça uma abordagem eficiente para calcular a interseção de um raio com múltiplas arestas de um polígono em 2D, implementá-la diretamente em Python pode resultar em um desempenho insatisfatório para conjuntos de dados maiores. Isso ocorre devido à natureza interpretada do Python e à falta de otimização de baixo nível para operações matriciais.
 
-Para superar essa limitação de desempenho, podemos recorrer à técnica de compilação just-in-time (JIT) oferecida pela biblioteca Numba. Numba é uma biblioteca que compila funções Python em código de máquina otimizado, melhorando significativamente o desempenho, especialmente para operações numéricas intensivas.
+Para superar essa limitação de desempenho, podemos recorrer à técnica de compilação just-in-time (JIT) oferecida pela biblioteca Numba\footnote{\url{https://numba.pydata.org/}}. Numba é uma biblioteca que compila funções Python em código de máquina otimizado, melhorando significativamente o desempenho, especialmente para operações numéricas intensivas.
 
 Ao utilizar Numba, podemos decorar a função que calcula a interseção do raio com múltiplas arestas com \texttt{@jit} para permitir a compilação JIT. Isso transformará a função em código de máquina otimizado, proporcionando uma melhoria significativa no desempenho.
 
@@ -208,12 +208,68 @@ Essa operação pode levar à instabilidade na solução quando os vértices est
 \section{Tratamento de Fronteiras}
 \label{sec:fronteiras}
 
-O tratamento adequado das fronteiras é essencial para manter a precisão e estabilidade do método RBF-FD em malhas não-estruturadas. Nossa abordagem para o tratamento de fronteiras difere da proposta por \citeonline{FLYER201639} ao implementar um sistema de nós fantasma temporários que não modifica a estrutura da malha original.
+O tratamento adequado das fronteiras é essencial para manter a precisão e estabilidade do método RBF-FD em malhas não-estruturadas. Nossa abordagem para o tratamento de fronteiras representa uma simplificação significativa da proposta por \citeonline{FLYER201639}, mantendo as vantagens de precisão enquanto reduz a complexidade computacional. Nesta seção, apresentamos inicialmente o método tradicional de \emph{collocation} e suas limitações, seguido pela técnica de nós fantasma e a formulação matemática completa para sua aplicação na solução da equação de Poisson.
+
+\subsection{Método de Collocation para Condições de Neumann}
+\label{subsec:collocation}
+
+A imposição de condições de contorno de Neumann na resolução da equação de Poisson pode ser realizada através do método de \emph{collocation}. Este método substitui a equação diferencial nos nós de fronteira pela equação da condição de contorno, resultando em um sistema linear que incorpora automaticamente as restrições de fronteira.
+
+\begin{figure}[H]
+    \centering
+    \caption{Exemplo de malha para método de \emph{collocation}. Os nós 1, 2, 3 e 4 (azul ciano) estão na fronteira com vetores normais $\mathbf{n}$ apontando para fora, e o nó 5 (laranja) é interno.}
+    \includegraphics[width=0.5\textwidth]{images/collocation_mesh.pdf}
+    \subcaption*{Fonte: Elaborada pelo autor.}
+    \label{fig:collocation_example}
+\end{figure}
+
+Para ilustrar este conceito, considere um domínio simples com 5 nós, conforme mostrado na \figref{fig:collocation_example}, onde os nós 1, 2, 3 e 4 estão na fronteira e o nó 5 é interno. A equação de Poisson $\nabla^2 p = \nabla\cdot\mathbf{u}$, onde $\mathbf{u}$ é o campo vetorial, vamos simplificar e usar $\nabla\cdot\mathbf{u} = b$, deve ser satisfeita em todos os nós, enquanto a condição de Neumann $\frac{\partial p}{\partial \mathbf{n}} = 0$ deve ser imposta nos nós de fronteira.
+
+No método RBF-FD, a aproximação dos operadores diferenciais em um nó $\mathbf{x}_i$ utiliza um conjunto de nós vizinhos, denominado estêncil e denotado por $\mathcal{S}_i = \{\mathbf{x}_j\}_{j=1}^{N_i}$, onde $N_i$ é o número de pontos no estêncil do nó $i$. Utilizando este conjunto de vizinhos, a derivada normal pode ser aproximada por:
+
+\begin{equation}
+   \frac{\partial p}{\partial \mathbf{n}} = \nabla p \cdot \mathbf{n} \approx \sum_{j \in \mathcal{S}_i} \omega_j^n p_j = 0
+   \label{eq:neumann_collocation}
+\end{equation}
+
+\noindent onde os pesos da derivada normal são dados por $\omega_j^n = n_x \omega_j^x + n_y \omega_j^y$, sendo $\omega_j^x$ e $\omega_j^y$ os pesos RBF-FD para as derivadas parciais e $\mathbf{n} = (n_x, n_y)$ o vetor normal unitário à fronteira.
+
+O sistema linear resultante combina as equações do Laplaciano para os nós internos com as equações de Neumann para os nós de fronteira:
+
+\begin{equation}
+\begin{bmatrix}
+\omega_1^n & \omega_2^n & 0 & \omega_4^n & \omega_5^n \\
+\omega_1^n & \omega_2^n & \omega_3^n & 0 & \omega_5^n \\
+0 & \omega_2^n & \omega_3^n & \omega_4^n & \omega_5^n \\
+\omega_1^n & 0 & \omega_3^n & \omega_4^n & \omega_5^n \\
+\omega_1^{\nabla^2} & \omega_2^{\nabla^2} & \omega_3^{\nabla^2} & \omega_4^{\nabla^2} & \omega_5^{\nabla^2}
+\end{bmatrix}
+\begin{bmatrix}
+p_1 \\ p_2 \\ p_3 \\ p_4 \\ p_5
+\end{bmatrix}
+=
+\begin{bmatrix}
+0 \\ 0 \\ 0 \\ 0 \\ b_5
+\end{bmatrix}
+\label{eq:collocation_system}
+\end{equation}
+
+As primeiras quatro linhas correspondem às condições de Neumann nos nós de fronteira (1, 2, 3 e 4), enquanto a última linha corresponde à equação de Poisson no nó interno (5). Este sistema pode ser resolvido diretamente para obter os valores de pressão que satisfazem simultaneamente a equação de Poisson no interior do domínio e a condição de Neumann na fronteira.
+
+Embora o método de \emph{collocation} seja conceitualmente simples e direto, ele apresenta limitações importantes em termos de precisão. O problema fundamental está na assimetria dos estêncils próximos à fronteira. No exemplo da \figref{fig:collocation_example}, observe que o nó 1, localizado no canto superior esquerdo, possui vizinhos apenas nas direções para baixo e para a direita. Esta distribuição assimétrica de pontos no estêncil prejudica a qualidade da aproximação RBF-FD dos operadores diferenciais, resultando em erros maiores para nós de fronteira quando comparados aos nós internos.
+
+Para ilustrar esta limitação, considere o cálculo do Laplaciano $\nabla^2 p$ no nó 1. O estêncil para este nó contém apenas os nós 2, 4 e 5, todos localizados em um mesmo semiplano em relação ao nó 1. Esta configuração unilateral dificulta a captura precisa do comportamento da função em todas as direções, especialmente na direção normal à fronteira, onde não há nós disponíveis para balancear o estêncil. Este problema se agrava em malhas não-estruturadas com geometrias complexas, onde a distribuição irregular de nós amplifica a assimetria dos estêncils de fronteira.
+
+Estas limitações motivam a busca por técnicas alternativas que possam melhorar a precisão das aproximações em nós de fronteira, mantendo a estrutura geral do método RBF-FD. A seguir, apresentamos a técnica de nós fantasma, que oferece uma solução elegante para este problema.
 
 \subsection{Nós Fantasmas}
 \label{subsec:ghost_temp}
 
-Em vez de adicionar permanentemente nós fantasma à malha computacional, nossa implementação cria nós fantasma temporários apenas durante o processo de cálculo dos pesos RBF-FD. Para cada nó da fronteira $\mathbf{x}_b$, criamos um nó fantasma $\mathbf{x}_g$ na direção normal à fronteira:
+A técnica de nós fantasma foi desenvolvida especificamente para superar as limitações do método de \emph{collocation} descritas anteriormente. A ideia central é balancear artificialmente os estêncis assimétricos de fronteira através da adição temporária de nós virtuais fora do domínio computacional. Estes nós fantasma são posicionados estrategicamente para simetrizar o estêncil, melhorando significativamente a precisão das aproximações RBF-FD em nós de fronteira.
+
+A \figref{fig:ghost_node} ilustra o conceito de nó fantasma em uma malha triangular. O nó de fronteira destacado $\mathbf{x}_b$ (em vermelho) está localizado na fronteira superior do domínio. O nó fantasma $\mathbf{x}_g$ (em azul tracejado) é criado fora do domínio, na direção do vetor normal $\mathbf{n}$, a uma distância $h$ controlada pelo parâmetro $\alpha$.
+
+Para cada nó da fronteira $\mathbf{x}_b$, criamos um nó fantasma $\mathbf{x}_g$ na direção normal à fronteira:
 
 \begin{equation}
    \mathbf{x}_g = \mathbf{x}_b + h\mathbf{n}
@@ -229,55 +285,126 @@ Em vez de adicionar permanentemente nós fantasma à malha computacional, nossa 
 
 \noindent onde $\Delta x_{local}$ é uma medida do espaçamento local da malha e $\alpha$ é um parâmetro de ajuste que controla a influência do nó fantasma.
 
+\begin{figure}
+    \centering
+    \caption{Ilustração da criação de um nó fantasma para tratamento de fronteiras. O nó fantasma $\mathbf{x}_g$ é criado na direção normal $\mathbf{n}$ a partir do nó de fronteira $\mathbf{x}_b$, a uma distância $h$.}
+    \includegraphics[width=0.6\textwidth]{images/ghost_node.pdf}
+    \subcaption*{Fonte: Elaborada pelo autor.}
+    \label{fig:ghost_node}
+\end{figure}
 
+\subsection{Simplificação da Abordagem de Flyer et al.}
+\label{subsec:simplification}
 
-\subsection{Cálculo dos Pesos RBF-FD}
+Embora a técnica de nós fantasma seja promissora, diferentes abordagens para sua implementação podem resultar em complexidades computacionais distintas. A abordagem proposta por \citeonline{FLYER201639} para o tratamento de fronteiras com nós fantasma é bastante sofisticada, envolvendo a reflexão de todos os nós internos através da fronteira e a criação de múltiplos nós fantasma. Neste método completo, cada nó de fronteira possui diversos nós fantasma em seu estêncil, oriundos das reflexões de seus vizinhos internos. Esta estratégia resulta em estêncils altamente balanceados e precisão elevada, mas requer a solução de sistemas lineares adicionais para cada configuração de estêncil.
+
+Nossa implementação adota uma simplificação substancial desta abordagem: para cada nó de fronteira, criamos apenas \emph{um único nó fantasma temporário} na direção normal, conforme ilustrado na \figref{fig:ghost_node}. Esta simplificação traz vantagens computacionais significativas em diversos aspectos.
+
+Primeiramente, em termos de eficiência computacional, evita-se a necessidade de resolver sistemas lineares adicionais para determinar os valores nos múltiplos nós fantasma, como requerido na abordagem completa de \citeonline{FLYER201639}. A criação de um único nó fantasma por nó de fronteira também resulta em código mais simples e manutenível, facilitando a implementação e depuração do método. Do ponto de vista de uso de memória, não é necessário armazenar as posições e relações de múltiplos nós fantasma refletidos, reduzindo significativamente os requisitos de armazenamento.
+
+A vantagem mais relevante para a simulação de fluidos está na resolução direta do Laplaciano. Para resolver a equação de Poisson na etapa de projeção, necessitamos apenas dos pesos do operador Laplaciano. Com a simplificação proposta, estes pesos são obtidos diretamente através de uma formulação matemática que combina os pesos padrão do Laplaciano com uma correção baseada na condição de Neumann, conforme será detalhado na próxima subseção.
+
+Esta simplificação é particularmente vantajosa para o problema de simulação de fluidos, onde a equação de Poisson deve ser resolvida a cada passo de tempo. Na prática, construímos a matriz esparsa do Laplaciano uma única vez durante a inicialização, utilizando pesos modificados para os nós de fronteira e pesos padrão RBF-FD para os nós internos. Durante a simulação, a resolução da equação de Poisson reduz-se à multiplicação desta matriz pelos valores de divergência e à solução do sistema linear resultante.
+
+Embora a abordagem simplificada possa resultar em precisão ligeiramente inferior à do método completo de \citeonline{FLYER201639} em problemas gerais, ela se mostra adequada para a simulação de fluidos incompressíveis, onde a ênfase está na conservação de massa e na estabilidade da simulação. A próxima subseção detalha os aspectos matemáticos do cálculo dos pesos RBF-FD com nós fantasma.
+
+\subsection{Cálculo do Laplaciano com Nós Fantasmas}
 \label{subsec:ghost_weights}
 
-O cálculo dos pesos RBF-FD para nós próximos à fronteira segue um processo em três etapas:
+A presença do nó fantasma no estêncil de fronteira afeta especificamente o cálculo do operador Laplaciano. O método RBF-FD para calcular os pesos permanece inalterado; a única modificação é a inclusão temporária do nó fantasma $\mathbf{x}_g$ no estêncil durante o cálculo. O que diferencia esta abordagem é o tratamento subsequente destes pesos para incorporar a condição de contorno de Neumann e eliminar a dependência do nó fantasma.
 
-\begin{description}
-    \item[Etapa 1:] Identifica-se o estêncil original do nó de fronteira.
+\subsubsection{Pesos RBF-FD com estêncil Estendido}
 
-    \item[Etapa 2:] Um nó fantasma é temporariamente adicionado ao estêncil, expandindo a matriz de interpolação:
+Considere um nó de fronteira $\mathbf{x}_b$ com seu estêncil original $\mathcal{S} = \{\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_N\}$. Ao incluir o nó fantasma $\mathbf{x}_g$ no estêncil, formamos o estêncil estendido $\mathcal{S}_g = \mathcal{S} \cup \{\mathbf{x}_g\}$. Os pesos RBF-FD para os operadores derivadas direcionais ($\partial_x$ e $\partial_y$) e Laplaciano são calculados da mesma forma que para nós internos, resolvendo o sistema linear local definido no capítulo anterior. A diferença é que agora obtemos pesos adicionais correspondentes ao nó fantasma.
 
-    \begin{equation}
-       \begin{bmatrix}
-           \mathbf{A} & \mathbf{a}_g \\
-           \mathbf{a}_g^T & \phi(0)
-       \end{bmatrix}
-       \begin{bmatrix}
-           \boldsymbol{\lambda} \\
-           \lambda_g
-       \end{bmatrix}
-       =
-       \begin{bmatrix}
-           \mathbf{b} \\
-           b_g
-       \end{bmatrix}
-       \label{eq:expanded_system}
-    \end{equation}
+Com o estêncil estendido, o operador Laplaciano é aproximado por:
 
-    onde $\mathbf{a}_g$ contém as avaliações da função de base radial entre o nó fantasma e os demais pontos do estêncil.
+\begin{equation}
+   \nabla^2 u(\mathbf{x}_b) \approx \sum_{j=1}^N \omega_j^{\nabla^2} u_j + \omega_g^{\nabla^2} u_g
+   \label{eq:laplacian_with_ghost}
+\end{equation}
 
-    \item[Etapa 3:] Os pesos são calculados considerando a condição de contorno apropriada. Para uma condição de Neumann, por exemplo:
+\noindent onde $u_j = u(\mathbf{x}_j)$ são os valores da função nos nós do estêncil, $u_g = u(\mathbf{x}_g)$ é o valor no nó fantasma, e $\omega_j^{\nabla^2}$ e $\omega_g^{\nabla^2}$ são os pesos RBF-FD calculados normalmente com o estêncil estendido. Da mesma forma, obtemos pesos para as derivadas parciais: $\omega_j^x$, $\omega_g^x$, $\omega_j^y$ e $\omega_g^y$.
 
-    \begin{equation}
-       \frac{\partial u}{\partial n} = 0 \quad \text{na fronteira}
-       \label{eq:neumann_bc_ghost}
-    \end{equation}
-\end{description}
+Como o nó fantasma não faz parte do domínio original e não possui valores físicos associados, é necessário eliminar a dependência de $u_g$ na expressão acima. Esta eliminação é realizada através da condição de contorno de Neumann, conforme descrito a seguir.
 
-Esta abordagem apresenta várias vantagens em relação à adição permanente de nós fantasma:
+\subsubsection{Aplicação da Condição de Neumann}
 
-\begin{itemize}
-   \item Mantém a estrutura original da malha inalterada;
-   \item Reduz o custo computacional por não aumentar o número total de nós;
-   \item Simplifica a implementação das condições de contorno;
-   \item Permite ajuste local da influência dos nós fantasma através do parâmetro $\alpha$.
-\end{itemize}
+A condição de contorno de Neumann homogênea, utilizada na etapa de projeção da Equação~\eqref{eq:neumann_bc}, pode ser expressa como:
 
-Os pesos resultantes deste processo são armazenados e utilizados durante toda a simulação, eliminando a necessidade de recálculo a cada passo de tempo e mantendo a eficiência computacional do método.
+\begin{equation}
+   \frac{\partial u}{\partial \mathbf{n}} = \nabla u \cdot \mathbf{n} = 0 \quad \text{em } \mathbf{x}_b
+   \label{eq:neumann_condition}
+\end{equation}
+
+Utilizando RBF-FD para aproximar o gradiente, temos:
+
+\begin{equation}
+   \nabla u(\mathbf{x}_b) \cdot \mathbf{n} \approx \sum_{j=1}^N \omega_j^n u_j + \omega_g^n u_g = 0
+   \label{eq:neumann_rbffd}
+\end{equation}
+
+\noindent onde os pesos da derivada normal são dados por:
+
+\begin{equation}
+   \omega_j^n = n_x \omega_j^x + n_y \omega_j^y
+   \label{eq:normal_weights}
+\end{equation}
+
+\noindent sendo $\omega_j^x$ e $\omega_j^y$ os pesos RBF-FD para as derivadas parciais em $x$ e $y$, respectivamente, e $\mathbf{n} = (n_x, n_y)$ o vetor normal unitário à fronteira.
+
+Com a condição de Neumann estabelecida, podemos agora expressar o valor do nó fantasma $u_g$ em termos dos valores conhecidos nos nós do domínio e, consequentemente, eliminar sua dependência na aproximação do Laplaciano.
+
+\subsubsection{Eliminação do Nó Fantasma e Pesos Efetivos}
+
+O passo fundamental que modifica o cálculo do Laplaciano em nós de fronteira é a eliminação da dependência do valor no nó fantasma $u_g$. Como $u_g$ não faz parte do domínio original, precisamos expressá-lo em termos dos valores conhecidos nos nós do domínio. Isso é feito através da condição de Neumann.
+
+Da Equação~\eqref{eq:neumann_rbffd}, podemos isolar o valor da função no nó fantasma:
+
+\begin{equation}
+   u_g = -\frac{1}{\omega_g^n} \sum_{j=1}^N \omega_j^n u_j
+   \label{eq:ghost_value}
+\end{equation}
+
+Substituindo a Equação~\eqref{eq:ghost_value} na Equação~\eqref{eq:laplacian_with_ghost}, realizamos a eliminação do nó fantasma:
+
+\begin{align}
+   \nabla^2 u(\mathbf{x}_b) &\approx \sum_{j=1}^N \omega_j^{\nabla^2} u_j + \omega_g^{\nabla^2} u_g \nonumber \\
+   &= \sum_{j=1}^N \omega_j^{\nabla^2} u_j + \omega_g^{\nabla^2} \left( -\frac{1}{\omega_g^n} \sum_{j=1}^N \omega_j^n u_j \right) \nonumber \\
+   &= \sum_{j=1}^N \omega_j^{\nabla^2} u_j - \frac{\omega_g^{\nabla^2}}{\omega_g^n} \sum_{j=1}^N \omega_j^n u_j \nonumber \\
+   &= \sum_{j=1}^N \left( \omega_j^{\nabla^2} - \frac{\omega_g^{\nabla^2}}{\omega_g^n} \omega_j^n \right) u_j \nonumber \\
+   &= \sum_{j=1}^N \tilde{\omega}_j^{\nabla^2} u_j
+   \label{eq:effective_weights}
+\end{align}
+
+\noindent onde os pesos efetivos do Laplaciano são:
+
+\begin{equation}
+   \tilde{\omega}_j^{\nabla^2} = \omega_j^{\nabla^2} - \frac{\omega_g^{\nabla^2}}{\omega_g^n} \omega_j^n
+   \label{eq:final_weights}
+\end{equation}
+
+Esta é a fórmula central para o cálculo do Laplaciano em nós de fronteira. Os pesos efetivos $\tilde{\omega}_j^{\nabla^2}$ combinam os pesos padrão do Laplaciano $\omega_j^{\nabla^2}$ com uma correção baseada nos pesos da derivada normal. Esta correção, dada pelo termo $-\frac{\omega_g^{\nabla^2}}{\omega_g^n} \omega_j^n$, incorpora automaticamente a condição de contorno de Neumann e elimina completamente a dependência do nó fantasma. O resultado são pesos que envolvem apenas os nós do domínio original, mas fornecem aproximações mais precisas do Laplaciano em nós de fronteira devido ao balanceamento do estêncil proporcionado pelo ghost node.
+
+Com os pesos efetivos definidos, podemos agora descrever como eles são utilizados na prática para construir o sistema linear global que resolve a equação de Poisson na etapa de projeção.
+
+\subsubsection{Construção da Matriz do Laplaciano}
+
+Na prática computacional, a matriz esparsa do operador Laplaciano é construída uma única vez durante a fase de inicialização da simulação. Para cada nó $i$ do domínio, a linha $i$ da matriz contém os pesos do Laplaciano calculados de acordo com a posição do nó:
+
+\begin{equation}
+   L_{ij} = \begin{cases}
+      \tilde{\omega}_j^{\nabla^2} & \text{se } i \text{ é nó de fronteira (usando Equação~\eqref{eq:final_weights})} \\
+      \omega_j^{\nabla^2} & \text{se } i \text{ é nó interno (pesos RBF-FD padrão)}
+   \end{cases}
+   \label{eq:laplacian_matrix}
+\end{equation}
+
+Esta matriz $L$ é então utilizada diretamente na resolução da equação de Poisson durante a etapa de projeção. A cada passo de tempo da simulação, a equação $\nabla^2 p = \nabla \cdot \mathbf{w}$ é resolvida através do sistema linear $L\mathbf{p} = \mathbf{b}$, onde $\mathbf{b}$ contém os valores de divergência calculados em cada nó e $\mathbf{p}$ é o vetor de pressões a ser determinado. A condição de Neumann nas fronteiras já está automaticamente incorporada nos pesos efetivos $\tilde{\omega}_j^{\nabla^2}$, não sendo necessário tratamento adicional das condições de contorno.
+
+Os pesos $\tilde{\omega}_j^{\nabla^2}$ resultantes deste processo são pré-calculados e armazenados para todos os nós de fronteira, sendo reutilizados durante toda a simulação sem necessidade de recálculo a cada passo de tempo. Esta estratégia garante eficiência computacional, uma vez que o custo de calcular os pesos com ghost nodes é pago apenas uma vez na inicialização.
+
+A formulação matemática apresentada nesta seção define completamente o tratamento de fronteiras no método RBF-FD. A próxima seção aborda os aspectos práticos da implementação computacional, incluindo as estruturas de dados utilizadas e as otimizações realizadas para garantir eficiência na simulação.
 
 \section{Aspectos Computacionais}
 \label{sec:aspectos_comp}
@@ -303,23 +430,11 @@ O sistema de renderização foi projetado para minimizar transferências de dado
 
 A geração de malhas triangulares a partir de contornos de países foi realizada utilizando a biblioteca Triangle~\cite{triangle}, que implementa o algoritmo de triangulação de Delaunay com restrições. Essa biblioteca foi escolhida por sua robustez e capacidade de lidar com geometrias complexas. A abordagem permite a construção confiável de malhas computacionais a partir de dados geográficos que originalmente continham apenas informações de contorno.
 
-O processo de geração de malha inclui etapas de pré-processamento para garantir a qualidade dos elementos gerados, incluindo:
-
-\begin{itemize}
-   \item Verificação e correção de auto-intersecções nos contornos
-   \item Refinamento adaptativo baseado na curvatura local
-   \item Suavização dos elementos para melhorar a qualidade da malha
-\end{itemize}
+O processo de geração de malha inclui etapas de pré-processamento para garantir a qualidade dos elementos gerados. Inicialmente, realiza-se a verificação e correção de auto-intersecções nos contornos de entrada. Em seguida, aplica-se refinamento adaptativo baseado na curvatura local, garantindo maior densidade de elementos em regiões de geometria complexa. Por fim, executa-se a suavização dos elementos para melhorar a qualidade geral da malha, otimizando aspectos como razão de aspecto e ângulos internos dos triângulos.
 
 \subsection{Estruturas de Dados}
 \label{subsec:data_structures}
 
-A implementação utiliza estruturas de dados otimizadas para operações comuns em simulações de fluidos:
-
-\begin{itemize}
-   \item Arrays contíguos em memória para armazenamento eficiente de propriedades do fluido
-   \item Estruturas esparsas para matrizes de diferenciação RBF-FD
-   \item Árvores de busca espacial para operações de vizinhança
-\end{itemize}
+A implementação utiliza estruturas de dados otimizadas para operações comuns em simulações de fluidos. As propriedades do fluido, como densidade, velocidade e pressão, são armazenadas em arrays contíguos em memória, maximizando a eficiência de acesso e permitindo operações vetorizadas. As matrizes de diferenciação RBF-FD são representadas por estruturas esparsas, explorando o fato de que cada linha contém apenas um número pequeno de entradas não-nulas correspondentes ao estêncil local. Para operações de vizinhança, como a busca dos $k$ vizinhos mais próximos durante a interpolação, utilizam-se árvores de busca espacial que reduzem a complexidade computacional destas operações.
 
 Estas escolhas de implementação permitem um equilíbrio entre facilidade de desenvolvimento e desempenho computacional, resultando em um sistema capaz de simular escoamentos de fumaça em malhas não-estruturadas com eficiência satisfatória para aplicações práticas.

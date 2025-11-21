@@ -55,6 +55,7 @@ class SimulationWindow:
         self.quiver_program['u_projection'] = projection
 
         self.obj_assets_names = [f for f in os.listdir('./assets') if f.endswith('.obj')]
+        self.obj_assets_names.sort()
         self.mesh_list = [x for x in self.obj_assets_names]
 
         self.geojson, self.geo_list = get_geojson()
