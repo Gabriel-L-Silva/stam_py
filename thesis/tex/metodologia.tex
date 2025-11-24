@@ -404,6 +404,40 @@ Esta matriz $L$ é então utilizada diretamente na resolução da equação de P
 
 Os pesos $\tilde{\omega}_j^L$ resultantes deste processo são pré-calculados e armazenados para todos os nós de fronteira, sendo reutilizados durante toda a simulação sem necessidade de recálculo a cada passo de tempo. Esta estratégia garante eficiência computacional, uma vez que o custo de calcular os pesos com ghost nodes é pago apenas uma vez na inicialização.
 
+É importante notar que, para nós internos, a Equação~\eqref{eq:final_weights} reduz-se naturalmente aos pesos padrão do Laplaciano. Como nós internos não possuem vetor normal à fronteira definido, podemos considerar $\mathbf{n} = (0, 0)$ para estes nós. Consequentemente, pela Equação~\eqref{eq:normal_weights}, os pesos da derivada normal tornam-se $\omega_j^n = n_x \omega_j^x + n_y \omega_j^y = 0$. Substituindo este resultado na Equação~\eqref{eq:final_weights}, obtemos $\tilde{\omega}_j^L = \omega_j^L - \frac{\omega_g^L}{\omega_g^n} \cdot 0 = \omega_j^L$, confirmando que os pesos efetivos coincidem com os pesos RBF-FD padrão para nós internos, conforme especificado na Equação~\eqref{eq:laplacian_matrix}.
+
+\subsubsection{Exemplo: Sistema Linear com Nós Fantasma}
+
+Para ilustrar a aplicação completa da formulação com nós fantasma, retornemos ao domínio da \figref{fig:collocation_example} com 5 nós. Ao contrário do método de \emph{collocation} apresentado na Equação~\eqref{eq:collocation_system}, onde as linhas correspondentes aos nós de fronteira impõem diretamente a condição de Neumann, o sistema linear com nós fantasma mantém a equação de Poisson em todos os nós, utilizando os pesos efetivos $\tilde{\omega}_j^L$ calculados pela Equação~\eqref{eq:final_weights} para os nós de fronteira:
+
+\begin{equation}
+\begin{bmatrix}
+\tilde{\omega}_{11}^L & \tilde{\omega}_{12}^L & 0 & \tilde{\omega}_{14}^L & \tilde{\omega}_{15}^L \\
+\tilde{\omega}_{21}^L & \tilde{\omega}_{22}^L & \tilde{\omega}_{23}^L & 0 & \tilde{\omega}_{25}^L \\
+0 & \tilde{\omega}_{32}^L & \tilde{\omega}_{33}^L & \tilde{\omega}_{34}^L & \tilde{\omega}_{35}^L \\
+\tilde{\omega}_{41}^L & 0 & \tilde{\omega}_{43}^L & \tilde{\omega}_{44}^L & \tilde{\omega}_{45}^L \\
+\omega_{51}^L & \omega_{52}^L & \omega_{53}^L & \omega_{54}^L & \omega_{55}^L
+\end{bmatrix}
+\begin{bmatrix}
+p_1 \\ p_2 \\ p_3 \\ p_4 \\ p_5
+\end{bmatrix}
+=
+\begin{bmatrix}
+b_1 \\ b_2 \\ b_3 \\ b_4 \\ b_5
+\end{bmatrix}
+\label{eq:ghost_system}
+\end{equation}
+
+\noindent onde $b_5 = (\nabla\cdot\mathbf{w})_5$ é o valor da divergência no nó interno. Embora o sistema com nós fantasma mantenha a equação de Poisson $\nabla^2 p = b$ em todos os nós, o lado direito permanece zero nos nós de fronteira (1, 2, 3, 4), pois a condição de Neumann homogênea já está incorporada nos pesos efetivos $\tilde{\omega}_{ij}^L$.
+
+A diferença fundamental em relação ao método de \emph{collocation} da Equação~\eqref{eq:collocation_system} está na matriz de coeficientes. No \emph{collocation}, as quatro primeiras linhas representam a condição $\nabla p \cdot \mathbf{n} = 0$ usando pesos da derivada normal $\omega_j^n$. Já na formulação com nós fantasma, todas as cinco linhas representam o operador Laplaciano $\nabla^2 p$.
+
+As primeiras quatro linhas da matriz utilizam os pesos efetivos $\tilde{\omega}_{ij}^L$ calculados pela Equação~\eqref{eq:final_weights}, que diferem dos pesos padrão RBF-FD por incorporarem a correção baseada na condição de Neumann através do termo $-\frac{\omega_g^L}{\omega_g^n} \omega_j^n$. Esta correção é não-nula para nós de fronteira, pois estes possuem vetor normal $\mathbf{n} \neq (0,0)$ bem definido, resultando em $\omega_j^n \neq 0$ pela Equação~\eqref{eq:normal_weights}. Consequentemente, para os nós 1, 2, 3 e 4, temos $\tilde{\omega}_{ij}^L \neq \omega_{ij}^L$, e estes pesos efetivos fornecem aproximações mais precisas do Laplaciano devido ao balanceamento do estêncil proporcionado pelos nós fantasma.
+
+Por outro lado, a última linha, correspondente ao nó interno 5, utiliza os pesos RBF-FD padrão $\omega_{5j}^L$. Como demonstrado anteriormente, para nós internos, $\mathbf{n} = (0,0)$ implica $\omega_j^n = 0$, e portanto $\tilde{\omega}_{5j}^L = \omega_{5j}^L$ pela Equação~\eqref{eq:final_weights}. Assim, embora pudéssemos utilizar a notação de pesos efetivos também na quinta linha, ela seria redundante pois os pesos efetivos coincidem com os pesos padrão para nós internos.
+
+Esta abordagem unificada, onde todos os nós satisfazem a mesma equação diferencial com pesos apropriadamente modificados na fronteira, simplifica consideravelmente a implementação computacional e melhora a precisão das aproximações em nós de fronteira através do balanceamento proporcionado pelos nós fantasma.
+
 A formulação matemática apresentada nesta seção define completamente o tratamento de fronteiras no método RBF-FD. A próxima seção aborda os aspectos práticos da implementação computacional, incluindo as estruturas de dados utilizadas e as otimizações realizadas para garantir eficiência na simulação.
 
 \section{Aspectos Computacionais}
