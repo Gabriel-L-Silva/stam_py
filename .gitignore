@@ -5,7 +5,7 @@
 *.png
 .vs
 
-venv/*
+code/venv/*
 
 #latex
 *.acn
