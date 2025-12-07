@@ -1,0 +1,197 @@
+ANÁLISE COMPARATIVA: APRESENTAÇÃO ATUAL vs PLANO
+================================================================================
+
+CONTEÚDO JÁ EXISTENTE QUE SE ALINHA COM O PLANO:
+================================================================================
+
+1. INTRODUÇÃO E CONTEXTO ✓
+   - Atual: Frames 118-147
+   - Cobre: Importância (indústria, jogos, engenharia, academia)
+   - Tem imagem do Mass Effect 3
+   - STATUS: BOM - pode ser mantido como está
+
+2. FUNDAMENTOS TEÓRICOS ✓
+   - Atual: Frames 250-334 (Simulação de fluidos) + 365-551 (RBF-FD)
+   - Cobre:
+     * Equações de Navier-Stokes com explicação de cada termo
+     * Malhas estruturadas vs não-estruturadas
+     * Tipos de células (collocated/staggered)
+     * Diferenças finitas
+     * RBF e RBF-FD detalhadamente
+     * Cálculo de pesos e matrizes
+   - STATUS: EXCELENTE - muito completo
+
+3. PIPELINE DO STABLE FLUIDS (ALGORITMO PASSO A PASSO) ✓
+   - Atual: Frames 340-353 (overview) + 555-656 (detalhado)
+   - Cobre:
+     * Visão geral do pipeline (frame 340-353)
+     * Passo a passo com diagramas progressivos (frames 555-626)
+     * Adição de forças (Euler)
+     * Advecção semi-lagrangiana com diagrama de backtracking
+     * Projeção de pressão com equações
+     * Exemplo de matriz de Poisson com malha simples
+     * Imposição de Neumann na matriz
+   - STATUS: EXCELENTE - visualização progressiva muito boa
+
+4. RESULTADOS ✓
+   - Atual: Frames 683-743 (Resultados parciais)
+   - Cobre:
+     * Testes com funções analíticas
+     * Malha 16x16 não-estruturada
+     * Gráficos de erro: Poisson, divergente, gradiente
+     * Parâmetros: s=5, d=2, k=2, Ω = [0,π]²
+   - Atual: Frame 358 (Stam 2D implementado - vídeo)
+   - STATUS: BOM - mas faltam os vídeos principais mencionados no plano
+
+5. OBJETIVOS ✓
+   - Atual: Frames 231-244
+   - Cobre:
+     * Malha triangular
+     * Impor Neumann em domínios arbitrários usando FD
+     * Imagem da África (malha não-conforme)
+   - STATUS: BOM - pode ser expandido para melhor motivação
+
+
+CONTEÚDO ADICIONAL NA APRESENTAÇÃO ATUAL (NÃO NO PLANO):
+================================================================================
+
+1. TRABALHOS RELACIONADOS (frames 152-226)
+   - Foster & Metaxas, 1997
+   - Stam, 1999 (Stable Fluids)
+   - Feldman, 2005 (malhas híbridas)
+   - Klingner, 2006 (malhas dinâmicas)
+   - Nakanishi, 2020 (RBF Liquids)
+   - RECOMENDAÇÃO: Manter e incorporar ao plano como seção 2.5
+
+2. PROPOSTA COM CRONOGRAMA (frames 660-678)
+   - Timeline 2021-2023
+   - RECOMENDAÇÃO: Pode ser mantido ou removido dependendo do contexto
+
+3. TIPOS DE CÉLULAS (frames 287-319)
+   - Diagramas de células collocated/staggered para quad/tri
+   - RECOMENDAÇÃO: Manter como material educacional
+
+
+LACUNAS IDENTIFICADAS (NO PLANO MAS NÃO NA APRESENTAÇÃO):
+================================================================================
+
+1. MOTIVAÇÃO MAIS DETALHADA ⚠
+   - Plano enfatiza: limitações de grades regulares, necessidade de malhas
+   - Atual: Presente brevemente em "Objetivos"
+   - RECOMENDAÇÃO: Expandir a seção de Objetivos para incluir mais motivação
+
+2. GHOST NODES (NÓS FANTASMA) - CONTRIBUIÇÃO CHAVE ⚠⚠⚠
+   - Plano: Seção 5 completa dedicada ao tratamento de fronteiras
+   - Atual: Apenas fórmula básica de Neumann mostrada (frame 524-534)
+   - FALTA DETALHAR:
+     * Problema de estêncils assimétricos
+     * Método tradicional (collocation) e limitações
+     * Abordagem de nós fantasma simplificada
+     * Criação e eliminação analítica do nó fantasma
+     * Fórmula dos pesos efetivos: ω̃ᴸⱼ = ωᴸⱼ - (ωᴸɡ/ωⁿɡ)ωⁿⱼ
+     * Vantagens: precisão e simplicidade
+   - RECOMENDAÇÃO: ADICIONAR seção detalhada sobre ghost nodes
+
+3. RAY-POLYGON INTERSECTION ⚠
+   - Plano: Menciona como desafio importante na advecção
+   - Atual: Apenas diagrama de backtracking (frame 603)
+   - RECOMENDAÇÃO: Adicionar slide explicando o algoritmo de interseção
+
+4. DISCUSSÃO DOS RESULTADOS ⚠⚠
+   - Plano: Seção 7 completa
+   - Atual: NÃO EXISTE
+   - FALTA:
+     * Análise qualitativa do comportamento físico
+     * Desafios: perda de massa, instabilidades, sensibilidade
+     * Estabilidade com ghost nodes
+   - RECOMENDAÇÃO: ADICIONAR seção de discussão após resultados
+
+5. CONCLUSÕES EXPANDIDAS ⚠⚠
+   - Plano: Seção 8 com contribuições detalhadas
+   - Atual: Apenas "Obrigado!" (frame 758)
+   - FALTA:
+     * Adaptação do Stable Fluids com RBF-FD
+     * Técnica simplificada de ghost nodes
+     * Algoritmo eficiente de ray-casting
+     * Viabilidade em domínios arbitrários
+   - RECOMENDAÇÃO: ADICIONAR slide de conclusões antes do "Obrigado!"
+
+6. TRABALHOS FUTUROS ⚠
+   - Plano: Seção 9 completa
+   - Atual: Apenas "Resultados esperados" (frame 748)
+   - FALTA:
+     * Extensão para 3D
+     * Conservação de massa
+     * Outras RBFs
+     * Domínios não-simplesmente conexos
+     * Otimizações (paralelização, GPU)
+     * Refinamento adaptativo
+   - RECOMENDAÇÃO: ADICIONAR seção de trabalhos futuros
+
+7. VÍDEOS DE DEMONSTRAÇÃO ⚠⚠
+   - Plano: 3 experimentos em vídeo
+     * Validação ghost nodes (com vs sem)
+     * Geometria irregular simples
+     * Domínio complexo (geográfico)
+   - Atual: Apenas 1 vídeo (Stam 2D, frame 358)
+   - RECOMENDAÇÃO: ADICIONAR vídeos dos resultados principais
+
+
+PLANO DE AÇÃO RECOMENDADO:
+================================================================================
+
+PRIORIDADE ALTA (essencial para defesa):
+1. ✓ Adicionar seção detalhada sobre GHOST NODES (contribuição principal)
+2. ✓ Adicionar slide de CONCLUSÕES com contribuições
+3. ✓ Adicionar seção de DISCUSSÃO DOS RESULTADOS
+4. ✓ Adicionar VÍDEOS das simulações em domínios arbitrários
+
+PRIORIDADE MÉDIA (melhora significativamente):
+5. ✓ Expandir MOTIVAÇÃO (por que malhas triangulares são necessárias)
+6. ✓ Adicionar slide sobre RAY-POLYGON INTERSECTION
+7. ✓ Adicionar seção de TRABALHOS FUTUROS
+
+PRIORIDADE BAIXA (opcional):
+8. ✓ Incorporar "Trabalhos relacionados" ao plano formalmente
+9. ✓ Revisar se o cronograma (Proposta) ainda é relevante
+
+
+ESTRUTURA SUGERIDA FINAL:
+================================================================================
+
+1. Título
+2. Roteiro
+3. Introdução [MANTER]
+4. Trabalhos Relacionados [MANTER]
+5. Motivação e Objetivos [EXPANDIR atual "Objetivos"]
+6. Fundamentos Teóricos [MANTER]
+   - Navier-Stokes
+   - Malhas estruturadas
+   - Diferenças finitas
+   - RBF-FD
+7. Pipeline Stable Fluids [MANTER]
+8. Tratamento de Fronteiras - Ghost Nodes [ADICIONAR detalhado]
+9. Implementação - Detalhes [Advecção, ray-casting]
+10. Resultados [MANTER + adicionar vídeos]
+11. Discussão [ADICIONAR]
+12. Conclusões e Contribuições [ADICIONAR]
+13. Trabalhos Futuros [ADICIONAR]
+14. Agradecimentos e Perguntas [MODIFICAR atual "Obrigado"]
+
+
+RESUMO EXECUTIVO:
+================================================================================
+
+A apresentação atual tem uma BASE EXCELENTE com:
+- Fundamentos teóricos muito bem desenvolvidos
+- Pipeline explicado passo a passo com visualizações progressivas
+- Validação analítica com gráficos de erro
+
+PORÉM, faltam elementos CRÍTICOS para uma defesa:
+- Detalhamento da contribuição principal (ghost nodes)
+- Discussão dos resultados obtidos
+- Conclusões formais com lista de contribuições
+- Vídeos demonstrando simulações em domínios complexos
+
+ESTIMATIVA: Com as adições sugeridas, a apresentação passará de ~75% para 100%
+do conteúdo necessário para uma defesa bem-sucedida.
