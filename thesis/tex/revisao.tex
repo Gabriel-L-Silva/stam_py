@@ -10,9 +10,9 @@ Como malhas não-estruturadas (triangulares em 2D e tetraedrais em 3D) se adapta
 
 Métodos com malha baseada em árvores são amplamente utilizados em abordagens adaptativas \cite{quadtree1, quadtree2, Nakanishi2020}, pois esta estrutura facilita o aumento ou a diminuição da resolução da malha em regiões específicas (refinamento). A principal desvantagem é que o refinamento de \textit{quadtrees} (2D) e \textit{octrees} (3D) gera malhas não-estruturadas, onde a conectividade entre elementos varia. Isto causa complicações nos métodos numéricos mais tradicionais (FD e FV), criando a necessidade de determinar independentemente os vizinhos em cada ponto. Uma solução é usar RBF-FD para realizar a interpolação, que é independente da estrutura da malha. Embora existam diversos trabalhos que utilizam RBF-FD para resolução de \sigla{EDP}{Equações Diferenciais Parciais} \cite{RBF1,RBF2}, incluindo as ENS \cite{Mahmood2019}, o primeiro artigo a usar este método para simular fluidos na área de computação gráfica \cite{Nakanishi2020} tem como principais contribuições: uma nova técnica para simulação de fluido completamente adaptativa com abordagem híbrida (euleriana e lagrangiana); e o uso de RBF-FD para aproximar os operadores diferenciais em árvores arbitrárias, enquanto a adaptatividade é calculada durante a simulação com o intuito de ajustar a grade à interface do líquido.
 
-% Please add the following required packages to your document preamble:
-%\usepackage{booktabs}   
-\begin{sidewaystable}
+Durante a pesquisa do acervo para construir esta revisão bibliográfica, identificamos uma lacuna na literatura quanto ao uso de RBF-FD para animação de fumaça em malhas triangulares não-estruturadas. Apesar de encontrarmos resultados relevantes \cite{RBF1,RBF2}, nenhum deles aborda especificamente malhas triangulares arbitrárias com fronteiras complexas. O trabalho que mais se aproxima é o método proposto por Nakanishi et al.~\cite{Nakanishi2020}. Entretanto, o foco deste trabalho é construir uma grade adaptativa baseada em árvores (quadtree/octree), não em malhas triangulares. Nossa proposta é preencher essa lacuna na literatura e desenvolver uma simulação de fluidos em animação computacional utilizando RBF-FD em malhas triangulares bidimensionais não-estruturadas com geometrias arbitrárias. A Tabela~\ref{tab:revisao} resume as principais características dos trabalhos revisados.
+
+\begin{sidewaystable}[p]
 \caption{Resumo dos artigos revisados.}
 \begin{tabular}{@{}ccccccc@{}}
 \toprule
@@ -32,5 +32,3 @@ Nossa proposta                              & Co-localizada  & Tri & RBF-FD     
 \subcaption*{Fonte: Elaborada pelo autor.}
 \label{tab:revisao}
 \end{sidewaystable}
-
-Durante a pesquisa do acervo para construir esta revisão bibliográfica, identificamos uma lacuna na literatura quanto ao uso de RBF-FD para animação de fumaça em malhas triangulares não-estruturadas. Apesar de encontrarmos resultados relevantes \cite{RBF1,RBF2}, nenhum deles aborda especificamente malhas triangulares arbitrárias com fronteiras complexas. O trabalho que mais se aproxima é o método proposto por Nakanishi et al.~\cite{Nakanishi2020}. Entretanto, o foco deste trabalho é construir uma grade adaptativa baseada em árvores (quadtree/octree), não em malhas triangulares. Nossa proposta é preencher essa lacuna na literatura e desenvolver uma simulação de fluidos em animação computacional utilizando RBF-FD em malhas triangulares bidimensionais não-estruturadas com geometrias arbitrárias.

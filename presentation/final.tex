@@ -1,3 +1,12 @@
+% imagem feldman 
+% nakanishi tem limitacao de octre quadtre
+% rbf é meshless, usamos backtracking com Interpolação baricentrica por conta de performance
+% remover termo de difusao, renomear para equação de euler
+% explicar vizinhança
+% adicionar slide de rbf 
+% visualmente plausivel
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Beamer Presentation - Final Defense
 % Master's Thesis Final Presentation
@@ -87,7 +96,7 @@ Universidade de São Paulo
 \frametitle{Motivação}
     \begin{block}{Limitações das grades regulares}
         \begin{itemize}
-            \item Restritas a domínios AABB simples
+            \item Geralmente restritas a domínios AABB simples
             \item Dificuldade para representar fronteiras complexas
             \item Perda de detalhes em geometrias irregulares
         \end{itemize}
@@ -105,6 +114,27 @@ Universidade de São Paulo
 %------------------------------------------------
 
 \begin{frame}
+\frametitle{Artigos de Referência}
+    \begin{columns}[c]
+    \column{.5\textwidth}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\linewidth]{images/nakanishi.png}
+        \caption{Octree Nakanishi (RBF-FD)}
+    \end{figure}
+
+    \column{.5\textwidth}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\linewidth]{images/feldman2005.png}
+        \caption{Malha híbrida Feldman (FV)}
+    \end{figure}
+    \end{columns}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
 \frametitle{Objetivos}
     \begin{block}{Objetivo Principal}
         Desenvolver uma técnica de animação de fumaça 2D em malhas triangulares não-estruturadas utilizando RBF-FD
@@ -113,8 +143,7 @@ Universidade de São Paulo
     \begin{block}{Objetivos Específicos}
         \begin{itemize}
             \item Adaptar pipeline Stable Fluids para malhas arbitrárias
-            \item Implementar tratamento de fronteiras com nós fantasma
-            \item Desenvolver algoritmo eficiente de interseção raio-polígono
+            \item Implementar condição de fronteira de Neumann com nós fantasma (Flyer, Natasha)
             \item Validar método em domínios com geometrias complexas
         \end{itemize}
     \end{block}
@@ -125,16 +154,15 @@ Universidade de São Paulo
 %------------------------------------------------
 
 \begin{frame}
-\frametitle{Equações de Navier-Stokes}
+\frametitle{Equações de Euler}
     \begin{block}{Equações que regem o escoamento de fluidos}
         \begin{gather}
-            \dot{\mathbf{u}} = -(\mathbf{u}\cdot\nabla)\mathbf{u}-\frac{1}{\rho}\nabla p+\nu\nabla^{2}\mathbf{u}+\mathbf{g}\\
+            \dot{\mathbf{u}} = -(\mathbf{u}\cdot\nabla)\mathbf{u}-\frac{1}{\rho}\nabla p+\mathbf{g}\\
             \nabla\cdot\mathbf{u}=0
         \end{gather}
         \begin{itemize}
             \item $-(\mathbf{u}\cdot\nabla)\mathbf{u}$: Termo de advecção
             \item $-\frac{1}{\rho}\nabla p$: Gradiente de pressão
-            \item $\nu \nabla^2 \mathbf{u}$: Termo de difusão
             \item $\mathbf{g}$: Forças externas
         \end{itemize}
     \end{block}
@@ -161,6 +189,22 @@ Universidade de São Paulo
     \end{block}
 \end{frame}
 
+\begin{frame}
+    \frametitle{Vizinhança}
+    \begin{block}{Tipos de vizinhança}
+        \begin{itemize}
+            \item K-anel
+            \item KNN (k nearest neighbours)
+        \end{itemize}
+    \end{block}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.3\linewidth]{images/1-anel.png}
+        \caption{Exemplo 1-anel}
+    \end{figure}
+\end{frame}
+
 %------------------------------------------------
 
 \begin{frame}
@@ -170,9 +214,77 @@ Universidade de São Paulo
 
         Spline poliharmônica: $\phi(r) = r^s$, com $s = 1, 3, 5,...$
     \end{block}
+    \begin{block}{Interpolador Generalizado}
+        A forma generalizada do interpolador rbf se da por:
+        $$ S_y(x) = \sum_{k=1}^N \alpha_k \phi(||x-x_k||) + \sum^M_{j=1}\beta_jP_j(x)\,.$$
+    \end{block}
+\end{frame}
 
+\begin{frame}
+    \frametitle{RBF-FD: Fundamentos}
+    \begin{block}{Continuação RBF}
+        
+        Aplicando as seguintes restições:
+        $$\sum_{k=1}^N\alpha_k P_j(x_k) = 0\,\text{,   }\forall 1,...,M\,,$$
+        e
+        $$ S_y(x_i)=y_i\,\text{,   }\forall i = 1, ..., N\,.$$
+
+        Temos o seguinte sistema:
+        $$\left[ 
+        \begin{array}{cc}
+            \mathbf{A}
+             & 
+            \mathbf{P}\\
+           
+           \mathbf{P}^{\top}& 
+           \mathbf{O}\\
+        \end{array} 
+    \right]
+    \left[ 
+        \begin{array}{c}
+            \mathbf{\alpha}\\
+           \mathbf{\beta}
+        \end{array} 
+    \right]
+    =
+    \left[ 
+        \begin{array}{c}
+            \mathbf{y}\\
+            \mathbf{0}
+        \end{array} 
+    \right]\,$$
+    \end{block}
+\end{frame}
+\begin{frame}
+    \frametitle{RBF-FD: Fundamentos}
+    \begin{block}{Cálculo de pesos}
+        Para calcular os pesos para o operador $\mathcal{L}$, temos o seguinte sistema linear:
+        $$\left[ 
+        \begin{array}{cc}
+            \mathbf{A}
+             & 
+            \mathbf{P}\\
+           
+           \mathbf{P}^T& 
+           \mathbf{O}\\
+        \end{array} 
+    \right]
+    \left[ 
+        \begin{array}{c}
+            \mathbf{\omega}\\
+           \mathbf{\gamma}
+        \end{array} 
+    \right]
+    =
+    \left[ 
+        \begin{array}{c}
+            \mathbf{\mathcal{L}\phi}\\
+            \mathbf{\mathcal{L}\mathbf{P}}
+        \end{array} 
+    \right]$$
+    \end{block}
     \begin{block}{Aproximação de operador diferencial}
-        Para aproximar $\mathcal{L}y$ no ponto $x_i$:
+        Para aproximar $\mathcal{L}y$ no ponto $x_i$, com vizinhança $x_k$:
         $$\mathcal{L}y \approx \sum_{k=1}^N\omega_k^\mathcal{L}y_k$$
 
         Pesos $\omega$ calculados resolvendo sistema linear local
@@ -214,10 +326,6 @@ Universidade de São Paulo
             $$\mathbf{f}_{empuxo} = \alpha(T - T_{amb})\hat{\mathbf{j}}$$
             onde $\alpha$ é coeficiente de empuxo, $T$ é temperatura local
         \end{itemize}
-    \end{block}
-
-    \begin{block}{Resultado}
-        Integração explícita (método de Euler)
     \end{block}
 \end{frame}
 
@@ -261,16 +369,14 @@ Universidade de São Paulo
     \begin{block}{Solução}
         \begin{itemize}
             \item Interseção raio-polígono
-            \item Ray-casting otimizado (JIT)
-            \item Interpolação RBF
         \end{itemize}
     \end{block}
 
     \column{.5\textwidth}
     \begin{figure}
         \centering
-        \includegraphics[width=\linewidth]{images/intersect.pdf}
-        \caption{Raio de backtracking interceptando fronteira}
+        \includegraphics[width=\linewidth]{images/tri_backtracking.pdf}
+        \caption{Backtracking em malha regular com Interpolação baricentrica.}
     \end{figure}
     \end{columns}
 \end{frame}
@@ -302,15 +408,14 @@ Universidade de São Paulo
 %------------------------------------------------
 
 \begin{frame}
-\frametitle{Problema: Estêncils Assimétricos}
+\frametitle{Exemplo: Collocation}
     \begin{columns}[c]
     \column{.5\textwidth}
-    \begin{block}{Desafio}
-        \begin{itemize}
-            \item Nós de fronteira têm vizinhos apenas em um semiplano
-            \item Estêncil desequilibrado
-            \item Perda de precisão
-        \end{itemize}
+    \begin{block}{Resolvendo a equação de Poisson}
+        $$\nabla^2 p = \nabla \cdot \mathbf{w}$$
+    \end{block}
+    \begin{block}{Aplicando condição de fronteira de Neumann}
+        $$\nabla p \cdot \mathbf{n} = 0$$        
     \end{block}
 
     \column{.5\textwidth}
@@ -325,6 +430,50 @@ Universidade de São Paulo
 %------------------------------------------------
 
 \begin{frame}
+\frametitle{Método de Collocation}
+    \begin{block}{Abordagem Tradicional}
+        Substituir equação diferencial nos nós de fronteira pela condição de contorno
+    \end{block}
+
+    \begin{block}{Exemplo: 5 nós (1-4 fronteira, 5 interno)}
+        \small
+        $$\begin{bmatrix}
+        \omega_1^n & \omega_2^n & 0 & \omega_4^n & \omega_5^n \\
+        \omega_1^n & \omega_2^n & \omega_3^n & 0 & \omega_5^n \\
+        0 & \omega_2^n & \omega_3^n & \omega_4^n & \omega_5^n \\
+        \omega_1^n & 0 & \omega_3^n & \omega_4^n & \omega_5^n \\
+        \omega_1^L & \omega_2^L & \omega_3^L & \omega_4^L & \omega_5^L
+        \end{bmatrix}
+        \begin{bmatrix} p_1 \\ p_2 \\ p_3 \\ p_4 \\ p_5 \end{bmatrix}
+        =
+        \begin{bmatrix} 0 \\ 0 \\ 0 \\ 0 \\ b_5 \end{bmatrix}$$
+    \end{block}
+
+    \begin{itemize}
+        \item Linhas 1-4: Condição de Neumann $\nabla p \cdot \mathbf{n} = 0$ (pesos $\omega^n$)
+        \item Linha 5: Equação de Poisson $\nabla^2 p = b$ (pesos $\omega^L$)
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Desafio}
+    \begin{block}{Desafio}
+        \begin{itemize}
+            \item Nós de fronteira têm vizinhos apenas em um semiplano
+            \item Estêncil desequilibrado
+            \item Perda de precisão
+        \end{itemize}
+    \end{block}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.8\linewidth]{images/natasha_ghost.png}
+        \caption{Solução Natasha para melhorar precisão do RBF-FD}
+    \end{figure}
+\end{frame}
+%------------------------------------------------
+
+\begin{frame}
 \frametitle{Solução: Nós Fantasma}
     \begin{block}{Ideia Central}
         \begin{itemize}
@@ -336,7 +485,7 @@ Universidade de São Paulo
 
     \begin{figure}
         \centering
-        \includegraphics[width=0.4\linewidth]{images/nring_int.png}
+        \includegraphics[width=0.4\linewidth]{images/ghost_node.pdf}
         \caption{Nó fantasma (ilustração conceitual)}
     \end{figure}
 \end{frame}
@@ -394,8 +543,8 @@ Universidade de São Paulo
     \column{.5\textwidth}
     \begin{figure}
         \centering
-        \includegraphics[width=\linewidth]{images/africa-nao-conforme.png}
-        \caption{Exemplo de malha arbitrária}
+        \includegraphics[width=\linewidth]{images/intersect.pdf}
+        \caption{Exemplo intersecção durante backtracking}
     \end{figure}
     \end{columns}
 \end{frame}
@@ -428,7 +577,7 @@ Universidade de São Paulo
     \begin{itemize}
         \item Domínio: Polígono irregular
         \item Formação de vórtices
-        \item Comportamento físico qualitativamente correto
+        \item Comportamento físico qualitativamente(visualmente) correto
     \end{itemize}
 \end{frame}
 
@@ -477,7 +626,7 @@ Universidade de São Paulo
 \frametitle{Discussão dos Resultados}
     \begin{block}{Sucessos}
         \begin{itemize}
-            \item Comportamento físico qualitativamente correto
+            \item Comportamento físico qualitativamente(visualmente) correto
             \item Formação de estruturas vorticais
             \item Interação adequada com fronteiras
             \item Viabilidade em domínios arbitrários
@@ -546,15 +695,6 @@ Universidade de São Paulo
 \begin{frame}
 \frametitle{Agradecimentos}
 \centering
-    \begin{block}{}
-        \begin{itemize}
-            \item Prof. Dr. Afonso Paiva Neto (orientação)
-            \item CAPES (bolsa PROEX)
-            \item Colegas do laboratório
-            \item Família e amigos
-        \end{itemize}
-    \end{block}
-
     \vspace{1cm}
     \Large{Obrigado!}
 
