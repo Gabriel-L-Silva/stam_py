@@ -20,12 +20,14 @@ A implementação numérica das Equações de Navier-Stokes incompressíveis usa
 O termo de advecção, $(\mathbf{u}\cdot\nabla)\mathbf{u}$, representa o transporte das propriedades do fluido pelo próprio campo de velocidades. Para sua implementação usando RBF-FD, adotamos uma abordagem semi-lagrangiana similar à apresentada por Stam~\cite{Stam1999}, porém adaptada ao contexto de malhas não-estruturadas. O procedimento pode ser descrito em três etapas principais:
 
 \begin{description}
-    \item[Etapa 1:] Para cada ponto $\mathbf{x}_i$ da malha computacional no tempo $t^n$, calculamos a posição de origem $\mathbf{x}_i^*$ através do \emph{backtracking}:
+    \item[Etapa 1:] Para cada ponto $\mathbf{x}_i$ da malha computacional no tempo $t^n$, onde $i \in \{1, \ldots, N_{total}\}$ é o índice do ponto na malha, calculamos a posição de origem $\mathbf{x}_i^*$ através do \emph{backtracking}:
 
     \begin{equation}
         \mathbf{x}_i^* = \mathbf{x}_i - \Delta t\mathbf{u}(\mathbf{x}_i, t^n)
         \label{eq:backtrack}
     \end{equation}
+
+    \noindent onde $\mathbf{x}_i^*$ denota a posição de partida da partícula que chegará em $\mathbf{x}_i$ após um passo de tempo $\Delta t$, seguindo o campo de velocidades $\mathbf{u}$.
 
     \item[Etapa 2:] Como $\mathbf{x}_i^*$ geralmente não coincide com um ponto da malha, utilizamos interpolação RBF para aproximar o valor da velocidade nesta posição. A função de interpolação é construída usando os $N$ pontos mais próximos de $\mathbf{x}_i^*$, onde $N$ é o número de pontos do estêncil:
 
@@ -54,7 +56,7 @@ O termo do gradiente de pressão, $-\frac{1}{\rho}\nabla p$, é implementado dir
     \label{eq:press_grad}
 \end{equation}
 
-\noindent onde $\omega_{ij}^{\nabla}$ são os pesos RBF-FD para o operador gradiente.
+\noindent onde $i$ é o índice do ponto onde o gradiente está sendo calculado, $j$ percorre os $N$ pontos do estêncil $\mathcal{S}_i$, $p_j$ é o valor da pressão no ponto $j$, e $\omega_{ij}^{\nabla}$ são os pesos RBF-FD para o operador gradiente.
 \subsection{Termo de Força Externa}
 \label{subsec:impl_force}
 
@@ -64,6 +66,8 @@ O termo de força externa $\mathbf{g}$ incorpora as forças volumétricas que at
     \mathbf{u}^{n+1} = \mathbf{u}^n + \Delta t\mathbf{g}
     \label{eq:force_update}
 \end{equation}
+
+\noindent onde o superscript $n$ denota o passo de tempo atual ($t = n \cdot \Delta t$) e $n+1$ o próximo passo de tempo.
 
 Para o caso específico da força de empuxo térmico, utilizamos a aproximação de Boussinesq:
 
@@ -189,7 +193,7 @@ Portanto, ao utilizar Numba, podemos melhorar significativamente o desempenho do
 
 \subsection{Interpolação}
 
-Durante o processo de \emph{backtracking}, quando a posição $\mathbf{x}_i^*$ não coincide com um ponto da malha, é necessário interpolar os valores das propriedades do fluido a partir dos pontos vizinhos. Nas malhas triangulares, dois métodos comuns de interpolação são utilizados: baricêntrica e RBF (Radial Basis Function). O método de interpolação baricêntrica é uma abordagem direta que interpola valores dentro de cada elemento triangular usando uma combinação linear dos valores conhecidos nos vértices do triângulo. Por outro lado, o método RBF utiliza funções de base radial para interpolar os valores, permitindo uma maior flexibilidade na representação de dados irregulares.
+Durante o processo de \emph{backtracking}, quando a posição $\mathbf{x}_i^*$ não coincide com um ponto da malha, é necessário interpolar os valores das propriedades do fluido a partir dos pontos vizinhos. Esse cenário caracteriza um problema de interpolação em \textbf{dados irregulares}, onde os pontos de amostragem (posições após backtracking) não coincidem com os vértices da malha computacional. Nas malhas triangulares, dois métodos comuns de interpolação são utilizados: baricêntrica e RBF (Radial Basis Function). O método de interpolação baricêntrica é uma abordagem direta que interpola valores dentro de cada elemento triangular usando uma combinação linear dos valores conhecidos nos vértices do triângulo, sendo o método que adotamos neste trabalho para o backtracking devido à sua eficiência e estabilidade. Por outro lado, o método RBF utiliza funções de base radial para interpolar os valores, permitindo uma maior flexibilidade na representação de dados em posições arbitrárias.
 
 No entanto, embora o método RBF ofereça essa flexibilidade, ele é conhecido por sofrer de baixa precisão perto das bordas dos elementos triangulares. Essa baixa precisão é atribuída à maneira como as funções de base radial são distribuídas, resultando em uma interpolação menos confiável em regiões próximas às fronteiras. Como consequência, a interpolação RBF pode gerar campos que não são divergentes nulos, o que significa que as propriedades físicas não estão sendo corretamente representadas, criando artefatos na simulação. Esses artefatos podem distorcer os resultados da simulação e comprometer a precisão do modelo, especialmente em problemas onde a conservação de massa e outras leis físicas são críticas.
 
@@ -197,7 +201,7 @@ Além disso, exploramos a influência dos métodos de interpolação do \emph{ba
 
 \section{Malhas arbitrárias}
 
-Para criar malhas triangulares arbitrárias, aproveitamos uma biblioteca de malhas de países, que fornece uma representação precisa das fronteiras de países. Essa biblioteca permite gerar malhas de alta resolução para uma variedade de regiões geográficas, oferecendo uma base sólida para a simulação de dispersão de fumaça em diferentes ambientes. É importante destacar que as malhas de países são descritas apenas pelas fronteiras, sem uma triangulação prévia. Para realizar a triangulação das fronteiras e obter as malhas triangulares necessárias para a simulação, utilizamos um wrapper Python da biblioteca Triangle~\cite{triangle}, uma ferramenta conhecida por sua capacidade de realizar triangulações de Delaunay com restrições de maneira eficiente e robusta. Vale ressaltar que a triangulação pode gerar malhas com características que dificultam a solução de problemas de interpolação, especialmente quando utilizamos métodos baseados em RBF (Radial Basis Function). Essas malhas complexas podem apresentar regiões onde a solução do problema de RBF se torna instável ou até mesmo impossível de ser determinada devido à natureza irregular da malha.
+Para demonstrar a capacidade do método em lidar com \textbf{geometrias complexas} --- definidas como domínios com fronteiras de alta curvatura, não-convexos ou com múltiplas regiões de concavidade --- criamos malhas triangulares arbitrárias aproveitando uma biblioteca de malhas de países, que fornece uma representação precisa das fronteiras de países. Essa biblioteca permite gerar malhas de alta resolução para uma variedade de regiões geográficas, oferecendo uma base sólida para a simulação de dispersão de fumaça em diferentes ambientes. É importante destacar que as malhas de países são descritas apenas pelas fronteiras, sem uma triangulação prévia. Para realizar a triangulação das fronteiras e obter as malhas triangulares necessárias para a simulação, utilizamos um wrapper Python da biblioteca Triangle~\cite{triangle}, uma ferramenta conhecida por sua capacidade de realizar triangulações de Delaunay com restrições de maneira eficiente e robusta. Vale ressaltar que a triangulação pode gerar malhas com características que dificultam a solução de problemas de interpolação, especialmente quando utilizamos métodos baseados em RBF (Radial Basis Function). Essas malhas complexas podem apresentar regiões onde a solução do problema de RBF se torna instável ou até mesmo impossível de ser determinada devido à natureza irregular da malha.
 
 \subsection{Precisão do RBF}
 
@@ -283,7 +287,16 @@ Para cada nó da fronteira $\mathbf{x}_b$, criamos um nó fantasma $\mathbf{x}_g
    \label{eq:ghost_distance}
 \end{equation}
 
-\noindent onde $\Delta x_{local}$ é uma medida do espaçamento local da malha e $\alpha$ é um parâmetro de ajuste que controla a influência do nó fantasma.
+\noindent onde $\Delta x_{local}$ representa o espaçamento local da malha, calculado como a distância média entre o nó de fronteira e seus vizinhos no estêncil, e $\alpha$ é um parâmetro de ajuste que controla a influência do nó fantasma. Em nossos experimentos, utilizamos $\alpha = 0.1$, valor que oferece um bom equilíbrio entre a melhoria na simetria do estêncil e a estabilidade numérica.
+
+O vetor normal $\mathbf{n}$ em cada nó de fronteira $\mathbf{x}_b$ é calculado como a média normalizada das normais das arestas de fronteira adjacentes ao nó. Se $\mathbf{e}_1$ e $\mathbf{e}_2$ são as duas arestas de fronteira que compartilham o nó $\mathbf{x}_b$, com normais $\mathbf{n}_1$ e $\mathbf{n}_2$ respectivamente (obtidas por rotação de 90° do vetor da aresta), então:
+
+\begin{equation}
+   \mathbf{n} = \frac{\mathbf{n}_1 + \mathbf{n}_2}{\|\mathbf{n}_1 + \mathbf{n}_2\|}
+   \label{eq:normal_calc}
+\end{equation}
+
+\noindent Esta abordagem garante que a normal aponte consistentemente para fora do domínio, mesmo em regiões de alta curvatura da fronteira.
 
 \begin{figure}
     \centering
@@ -386,6 +399,8 @@ Substituindo a Equação~\eqref{eq:ghost_value} na Equação~\eqref{eq:laplacian
 
 Esta é a fórmula central para o cálculo do Laplaciano em nós de fronteira. Os pesos efetivos $\tilde{\omega}_j^L$ combinam os pesos padrão do Laplaciano $\omega_j^L$ com uma correção baseada nos pesos da derivada normal. Esta correção, dada pelo termo $-\frac{\omega_g^L}{\omega_g^n} \omega_j^n$, incorpora automaticamente a condição de contorno de Neumann e elimina completamente a dependência do nó fantasma. O resultado são pesos que envolvem apenas os nós do domínio original, mas fornecem aproximações mais precisas do Laplaciano em nós de fronteira devido ao balanceamento do estêncil proporcionado pelo ghost node.
 
+\paragraph{Considerações sobre estabilidade numérica.} A Equação~\eqref{eq:final_weights} apresenta uma potencial instabilidade quando $\omega_g^n \approx 0$, o que causaria uma divisão por zero ou valores numericamente instáveis. Esta situação pode ocorrer em configurações geométricas específicas onde o nó fantasma está posicionado de forma que sua contribuição para a derivada normal seja aproximadamente nula. Na prática, isso acontece raramente quando o parâmetro $\alpha$ é escolhido adequadamente (em nosso caso, $\alpha = 0.1$), garantindo que o nó fantasma esteja suficientemente afastado da fronteira na direção normal. Em nossa implementação, não observamos este problema nas malhas testadas, mas recomenda-se verificar a magnitude de $\omega_g^n$ durante a construção dos pesos para detectar possíveis configurações problemáticas.
+
 Com os pesos efetivos definidos, podemos agora descrever como eles são utilizados na prática para construir o sistema linear global que resolve a equação de Poisson na etapa de projeção.
 
 \subsubsection{Construção da Matriz do Laplaciano}
@@ -465,6 +480,15 @@ O sistema de renderização foi projetado para minimizar transferências de dado
 A geração de malhas triangulares a partir de contornos de países foi realizada utilizando a biblioteca Triangle~\cite{triangle}, que implementa o algoritmo de triangulação de Delaunay com restrições. Essa biblioteca foi escolhida por sua robustez e capacidade de lidar com geometrias complexas. A abordagem permite a construção confiável de malhas computacionais a partir de dados geográficos que originalmente continham apenas informações de contorno.
 
 O processo de geração de malha inclui etapas de pré-processamento para garantir a qualidade dos elementos gerados. Inicialmente, realiza-se a verificação e correção de auto-intersecções nos contornos de entrada. Em seguida, aplica-se refinamento adaptativo baseado na curvatura local, garantindo maior densidade de elementos em regiões de geometria complexa. Por fim, executa-se a suavização dos elementos para melhorar a qualidade geral da malha, otimizando aspectos como razão de aspecto e ângulos internos dos triângulos.
+
+\subsection{Resolução do Sistema Linear}
+\label{subsec:linear_solver}
+
+A resolução da equação de Poisson a cada passo de tempo da simulação requer a solução de um sistema linear esparso $L\mathbf{p} = \mathbf{b}$. Para sistemas de grande porte, métodos diretos como a decomposição LU podem ser computacionalmente custosos tanto em tempo quanto em memória. Por isso, optamos por utilizar o método iterativo BiCGSTAB (\textit{Biconjugate Gradient Stabilized}), que é particularmente eficiente para sistemas não-simétricos, como o resultante da formulação com nós fantasma.
+
+O método BiCGSTAB é acelerado através de um precondicionador ILU (\textit{Incomplete LU}), que aproxima a decomposição LU da matriz original, melhorando significativamente a taxa de convergência do método iterativo. O precondicionador é calculado uma única vez durante a fase de inicialização da simulação, sendo reutilizado em todos os passos de tempo subsequentes.
+
+A tolerância de convergência utilizada foi de $10^{-10}$, valor que garante precisão adequada para a etapa de projeção sem comprometer o desempenho computacional. O custo por iteração do BiCGSTAB é proporcional ao número de entradas não-nulas da matriz, tornando-o especialmente adequado para as matrizes esparsas geradas pelo método RBF-FD.
 
 \subsection{Estruturas de Dados}
 \label{subsec:data_structures}

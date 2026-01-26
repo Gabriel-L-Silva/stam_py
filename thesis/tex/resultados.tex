@@ -12,32 +12,37 @@ A análise destes resultados revela um aumento gradual do divergente ao longo do
 \section{Visualização da Simulação}
 \label{sec:visualizacao}
 
-Para avaliar qualitativamente o método proposto, realizamos três experimentos distintos de simulação de fumaça em diferentes geometrias. As Figuras~\ref{fig:exp1}, \ref{fig:exp2} e \ref{fig:exp3} apresentam a evolução temporal de cada experimento em três instantes: inicial, intermediário e final (de cima para baixo). Em todo começo de simulação é esperado que tenhamos o divergente alto, pois estamos injetando fumaça no campo. Esse injetor é desligado na metade da simulação, por isso a queda repentina no gráfico de divergente máximo pelo tempo.
+Para avaliar qualitativamente o método proposto, realizamos três experimentos distintos de simulação de fumaça em diferentes geometrias. As Figuras~\ref{fig:exp1}, \ref{fig:exp2} e \ref{fig:exp3} apresentam a evolução temporal de cada experimento em três instantes: inicial, intermediário e final (de cima para baixo).
+
+Em todos os experimentos, utilizamos um \textbf{injetor de fumaça} que aplica uma fonte constante de velocidade vertical e densidade em uma região específica da malha. O injetor permanece ativo durante a primeira metade da simulação (500 frames) e é então desligado, permitindo observar o comportamento do fluido em regime livre. Por isso, é esperado que o divergente seja alto no início da simulação (devido à injeção de massa) e apresente uma queda repentina quando o injetor é desativado.
 
 \begin{figure}[p]
    \centering
-   \caption{Primeiro experimento: Comparação da eficácia da técnica de nós fantasma.}
+   \caption{Primeiro experimento: Comparação da eficácia da técnica de nós fantasma em malha circular. Cada linha mostra, da esquerda para direita: simulação sem ghost nodes, simulação com ghost nodes, distribuição espacial do divergente (gráfico 3D) e evolução temporal do divergente máximo. As três linhas representam instantes inicial, intermediário e final da simulação, respectivamente.}
    \includegraphics[width=0.85\textwidth]{images/ghost_comp_frame_0.png}
    \includegraphics[width=0.85\textwidth]{images/ghost_comp_frame_1.png}
    \includegraphics[width=0.85\textwidth]{images/ghost_comp_frame_2.png}
+   \subcaption*{Fonte: Elaborada pelo autor.}
    \label{fig:exp1}
 \end{figure}
 
 \begin{figure}[p]
    \centering
-   \caption{Segundo experimento: simulação da fumaça em uma geometria simples irregular.}
+   \caption{Segundo experimento: simulação de fumaça em geometria irregular (formato de país). Cada linha apresenta, da esquerda para direita: visualização da densidade de fumaça sobre a malha, distribuição espacial do divergente (gráfico 3D) e evolução temporal do divergente máximo. As três linhas correspondem aos instantes inicial, intermediário e final da simulação.}
    \includegraphics[width=0.85\textwidth]{images/tunisia_frame_0.png}
    \includegraphics[width=0.85\textwidth]{images/tunisia_frame_1.png}
    \includegraphics[width=0.85\textwidth]{images/tunisia_frame_2.png}
+   \subcaption*{Fonte: Elaborada pelo autor.}
    \label{fig:exp2}
 \end{figure}
 
 \begin{figure}[p]
    \centering
-   \caption{Terceiro experimento: simulação em um domínio com fronteiras irregulares complexas.}
+   \caption{Terceiro experimento: simulação de fumaça em domínio com fronteiras altamente irregulares e regiões de alta curvatura. Cada linha apresenta, da esquerda para direita: visualização da densidade de fumaça sobre a malha, distribuição espacial do divergente (gráfico 3D) e evolução temporal do divergente máximo. As três linhas correspondem aos instantes inicial, intermediário e final da simulação.}
    \includegraphics[width=0.85\textwidth]{images/djobuti_frame_0.png}
    \includegraphics[width=0.85\textwidth]{images/djobuti_frame_1.png}
    \includegraphics[width=0.85\textwidth]{images/djobuti_frame_2.png}
+   \subcaption*{Fonte: Elaborada pelo autor.}
    \label{fig:exp3}
 \end{figure}
 

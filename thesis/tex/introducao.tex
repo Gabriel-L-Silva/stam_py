@@ -1,8 +1,8 @@
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.92\textwidth]{images/mass_effect3_smoke.jpg}
     \caption{Animação de fumaça no jogo \textit{Mass Effect 3}.}
+    \includegraphics[width=0.92\textwidth]{images/mass_effect3_smoke.jpg}
     \subcaption*{Fonte: \url{https://www.fxguide.com/fxfeatured/cinematics-case-study-mass-effect-3/}}
     \label{fig:masseffect3}
 \end{figure}
@@ -33,7 +33,7 @@ Na visão lagrangiana (ver \figref{fig:lagrangiana}), o fluido é discretizado e
     \label{fig:simulacoes}
 \end{figure}
 
-Existem diversas características que diferem na representação da malha. Por exemplo, existem malhas regulares e irregulares. Em malhas regulares, os centros de cada célula são equidistantes e colineares, enquanto nas malhas irregulares não existe esta restrição. Outro fator que pode distinguir é a topologia de cada célula da malha: existem malhas com topologia triangular, quadrangular ou mistas. Malhas triangulares se moldam melhor em fronteiras irregulares, como objetos complexos, porém, este benefício é contrabalançado pelo grande custo computacional. Malhas quadrangulares têm a desvantagem de perder muitos detalhes por conta da estrutura simples. Grades híbridas têm a vantagem de poder usar células triangulares em fronteiras com objetos complexos, e células quadrangulares em espaços abertos, melhorando o custo computacional \cite{Huang2015}. Além disso, os valores do campo escalar ou campo vetorial podem ser armazenados no centro de cada célula ou no centro de cada face. Caso ambos estejam no centro, esta malha é chamada de co-localizada (do inglês, \textit{collocated}), e no caso do campo escalar estar no centro da célula e a velocidade na face, esta malha é chamada de deslocada (do inglês, \textit{staggered}), conforme ilustrado na \figref{fig:celulas}. O foco do nosso trabalho será a simulação de fluidos bidimensional por meio da abordagem euleriana com uso de malhas triangulares deslocadas.
+Existem diversas características que diferem na representação da malha. Por exemplo, existem malhas regulares e irregulares. Em malhas regulares, os centros de cada célula são equidistantes e colineares, enquanto nas malhas irregulares não existe esta restrição. Outro fator que pode distinguir é a topologia de cada célula da malha: existem malhas com topologia triangular, quadrangular ou mistas. Malhas triangulares se moldam melhor em fronteiras irregulares, como objetos complexos, porém, este benefício é contrabalançado pelo grande custo computacional. Malhas quadrangulares têm a desvantagem de perder muitos detalhes por conta da estrutura simples. Grades híbridas têm a vantagem de poder usar células triangulares em fronteiras com objetos complexos, e células quadrangulares em espaços abertos, melhorando o custo computacional \cite{Huang2015}. Além disso, os valores do campo escalar ou campo vetorial podem ser armazenados no centro de cada célula ou no centro de cada face. Caso ambos estejam no centro, esta malha é chamada de co-localizada (do inglês, \textit{collocated}), e no caso do campo escalar estar no centro da célula e a velocidade na face, esta malha é chamada de deslocada (do inglês, \textit{staggered}), conforme ilustrado na \figref{fig:celulas}. O foco do nosso trabalho será a simulação de fluidos bidimensional por meio da abordagem euleriana com uso de malhas triangulares co-localizadas.
 
 \begin{figure}
     \centering
@@ -79,33 +79,15 @@ Em geral, simulações de fluidos baseadas em física têm como base as Equaçõ
     \label{fig:stencil2d}
 \end{figure}
 
-Quando trabalhamos com malhas triangulares, temos uma malha não-estruturada. Neste contexto, o conceito de estêncil se torna mais complexo, pois a quantidade e configuração dos vizinhos de uma célula não são mais uniformes. Em malhas não-estruturadas, é comum utilizar o conceito de \textit{k-anel} (do inglês, \textit{k-ring}), que define a vizinhança de um elemento da malha de forma topológica. O \textit{1-anel} de uma célula ou vértice é definido como o conjunto de todos os elementos que compartilham pelo menos uma aresta com o elemento central. Diferentemente do 1-anel em malhas regulares (como mostrado na \figref{fig:stencil2d}), onde sempre há 4 vizinhos em posições fixas, em malhas não-estruturadas o 1-anel pode ter um número variável de vizinhos sem restrições de posição. Por exemplo, em uma malha triangular, o 1-anel de um vértice interno é composto por todos os triângulos que contêm aquele vértice (podendo ser 5, 6, 7 ou mais triângulos), enquanto o 1-anel de um triângulo é formado pelos três triângulos adjacentes que compartilham suas arestas. Este conceito pode ser estendido para \textit{k-anéis}, onde o 2-anel inclui os vizinhos dos vizinhos, e assim sucessivamente. A escolha do tamanho do estêncil (ou seja, quantos anéis incluir) impacta diretamente a precisão e o custo computacional dos métodos numéricos aplicados à malha.
+Quando trabalhamos com malhas triangulares, temos uma \textbf{malha não-estruturada}, definida como uma discretização do domínio onde os elementos (triângulos, no caso 2D) não seguem um padrão regular de conectividade, ou seja, cada vértice pode ter um número variável de elementos adjacentes. Neste contexto, o conceito de estêncil se torna mais complexo, pois a quantidade e configuração dos vizinhos de uma célula não são mais uniformes. Em malhas não-estruturadas, é comum utilizar o conceito de \textit{k-anel} (do inglês, \textit{k-ring}), que define a vizinhança de um elemento da malha de forma topológica. O \textit{1-anel} de uma célula ou vértice é definido como o conjunto de todos os elementos que compartilham pelo menos uma aresta com o elemento central. Diferentemente do 1-anel em malhas regulares (como mostrado na \figref{fig:stencil2d}), onde sempre há 4 vizinhos em posições fixas, em malhas não-estruturadas o 1-anel pode ter um número variável de vizinhos sem restrições de posição. Por exemplo, em uma malha triangular, o 1-anel de um vértice interno é composto por todos os triângulos que contêm aquele vértice (podendo ser 5, 6, 7 ou mais triângulos), enquanto o 1-anel de um triângulo é formado pelos três triângulos adjacentes que compartilham suas arestas. Este conceito pode ser estendido para \textit{k-anéis}, onde o 2-anel inclui os vizinhos dos vizinhos, e assim sucessivamente. A escolha do tamanho do estêncil (ou seja, quantos anéis incluir) impacta diretamente a precisão e o custo computacional dos métodos numéricos aplicados à malha.
 
 A propriedade de vizinhança variável impossibilita o uso direto de FD em malhas não-estruturadas, sendo necessário o uso de outros métodos para a resolução dos operadores diferenciais, tais como os métodos de Elementos Finitos e Volumes Finitos. Em animação computacional, o método de Volumes Finitos (do inglês, \textit{Finite Volumes} - FV) é o mais utilizado para animação de fluidos em malhas não-estruturadas \cite{Klingner2006}.
 
-Outra propriedade importante de malhas que deve ser considerada é a conformidade. Uma malha conforme (ver \figref{fig:conforme}) é aquela em que todas as arestas são completas, ou seja, não existe um vértice que resida no interior de uma aresta. Na literatura, encontramos diversos trabalhos que lidam com problemas geométricos em malhas não-conformes (ver \figref{fig:africa}) \cite{Mahmood2019, nonconf1}. No entanto, há uma lacuna na resolução das ENS neste tipo de malha. Para resolver numericamente as ENS em malhas não-conformes, é interessante utilizar um método independente da estrutura da malha, isto é, métodos de interpolação sem malha.
-
-\begin{figure}
-    \centering
-    \caption{Exemplo de malha conforme.}
-    \includegraphics[width=0.7\textwidth]{images/africa-conforme.jpg}
-    \subcaption*{Fonte: \cite{Nascimento:2014}}
-    \label{fig:conforme}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \caption{Exemplo de malha não-conforme, com círculo vermelho para evidenciar uma aresta que mostra a propriedade da malha.}
-    \includegraphics[width=0.7\textwidth]{images/africa-nao-conforme.png}
-    \subcaption*{Fonte: Adaptado de \cite{Nascimento:2014}}
-    \label{fig:africa}
-\end{figure}
-
-O método baseado em Funções de Base Radial (do inglês, \textit{Radial Basis Function} - RBF) \cite{rbf} realiza uma interpolação independente de malha, e sua aproximação de FD, conhecida como \textit{Radial Basis Function Finite Differences} (RBF-FD) \cite{WRIGHT200699}, resolve os operadores diferenciais necessários através de uma aproximação de alta ordem. Com a aplicação do RBF-FD em malhas não-conformes, pretendemos resolver as ENS e representar visualmente a simulação de fumaça.
+O método baseado em Funções de Base Radial (do inglês, \textit{Radial Basis Function} - RBF) \cite{rbf} realiza uma interpolação independente da conectividade da malha, e sua aproximação de FD, conhecida como \textit{Radial Basis Function Finite Differences} (RBF-FD) \cite{WRIGHT200699}, resolve os operadores diferenciais necessários através de uma aproximação de alta ordem. Com a aplicação do RBF-FD em malhas não-estruturadas, pretendemos resolver as ENS e representar visualmente a simulação de fumaça.
 
 Um desafio fundamental na resolução numérica das ENS é a correta aplicação de condições de fronteira, essenciais para garantir o comportamento físico apropriado do fluido nos limites do domínio. Existem diferentes tipos de condições de fronteira, sendo as mais comuns as condições de Dirichlet, que prescrevem o valor da função no contorno, e as condições de Neumann, que prescrevem o valor da derivada normal no contorno.
 
-Em particular, as condições de Neumann são cruciais para modelar fronteiras com fluxo livre e paredes impermeáveis, mas sua implementação em malhas não-estruturadas apresenta dificuldades significativas. Enquanto métodos tradicionais como FD e FV têm procedimentos bem estabelecidos para aplicar essas condições em grades uniformes, a extensão para malhas triangulares não-conformes utilizando RBF-FD ainda carece de investigação aprofundada na literatura de animação de fluidos.
+Em particular, as condições de Neumann são cruciais para modelar fronteiras com fluxo livre e paredes impermeáveis, mas sua implementação em malhas não-estruturadas apresenta dificuldades significativas. Enquanto métodos tradicionais como FD e FV têm procedimentos bem estabelecidos para aplicar essas condições em grades uniformes, a extensão para malhas triangulares não-estruturadas utilizando RBF-FD ainda carece de investigação aprofundada na literatura de animação de fluidos.
 
 \section{Objetivos}
 

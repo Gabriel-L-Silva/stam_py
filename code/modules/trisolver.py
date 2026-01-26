@@ -11,7 +11,7 @@ except:
     from interpolator import Interpolator, RBFInterpolator
 
 from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import bicgstab, spilu, LinearOperator
 
 class TriSolver:
     def __init__(self, mesh, k=12, s=5, d=2, only_knn=True, ghost_distance=0.1, source_force=30):
@@ -109,18 +109,23 @@ class TriSolver:
             data[0:0] = weights
             data_row[0:0] = ([pid]*len(self.mesh.nring[pid]))
             data_col[0:0] = self.mesh.nring[pid]
-        self.w = csr_matrix((data, (data_row, data_col)), 
+        self.w = csr_matrix((data, (data_row, data_col)),
                           shape = (self.mesh.n_points, self.mesh.n_points))
 
+        # Precondicionador ILU para BiCGSTAB
+        ilu = spilu(self.w.tocsc())
+        self.M = LinearOperator(self.w.shape, ilu.solve)
+
         
-    def poisson_solver(self, testing=None):        
+    def poisson_solver(self, testing=None):
         if testing != None:
             b = testing
         else:
             # we need to 0 only on collocation method, with ghost we are in fact calculating the laplacian
             # b = np.array([self.divergence(pid) if pid not in self.mesh.boundary else 0.0 for pid in range(self.mesh.n_points)])
             b = np.array([self.divergence(pid) for pid in range(self.mesh.n_points)])
-        lapl = spsolve(self.w, b)
+        lapl, info = bicgstab(self.w, b, M=self.M, tol=1e-10)
+        assert info == 0, f'BiCGSTAB não convergiu (info={info})'
         assert(not np.isnan(lapl).any())
         return lapl
 

@@ -88,7 +88,14 @@ A forma generalizada de um interpolador RBF é dada por:
     \label{eq:rbf0}
 \end{equation}
 %
-No qual $\{P_1(x), ..., P_M(x)\}$ é a base para o espaço $M=\binom{m+d}{d}$-dimensional $\prod^d_m$ de todos os  polinômios multivariados com grau  $\leq m$. Para garantir que os coeficientes $\alpha_k$ e $\beta_j$ são únicos, precisamos impor a seguinte restrição:
+No qual $\{P_1(x), ..., P_M(x)\}$ é a base para o espaço $M=\binom{m+d}{d}$-dimensional $\prod^d_m$ de todos os polinômios multivariados com grau $\leq m$. Para o caso bidimensional ($d=2$), a base polinomial é construída da seguinte forma:
+
+\begin{itemize}
+    \item Para $m=1$ (linear), $M=3$: $\{P_1, P_2, P_3\} = \{1, x, y\}$
+    \item Para $m=2$ (quadrático), $M=6$: $\{P_1, ..., P_6\} = \{1, x, y, x^2, xy, y^2\}$
+\end{itemize}
+
+\noindent Neste trabalho, utilizamos polinômios de grau $m=2$, resultando em $M=6$ termos polinomiais. Para garantir que os coeficientes $\alpha_k$ e $\beta_j$ são únicos, precisamos impor a seguinte restrição:
 
 \begin{equation}
     \sum_{k=1}^N\alpha_k P_j(x_k) = 0\,\text{,   }\forall 1,...,M\,.
@@ -206,6 +213,16 @@ com $r=||x_{i+1} - x_i|| = ||x_{i-1} - x_i||$ e $(\cdot)_k$ a k-ésima coordenad
 \end{equation}
 %
 Como podemos ver, a Equação~\eqref{eq:resultrbf1d} coincide com a aproximação por FD central~\eqref{eq:fdcentral}.
+
+A principal vantagem do método RBF-FD é sua capacidade de generalizar para malhas não-estruturadas, como malhas triangulares. A \figref{fig:rbffd_tri} ilustra um estêncil típico em uma malha triangular 2D, onde o ponto central $f_i$ possui vizinhos em posições arbitrárias, cada um a uma distância $r_j$ diferente. O mesmo procedimento de cálculo de pesos descrito anteriormente é aplicado, porém com uma matriz de dimensão maior (proporcional ao número de vizinhos no estêncil) e sem a simplificação de equidistância.
+
+\begin{figure}[H]
+    \centering
+    \caption{Estêncil RBF-FD em malha triangular 2D. O ponto central $f_i$ (em verde escuro) possui vizinhos em posições não uniformes, conectados pelas linhas tracejadas azuis com distâncias $r_j$ variáveis.}
+    \includegraphics[width=0.6\textwidth]{images/rbffd_triangular.pdf}
+    \subcaption*{Fonte: Elaborada pelo autor.}
+    \label{fig:rbffd_tri}
+\end{figure}
 
 \section{Animação de fumaça}
 \label{sec:anim_fumaca}
