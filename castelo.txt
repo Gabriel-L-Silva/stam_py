@@ -1,0 +1,17 @@
+quando nao tem viscosidade, o termo convectivo é que manda, que é de primeira ordem
+
+respeitar CFL
+
+Metodo da projecao de primeira ordem, nao é o melhor 
+
+Definir o metodo de solucao da matriz da projecao de pressao
+
+Usar metodo do gradiente biconjugado com precondionador bom()
+
+matriz esparsa tem que ser resolvida com metodo iterativo, metodo direto perde o beneficio da esparcidade.
+
+enaltecer o instante de tempo dos resultados.
+
+secao especialmente pra condicao de contorno.
+
+Definir na metodologia como o injetor foi feito.

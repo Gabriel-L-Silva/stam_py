@@ -1,0 +1,72 @@
+cdetalhar melhor o texto(nao tem restricao de tamanho)
+adicionar imagens e motivaocao na revisao bibliografica
+melhorar os objetivos no texto
+caption tem que ser auto contido, melorar tamanho dos resultados
+melhorar resultados ao inves de divergente 3d, colorir o divergente em 2d mes
+
+MELHORAR RESULTADOS, QUEBRA EM VARIAS IMAMGENS, MELHORA VISUALIZACAO
+
+grau do vertice?
+
+expandir os resultados e explorar mais atributos do meu resultado.
+
+Definir malhas complexa/ malhas irregular
+
+Malhas nao conforme, mostrar resultado conforme vs nao conforme.
+
+Mudar resolucao da malha e analisar resultado.
+
+Mostrar oque ficou ruim, quando afirmar
+
+Citar tempo de execucao no texto. Qual o custo computacional. Quantos sistemas sao resolvidos por passo de tempo.
+Mostrar tamanho dos sistemas e quando eles sao resolvidos
+
+Quantificar com profiler onde tem gargalo.
+
+Pagina 26: não conforme, mostrar resultado
+
+Pagina 29: mostrar os polinomios P_j.(3,16)
+Melhorar notacao de ponto (uso de negrito nao consistente) eq3.14
+notacao n : timestep, numero de pontos, vetor normal
+3.17 usar exemplo com o phi para conectar 
+
+
+figura 3.8 trocar para malhar triangular
+
+
+4.1 definir oq o estrela significa x^*
+
+4.7 definir oq é o i
+
+4.11 definir o timestep atual 
+
+4.2.1 citar que as arestas que sao testadas, e a complexidade do algoritmo
+
+4.2.3 primeiro paragrafo definir oq é dados irregulares
+definir que uso a interpolacao baricentrica.
+
+4.2.2 quantificar melhor as melhoras
+
+4.3.1 ja estou analisando resultado, mover isso pra la
+
+Falar como foi feito o calculo de normal
+
+4.4 explicar delta x local
+
+mostrar os parametros alpha de distancia utilizados para a criacao do ghost
+
+eq4.24 analisar quando  omega^n_g pode ser zero e causa instabilidade
+
+4.5.2 deixar explicitos detalhes de implementação da opengl
+
+4.5.3 definir oq é geometria complexa 
+mostrar o refinamento ou tirar essa parte do texto
+
+4.5.4 definir que arvore foi utilizada no calculo de vizinhanca
+colocar as versoes das bibliotecas utilizadas python
+
+mostrar o tipo de interpoolacao usado, e adicionar imagens da diferenca entre tempo, qualidade e resultado de interpolacao baricentrica e rbf
+
+figuras nao de acordo com a abnt legenda em cima e autor embaixo
+
+
