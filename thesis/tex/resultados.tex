@@ -1,6 +1,6 @@
 \label{ch:resultados}
 
-Neste capítulo apresentamos os resultados obtidos com o método proposto. Embora a implementação tenha sido inicialmente concebida para ser interativa, a complexidade do tratamento de malhas arbitrárias nos levou a adotar uma abordagem não-interativa. Os resultados são avaliados tanto quantitativamente, através da análise do divergente do campo de velocidades, quanto qualitativamente, por meio da visualização da simulação.
+Neste capítulo, apresentamos os resultados obtidos com o método proposto. Embora a implementação tenha sido inicialmente concebida para ser interativa, a complexidade do tratamento de malhas arbitrárias nos levou a adotar uma abordagem não-interativa. Os resultados são avaliados tanto quantitativamente, através da análise do divergente do campo de velocidades, quanto qualitativamente, por meio da visualização da simulação.
 
 \section{Análise do Divergente}
 \label{sec:divergente}
@@ -12,36 +12,41 @@ A análise destes resultados revela um aumento gradual do divergente ao longo do
 \section{Visualização da Simulação}
 \label{sec:visualizacao}
 
-Para avaliar qualitativamente o método proposto, realizamos três experimentos distintos de simulação de fumaça em diferentes geometrias. As Figuras~\ref{fig:exp1}, \ref{fig:exp2} e \ref{fig:exp3} apresentam a evolução temporal de cada experimento em três instantes: inicial, intermediário e final (de cima para baixo). Em todo começo de simulação é esperado que tenhamos o divergente alto, pois estamos injetando fumaça no campo. Esse injetor é desligado na metade da simulação, por isso a queda repentina no gráfico de divergente máximo pelo tempo.
+Para avaliar qualitativamente o método proposto, realizamos três experimentos distintos de simulação de fumaça em diferentes geometrias. As Figuras~\ref{fig:exp1}, \ref{fig:exp2} e \ref{fig:exp3} apresentam a evolução temporal de cada experimento em três instantes: inicial, intermediário e final (de cima para baixo).
+
+Em todos os experimentos, utilizamos um \textbf{injetor de fumaça} que aplica uma fonte constante de velocidade vertical e densidade em uma região específica da malha. O injetor permanece ativo durante a primeira metade da simulação (500 frames) e é então desligado, permitindo observar o comportamento do fluido em regime livre. Por isso, é esperado que o divergente seja alto no início da simulação (devido à injeção de massa) e apresente uma queda repentina quando o injetor é desativado.
 
 \begin{figure}[p]
    \centering
+   \caption{Primeiro experimento: Comparação da eficácia da técnica de nós fantasma em malha circular. Cada linha mostra, da esquerda para direita: simulação sem ghost nodes, simulação com ghost nodes, distribuição espacial do divergente (gráfico 3D) e evolução temporal do divergente máximo. As três linhas representam instantes inicial, intermediário e final da simulação, respectivamente.}
    \includegraphics[width=0.85\textwidth]{images/ghost_comp_frame_0.png}
    \includegraphics[width=0.85\textwidth]{images/ghost_comp_frame_1.png}
    \includegraphics[width=0.85\textwidth]{images/ghost_comp_frame_2.png}
-   \caption{Primeiro experimento: Comparação da eficácia da técnica de vértice fantasma.}
+   \subcaption*{Fonte: Elaborada pelo autor.}
    \label{fig:exp1}
 \end{figure}
 
 \begin{figure}[p]
    \centering
+   \caption{Segundo experimento: simulação de fumaça em geometria irregular (formato de país). Cada linha apresenta, da esquerda para direita: visualização da densidade de fumaça sobre a malha, distribuição espacial do divergente (gráfico 3D) e evolução temporal do divergente máximo. As três linhas correspondem aos instantes inicial, intermediário e final da simulação.}
    \includegraphics[width=0.85\textwidth]{images/tunisia_frame_0.png}
    \includegraphics[width=0.85\textwidth]{images/tunisia_frame_1.png}
    \includegraphics[width=0.85\textwidth]{images/tunisia_frame_2.png}
-   \caption{Segundo experimento: simulação da fumaça em uma geometria simples irregular.}
+   \subcaption*{Fonte: Elaborada pelo autor.}
    \label{fig:exp2}
 \end{figure}
 
 \begin{figure}[p]
    \centering
+   \caption{Terceiro experimento: simulação de fumaça em domínio com fronteiras altamente irregulares e regiões de alta curvatura. Cada linha apresenta, da esquerda para direita: visualização da densidade de fumaça sobre a malha, distribuição espacial do divergente (gráfico 3D) e evolução temporal do divergente máximo. As três linhas correspondem aos instantes inicial, intermediário e final da simulação.}
    \includegraphics[width=0.85\textwidth]{images/djobuti_frame_0.png}
    \includegraphics[width=0.85\textwidth]{images/djobuti_frame_1.png}
    \includegraphics[width=0.85\textwidth]{images/djobuti_frame_2.png}
-   \caption{Terceiro experimento: simulação em um domínio com fronteiras irregulares complexas.}
+   \subcaption*{Fonte: Elaborada pelo autor.}
    \label{fig:exp3}
 \end{figure}
 
-No primeiro experimento (Figura~\ref{fig:exp1}), comparamos o impacto da solução de ghost simplificado que adotamos. Especialmente nesse exemplo, não utilizamos o algoritmo de interseção raio-polígono. Como podemos analisar pelos gráficos, temos uma estabilidade muito maior no valor do divergente a cada passo de tempo e também analisamos que os pontos onde o divergente diferente de zero passaram de estar por toda a malha para estarem só na fronteira. 
+No primeiro experimento (Figura~\ref{fig:exp1}), comparamos o impacto da solução de nós fantasma simplificada que adotamos. Especialmente nesse exemplo, não utilizamos o algoritmo de interseção raio-polígono. Como podemos analisar pelos gráficos, temos uma estabilidade muito maior no valor do divergente a cada passo de tempo e também analisamos que os pontos onde o divergente diferente de zero passaram de estar por toda a malha para estarem só na fronteira. 
 
 O segundo experimento (Figura~\ref{fig:exp2}) apresenta uma geometria mais complexa, testando a capacidade do método em lidar com fronteiras irregulares. Nota-se que, mesmo com a maior complexidade geométrica, o método consegue capturar os principais fenômenos físicos esperados. Aqui, começam a se manifestar algumas das limitações do método, como os efeitos da perda de massa e instabilidades próximas às fronteiras mais complexas.
 
@@ -50,9 +55,9 @@ No terceiro experimento (Figura~\ref{fig:exp3}), exploramos uma configuração a
 Em todos os casos, é possível observar a capacidade do método em reproduzir comportamentos físicos qualitativamente corretos, como:
 
 \begin{itemize}
-   \item Formação e evolução de estruturas vorticais
-   \item Interação adequada com as fronteiras do domínio
-   \item Difusão realista da densidade da fumaça
+   \item Formação e evolução de estruturas vorticais;
+   \item Interação adequada com as fronteiras do domínio;
+   \item Difusão realista da densidade da fumaça.
 \end{itemize}
 
 No entanto, também são evidentes alguns artefatos numéricos, particularmente em regiões de alta curvatura da fronteira e nos estágios mais avançados da simulação, onde a perda de massa se torna mais pronunciada.
@@ -63,40 +68,8 @@ No entanto, também são evidentes alguns artefatos numéricos, particularmente 
 Um desafio significativo identificado durante os testes foi a perda gradual de massa ao longo da simulação, como pode ser observado em todos os experimentos. Este fenômeno é principalmente atribuído a dois fatores:
 
 \begin{enumerate}
-   \item Imprecisões na aproximação das condições de contorno junto à fronteira
-   \item Instabilidades numéricas em regiões onde vértices da malha estão muito próximos
+   \item Imprecisões na aproximação das condições de contorno junto à fronteira;
+   \item Instabilidades numéricas em regiões onde nós da malha estão muito próximos.
 \end{enumerate}
 
 A escolha da função de base radial poliarmônica mostrou-se particularmente sensível a estas configurações geométricas, contribuindo para a instabilidade do método em fronteiras complexas.
-
-\section{Limitações e Trabalhos Futuros}
-\label{sec:limitacoes}
-
-As principais limitações identificadas em nossa implementação podem ser sumarizadas em:
-
-\begin{itemize}
-   \item Perda de massa ao longo do tempo
-   \item Instabilidade em fronteiras complexas
-   \item Sensibilidade à proximidade entre vértices
-   \item Custo computacional elevado para malhas densas
-   \item Incapacidade de lidar com domínios não-simplesmente conexos
-\end{itemize}
-
-Particularmente relevante foi a tentativa mal sucedida de estender o método para domínios com buracos (domínios não-simplesmente conexos). Esta limitação está possivelmente relacionada a dois fatores: a dificuldade do método RBF-FD em lidar com as descontinuidades topológicas introduzidas pelos buracos e a complexidade adicional no tratamento das condições de contorno em fronteiras internas.
-
-Para trabalhos futuros, sugerimos algumas direções promissoras:
-
-\begin{itemize}
-   \item Investigação de funções de base radial alternativas que apresentem maior estabilidade em geometrias complexas
-   \item Desenvolvimento de técnicas de pré-processamento para otimizar a distribuição dos vértices na malha
-   \item Implementação de métodos de correção de massa local
-   \item Exploração de técnicas de paralelização para viabilizar simulações interativas
-   \item Adaptação do método para suportar domínios não-simplesmente conexos, possivelmente através de:
-   \begin{itemize}
-       \item Decomposição do domínio em regiões simplesmente conexas
-       \item Desenvolvimento de técnicas específicas para tratamento de fronteiras internas
-       \item Investigação de formulações alternativas para o cálculo dos pesos RBF-FD em topologias complexas
-   \end{itemize}
-\end{itemize}
-
-Estas melhorias poderiam endereçar as principais limitações identificadas, tornando o método mais robusto e aplicável a uma gama mais ampla de problemas práticos, incluindo simulações em domínios geometricamente mais complexos.

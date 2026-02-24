@@ -1,0 +1,56 @@
+\chapter{Dependências do Projeto}
+\label{ap:dependencias}
+
+Este apêndice lista as principais bibliotecas Python utilizadas na implementação do método proposto, juntamente com suas respectivas versões. A reprodução dos experimentos descritos neste trabalho requer a instalação destas dependências nas versões especificadas ou compatíveis.
+
+\section{Bibliotecas Principais}
+
+\begin{description}
+    \item[NumPy 1.22.4] Biblioteca fundamental para computação numérica, utilizada para operações com arrays e álgebra linear.
+
+    \item[SciPy 1.10.1] Biblioteca para computação científica, utilizada para resolver sistemas lineares esparsos (BiCGSTAB com precondicionador ILU), construção de matrizes esparsas e busca de vizinhos mais próximos (KD-Tree).
+
+    \item[Numba 0.60] Compilador JIT (Just-In-Time) para Python, utilizado para otimização de operações numéricas intensivas, especialmente no algoritmo de intersecção raio-polígono.
+
+    \item[Triangle 20230923] Wrapper Python para a biblioteca Triangle de triangulação de Delaunay, utilizada para geração de malhas triangulares a partir de contornos.
+
+    \item[Matplotlib 3.7.1] Biblioteca de visualização, utilizada para geração de gráficos e análise dos resultados.
+
+    \item[OpenCV-Python 4.7.0.72] Biblioteca de visão computacional, utilizada para processamento de imagens e gravação de vídeos da simulação.
+
+    \item[PyOpenGL 3.1.7] Binding Python para OpenGL, utilizado para renderização em tempo real da simulação.
+
+    \item[Shapely 2.0.1] Biblioteca para manipulação e análise de objetos geométricos planares.
+
+    \item[libpysal 4.7.0] Biblioteca de análise espacial, utilizada para operações de vizinhança em malhas.
+
+    \item[tqdm 4.65.0] Biblioteca para barras de progresso, utilizada durante a inicialização e processamento da simulação.
+\end{description}
+
+\section{Arquivo de Dependências Completo}
+
+O arquivo \texttt{requirements.txt} completo, que pode ser utilizado para instalação automática via \texttt{pip install -r requirements.txt}, contém as seguintes especificações:
+
+\begin{verbatim}
+# Python 3.10.4
+numpy<=1.22.4
+scipy==1.10.1
+numba==0.60
+triangle==20230923
+matplotlib==3.7.1
+opencv-python==4.7.0.72
+PyOpenGL==3.1.7
+shapely==2.0.1
+libpysal<=4.7.0
+tqdm==4.65.0
+Pillow==10.0.1
+networkx==3.1
+scikit-learn==1.2.2
+Rtree==1.0.1
+trimesh==3.22.0
+Cython==0.29.35
+\end{verbatim}
+
+\section{Ambiente de Execução}
+
+Os experimentos foram executados em um sistema Linux com Python 3.10.4. A utilização de versões diferentes das bibliotecas listadas pode resultar em comportamentos distintos ou incompatibilidades. Recomenda-se a criação de um ambiente virtual Python para isolar as dependências do projeto.

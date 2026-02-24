@@ -79,9 +79,67 @@
 % Inclui a lista de tabelas
 \incluilistadetabelas
 
+% Inclui a lista de símbolos
+\incluilistadesimbolos
+
 % ----
 % Início do documento
 % ----
+
+% ---------------------------------------------------------------------------
+% Lista de Símbolos
+% ---------------------------------------------------------------------------
+% Operadores e campos
+\simbolo{\mathbf{u}}{Campo de velocidades}
+\simbolo{p}{Campo de pressão}
+\simbolo{\rho}{Densidade do fluido}
+\simbolo{\nu}{Coeficiente de viscosidade dinâmica}
+\simbolo{\mathbf{g}}{Vetor de forças externas (gravidade)}
+\simbolo{\mathbf{w}}{Campo de velocidades intermediário}
+
+% Operadores diferenciais
+\simbolo{\nabla}{Operador gradiente (nabla)}
+\simbolo{\nabla \cdot}{Operador divergente}
+\simbolo{\nabla^2}{Operador laplaciano}
+\simbolo{\mathcal{L}}{Operador diferencial genérico}
+
+% Discretização temporal e espacial
+\simbolo{\Delta t}{Passo de tempo da simulação}
+\simbolo{\Delta x}{Espaçamento da malha (direção $x$)}
+\simbolo{\Delta x_{local}}{Espaçamento local da malha}
+\simbolo{n}{Índice temporal (superscript): $\mathbf{u}^n$ é a velocidade no tempo $t^n$}
+
+% RBF e interpolação
+\simbolo{\phi(r)}{Função de base radial}
+\simbolo{\Phi_k(\mathbf{x})}{RBF centrada no ponto $\mathbf{x}_k$}
+\simbolo{r}{Distância radial $r = \|\mathbf{x} - \mathbf{x}_k\|$}
+\simbolo{s}{Expoente da spline poliharmônica ($\phi(r) = r^s$)}
+\simbolo{\omega_j}{Pesos RBF-FD para o ponto $j$}
+\simbolo{\omega_j^L}{Pesos RBF-FD para o operador laplaciano}
+\simbolo{\omega_j^n}{Pesos RBF-FD para a derivada normal}
+\simbolo{\tilde{\omega}_j^L}{Pesos efetivos do laplaciano (com ghost node)}
+\simbolo{\alpha_k}{Coeficientes de interpolação RBF}
+\simbolo{\beta_j}{Coeficientes dos polinômios na interpolação RBF}
+\simbolo{P_j(x)}{Polinômios da base para interpolação RBF}
+
+% Geometria e malha
+\simbolo{\mathbf{x}_i}{Posição do ponto/nó $i$ na malha}
+\simbolo{\mathbf{x}^*}{Posição de origem após backtracking}
+\simbolo{\mathbf{x}_b}{Nó de fronteira}
+\simbolo{\mathbf{x}_g}{Nó fantasma (ghost node)}
+\simbolo{\mathbf{n}}{Vetor normal unitário à fronteira}
+\simbolo{h}{Distância do nó fantasma à fronteira}
+\simbolo{\alpha}{Parâmetro de ajuste para distância do ghost node}
+\simbolo{\mathcal{S}_i}{Estêncil do nó $i$ (conjunto de vizinhos)}
+\simbolo{N}{Número de pontos no estêncil ou na malha}
+\simbolo{M}{Número de polinômios na base RBF}
+\simbolo{\Omega}{Domínio computacional}
+
+% Índices
+\simbolo{i, j, k}{Índices de pontos/nós na malha}
+\simbolo{d}{Dimensão do domínio ($d=2$ para 2D)}
+\simbolo{m}{Grau máximo dos polinômios}
+
 \begin{document}
 % ----------------------------------------------------------
 % ELEMENTOS TEXTUAIS
@@ -107,6 +165,9 @@
 \label{chapter:Resultados}
 \input{tex/resultados}
 
+\chapter{Conclusão}
+\label{chapter:conclusao}
+\input{tex/conclusao}
 
 % ---
 % Finaliza a parte no bookmark do PDF, para que se inicie o bookmark na raiz
@@ -124,5 +185,12 @@
 % ----------------------------------------------------------
 \bibliography{references}
 
+% ----------------------------------------------------------
+% Apêndices
+% ----------------------------------------------------------
+\begin{apendicesenv}
+\partapendices
+\input{tex/apendice-dependencias}
+\end{apendicesenv}
 
 \end{document}

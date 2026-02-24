@@ -1,0 +1,116 @@
+PLANO DE APRESENTAÇÃO - ANIMAÇÃO DE FUMAÇA EM MALHAS NÃO-ESTRUTURADAS
+================================================================================
+
+1. INTRODUÇÃO E CONTEXTO
+   - Aplicações de simulação de fluidos (jogos, filmes, engenharia)
+   - Importância de simulações realistas de fumaça
+   - Transição: "Mas como simular em domínios complexos?"
+
+2. MOTIVAÇÃO DO PROBLEMA
+   - Limitações de grades regulares (AABBs simples)
+   - Necessidade de malhas para fronteiras complexas/irregulares
+   - Desafios: grades regulares vs malhas triangulares
+   - Lacuna na literatura: simulação de fumaça em malhas triangulares arbitrárias
+   - Transição: "Para resolver isso, precisamos entender os fundamentos"
+
+3. FUNDAMENTOS TEÓRICOS
+   a) Equações de Navier-Stokes (simplificadas para fumaça)
+      - Incompressibilidade: ∇·u = 0
+      - Equação de momento
+
+   b) Diferenças Finitas (FD) vs RBF-FD
+      - FD: funciona apenas em grades regulares
+      - RBF-FD: generalização para malhas arbitrárias
+      - Interpolação livre de malha (meshfree)
+
+   - Transição: "Com essa base teórica, podemos explicar nosso método"
+
+4. METODOLOGIA - PIPELINE DO STABLE FLUIDS (ALGORITMO PASSO A PASSO)
+
+   Passo 1: Aplicação de Forças Externas
+   - Gravidade, empuxo térmico
+   - Atualização do campo de velocidades
+
+   Passo 2: Advecção Semi-Lagrangiana
+   - Backtracking no campo de velocidades
+   - Desafio: interseção raio-polígono em malhas arbitrárias
+   - Nossa solução: algoritmo otimizado com JIT (Numba)
+   - Interpolação RBF vs Baricêntrica
+
+   Passo 3: Projeção de Helmholtz-Hodge
+   - Garantir divergente nulo (∇·u = 0)
+   - Resolver equação de Poisson: ∇²p = ∇·w
+   - Aplicação de RBF-FD para o Laplaciano
+
+   - Transição: "Um desafio crucial: condições de fronteira"
+
+5. TRATAMENTO DE FRONTEIRAS (CONTRIBUIÇÃO CHAVE)
+   a) Problema: estêncils assimétricos na fronteira
+   b) Método tradicional (collocation) e suas limitações
+   c) Nossa abordagem: Nós Fantasma Simplificada
+      - Criação temporária de nós fora do domínio
+      - Balanceamento de estêncils
+      - Eliminação analítica do nó fantasma
+      - Pesos efetivos: ω̃ᴸⱼ = ωᴸⱼ - (ωᴸɡ/ωⁿɡ)ωⁿⱼ
+      - Simplificação da abordagem de Flyer et al.
+   d) Vantagens: melhor precisão, implementação mais simples
+
+   - Transição: "Vamos ver o método em ação"
+
+6. RESULTADOS (DEMONSTRAÇÃO EM VÍDEO)
+
+   Experimento 1: Validação do método de nós fantasma
+   - Comparação: com vs sem ghost nodes
+   - Análise do divergente
+   - Estabilidade temporal
+
+   Experimento 2: Geometria irregular simples
+   - Demonstração do escoamento
+   - Formação de vórtices
+   - Comportamento na fronteira
+
+   Experimento 3: Domínio complexo (fronteiras geográficas)
+   - Geometrias altamente irregulares
+   - Análise qualitativa do escoamento
+
+   Métricas apresentadas:
+   - Gráficos 3D do divergente espacial
+   - Evolução temporal do divergente máximo
+   - Conservação de massa
+
+   - Transição: "O que aprendemos com esses resultados?"
+
+7. DISCUSSÃO DOS RESULTADOS
+   - Sucesso: comportamento físico qualitativamente correto
+   - Desafios identificados:
+     * Perda gradual de massa
+     * Instabilidades em regiões de alta curvatura
+     * Sensibilidade à proximidade de nós
+   - Estabilidade proporcionada pelos nós fantasma
+
+8. CONCLUSÕES E CONTRIBUIÇÕES
+   - Adaptação do Stable Fluids com RBF-FD para malhas triangulares
+   - Técnica simplificada de nós fantasma para fronteiras
+   - Algoritmo eficiente de ray-casting com JIT
+   - Viabilidade demonstrada em domínios arbitrários
+
+9. TRABALHOS FUTUROS
+   - Extensão para 3D (malhas tetraedrais)
+   - Melhoria na conservação de massa
+   - Exploração de outras funções de base radial
+   - Domínios não-simplesmente conexos (com buracos)
+   - Otimizações de desempenho (paralelização, GPU)
+   - Refinamento adaptativo
+
+10. AGRADECIMENTOS E PERGUNTAS
+    - CAPES, orientador, colaboradores
+    - Abertura para discussão
+
+================================================================================
+NOTAS PARA APRESENTAÇÃO:
+- Tempo estimado: 15-20 minutos
+- Ênfase visual: vídeos das simulações são o ponto alto
+- Explicar RBF-FD de forma intuitiva (generalização de FD)
+- Focar na contribuição principal: tratamento de fronteiras com ghost nodes
+- Mostrar gráficos de divergente para validação quantitativa
+- Destacar: malhas triangulares permitem fronteiras complexas

@@ -1,0 +1,17 @@
+melhorar conexao entre objetivos e resultados. (malhas nao conforme)
+
+melhorar visualizacao dos resultados adicionar malha durante 
+
+melhorar definao entre precisao e acuracia
+
+fig 8 backtracking ilustracao peca, é linear mas ta ilustrada de maneira curva.
+
+avaliar melhor o divergente, o injetor pode chegar num steady state, desligar gera uma interferencia
+
+a malha gerada pode criar triangulos ruins (remeshing)
+
+enaltecer que com CFL o backtracking nao vai sair muito longe da malha.
+
+arrumar e definir que o trabalho é collocated
+
+falar sobre como usei 

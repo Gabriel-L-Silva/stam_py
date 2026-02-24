@@ -5,6 +5,8 @@
 *.png
 .vs
 
+code/venv/*
+
 #latex
 *.acn
 *.acr

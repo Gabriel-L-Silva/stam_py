@@ -509,3 +509,32 @@ author = {Natasha Flyer and Gregory A. Barnett and Louis J. Wicker},
 keywords = {RBF-FD, Radial basis functions, Finite differences, Polynomials, Splines, Navier–Stokes},
 abstract = {Polynomials are used together with polyharmonic spline (PHS) radial basis functions (RBFs) to create local RBF-finite-difference (RBF-FD) weights on different node layouts for spatial discretizations that can be viewed as enhancements of the classical finite differences (FD). The presented method replicates the convergence properties of FD but for arbitrary node layouts. It is tested on the 2D compressible Navier–Stokes equations at low Mach number, relevant to atmospheric flows. Test cases are taken from the numerical weather prediction community and solved on bounded domains. Thus, attention is given on how to handle boundaries with the RBF-FD method, as well as a novel implementation for hyperviscosity. Comparisons are done on Cartesian, hexagonal, and quasi-uniform node layouts. Consideration and guidelines are given on PHS order, polynomial degree and stencil size. The main advantages of the present method are: 1) capturing the basic physics of the problem surprisingly well, even at very coarse resolutions, 2) high-order accuracy without the need of tuning a shape parameter, and 3) the inclusion of polynomials eliminates stagnation (saturation) errors. A MATLAB code is given to calculate the differentiation weights for this novel approach.}
 }
+@misc{triangle,
+  author = {Jonathan Richard Shewchuk},
+  title = {Triangle: Engineering a 2D Quality Mesh Generator and Delaunay Triangulator},
+  howpublished = {Applied Computational Geometry Towards Geometric Engineering},
+  volume = {1148},
+  pages = {203--222},
+  year = {1996},
+  note = {Springer-Verlag. Wrapper Python disponível em: \url{https://pypi.org/project/triangle/}},
+  url = {https://www.cs.cmu.edu/~quake/triangle.html}
+}
+
+@article{Silva2023CNMAC,
+  author = {Gabriel L. da Silva and Afonso Paiva and Paulo Pagliosa},
+  title = {Animação de fumaça em malhas não-estruturadas usando o método RBF-FD},
+  journal = {Proceeding Series of the Brazilian Society of Computational and Applied Mathematics},
+  volume = {10},
+  number = {1},
+  year = {2023},
+  issn = {2359-0793},
+  url = {https://proceedings.sbmac.org.br/sbmac/article/view/4252},
+  doi = {10.5540/03.2023.010.01.0244}
+}
+
+@book{foley1996computer,
+  title={Computer Graphics: Principles and Practice},
+  author={Foley, James D and van Dam, Andries and Feiner, Steven K and Hughes, John F},
+  year={1996},
+  publisher={Addison-Wesley Professional}
+}

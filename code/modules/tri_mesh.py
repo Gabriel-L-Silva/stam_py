@@ -1,0 +1,205 @@
+from matplotlib import tri
+import networkx as nx
+from functools import cache
+from math import pi
+from sklearn.preprocessing import normalize
+import trimesh
+import numpy as np
+from tqdm import tqdm
+
+try:
+    from modules.ray_polygon_intersection import IntersectionSolver
+except:
+    from ray_polygon_intersection import IntersectionSolver
+try:
+    from modules.rbf import rbf_fd_weights
+except:
+    from rbf import rbf_fd_weights
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from libpysal.weights import KNN
+
+
+class TriMesh:
+    def __init__(self, mesh, k=None, s=5, d=2, only_knn=True, ghost_distance=0.1):
+        self.mesh = mesh
+        self.ghost_distance = ghost_distance
+        self.filename = mesh.metadata['file_name']
+        self.k = (d+2)*(d+1)/2 if k is None else k
+        self.s = s
+        self.d = d
+        self.only_knn = only_knn
+        self._init_mesh()
+        self.intersection_solver = IntersectionSolver(self.mesh, self.sorted_edges)
+
+    def intersect_boundary(self, new_pos):
+        if self.intersection_solver is not None:
+            self.intersection_solver.intersect(self.mesh.vertices[:,:2], new_pos - self.mesh.vertices[:,:2])
+
+        if 'circle' in self.filename:
+            out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) > 1)[0]
+            new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds])
+        elif 'donut' in self.filename:
+            out_of_bounds = np.where(np.linalg.norm(new_pos, axis=1) > 1)[0]
+            new_pos[out_of_bounds] = normalize(new_pos[out_of_bounds])
+
+            inside_hole = np.where(np.linalg.norm(new_pos, axis=1) < 0.2)[0]
+            new_pos[inside_hole] = normalize(new_pos[inside_hole]) * 0.2
+        elif 'square' in self.filename:
+            new_pos = np.clip(new_pos, 0, np.pi)
+        return new_pos
+    
+    def triFinder(self, x, y):
+        cells = self.findTri(x,y)
+        if cells.min() == -1:
+            if(type(x) == float):
+                points= np.array([[x, y,0]])
+            else:
+                points = np.stack([x,y,np.zeros(len(x))]).T
+            _,_,cells = trimesh.proximity.closest_point(self.mesh, points)
+        return cells
+
+    def _init_mesh(self):
+        self.t_mesh = tri.Triangulation(self.mesh.vertices[:,0], self.mesh.vertices[:,1], self.mesh.faces)
+
+        self.points = np.asarray([p for p in zip(self.mesh.vertices[:,0],self.mesh.vertices[:,1])])
+        self.n_points = len(self.points)
+
+        self.findTri = self.t_mesh.get_trifinder()
+        self.faces = self.mesh.faces
+        
+        print('Building neighborhood...')
+        self.g = nx.from_edgelist(self.mesh.edges_unique)
+        knn = list(KNN.from_array(self.points, k=self.k).neighbors.values())
+        if self.only_knn: 
+            self.nring = [np.append(knn[p],[p]) for p in tqdm(range(len(self.mesh.vertices)))]
+        else:
+            self.nring = [list(self.find_Nring(2, p, set())) for p in tqdm(range(len(self.mesh.vertices)))]
+            for id, ring in enumerate(self.nring):
+                if len(ring) < self.k:
+                    ring = knn[id].append(id)
+        
+        self._init_boundary()
+        
+        print('Building rbf...')
+        self.rbf = []
+        #adiconar o ghost no proximo passo
+        for p in tqdm(range(self.n_points)):
+            if p in self.boundary:
+                #create ghost node
+                ghost = self.points[p] + self.normals[p,:2]*self.ghost_distance
+                self.rbf.append(rbf_fd_weights(np.append(self.points[self.nring[p]], ghost.reshape(1,2), axis=0), self.points[p], self.s, self.d))
+            else:
+                self.rbf.append(rbf_fd_weights(self.points[self.nring[p]], self.points[p], self.s, self.d))
+        
+
+    def _init_boundary(self):
+        # Find edges at the boundary
+        unique_edges = self.mesh.edges[trimesh.grouping.group_rows(self.mesh.edges_sorted, require_count=1)]
+        self.boundary = set(np.unique(unique_edges.flatten()))
+        if not hasattr(self.mesh, 'exterior'):
+            self.mesh.exterior = list(set(unique_edges.flatten()))
+            self.mesh.holes = []
+        self.normals = np.zeros_like(self.mesh.vertices)
+
+        exterior_edges = [edge for edge in unique_edges if edge[0] in self.mesh.exterior and edge[1] in self.mesh.exterior]
+        self.normals[self.mesh.exterior] = self._get_normals(exterior_edges)[self.mesh.exterior]
+        
+        hole_edges = []
+        for hole in self.mesh.holes:
+            hole_edges.append([edge for edge in unique_edges if edge[0] in hole and edge[1] in hole])
+            self.normals[hole] = self._get_normals(hole_edges[-1])[hole]
+
+    def sort_edges(self, edges):
+        edge_count = len(edges)
+        if(edge_count > 0):
+            e = []
+            e.append(edges[0])
+            flip = []
+            
+            #main loop for edge e
+            for e_iter in edges:
+                eb = e[-1][1] #end vertex of last edge of e
+                found = False
+                
+                #first search
+                for m in edges:
+                    ma = m[0] #begin vertex of edge m
+                    mb = m[1] #end vertex of edge m
+                    if(eb == ma):
+                        flipFound = False
+                        for n in e:
+                            if(n[0] == mb and n[1] == ma):
+                                flipFound = True
+                                break
+                        if(flipFound == True):
+                            continue
+                        else:         
+                            e.append(m)
+                            found = True
+                            break
+                    
+                #check for reverse direction in case first search failed
+                if(found == False):
+                    for index, m in enumerate(edges):
+                        ma = m[0] #begin vertex of edge e
+                        mb = m[1] #end vertex of edge e
+                        
+                        #...also exclude existing m's in e
+                        if(mb == eb and m not in e):
+                            #create duplicate to reverse vertex indices
+                            m_dup = edges.copy()
+                            f = m_dup[index]
+                            f[0] = mb
+                            f[1] = ma
+                            e.append(f)
+                        else:
+                            continue
+    
+        #remove last element (was added twice)
+        del e[-1]
+        return e
+
+    def _get_normals(self, edges):
+        normals = np.zeros((self.n_points,3))
+        e_normals = np.zeros((len(edges),2))
+        R_matrix = np.array([[0,-1],[1,0]])
+        sorted_edges = self.sort_edges(edges)
+        self.sorted_edges = sorted_edges
+        for idx, edge in enumerate(sorted_edges):
+            e = self.mesh.vertices[edge[0]][:2] - self.mesh.vertices[edge[1]][:2]
+            e_normals[idx] = R_matrix@e
+            e_normals[idx] = e_normals[idx] / np.sqrt(np.sum(e_normals[idx]**2))
+        for id, edge in enumerate(sorted_edges):
+            normals[edge[0],:2] = (e_normals[id-1] + e_normals[id])/2
+            normals[edge[0],2] = 0
+            normals[edge[0]] = normals[edge[0]] / np.sqrt(np.sum(normals[edge[0]]**2))
+        # for id, b in zip(list(self.boundary),self.points[list(self.boundary)]):
+        #     if b[0] == 0:
+        #         normals[id] += [-1,0,0]
+        #     if b[1] == 0:
+        #         normals[id] += [0,-1,0]
+        #     if abs(b[0] - pi) <= 10e-3:
+        #         normals[id] += [1,0,0]
+        #     if abs(b[1] - pi) <= 10e-3:
+        #         normals[id] += [0,1,0]
+        #     normals[id] = normals[id] / np.sqrt(np.sum(normals[id]**2))
+        
+        # import matplotlib.pyplot as plt
+        # plt.plot(self.points[edges,0], self.points[edges,1], 'o')
+        # plt.quiver(self.points[edges,0], self.points[edges,1], normals[edges,0], normals[edges,1])
+        # plt.show(block=True)
+        return normals
+
+    def find_one_ring(self, index):
+        return list(self.g[index].keys())
+    
+    def find_Nring(self, n, index, nh :set):
+        if n == 0:
+            nh.add(index)
+            return
+        else:
+            for v in self.find_one_ring(index):
+                self.find_Nring(n-1, v, nh)
+            return nh
